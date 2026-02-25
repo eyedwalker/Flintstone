@@ -1,0 +1,60 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <mat-icon class="logo-icon">smart_toy</mat-icon>
+      <h1 class="logo-text">Bedrock Chat</h1>
+    </div>
+
+    <h2 class="auth-title">Create your account</h2>
+    <p class="auth-subtitle">Get started with your AI assistant platform</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Full Name</mat-label>
+        <input matInput formControlName="name" autocomplete="name">
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-error>Name is required (min 2 chars)</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Work Email</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="email">
+        <mat-icon matPrefix>email</mat-icon>
+        <mat-error>Valid email is required</mat-error>
+      </mat-form-field>
+
+      <div formGroupName="passwords">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" autocomplete="new-password">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-hint>Minimum 8 characters</mat-hint>
+          <mat-error>Password must be at least 8 characters</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:4px">
+          <mat-label>Confirm Password</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="confirmPassword" autocomplete="new-password">
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <mat-error *ngIf="form.get('passwords')?.hasError('passwordMismatch')">Passwords do not match</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-checkbox formControlName="terms" class="terms-check">
+        I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
+      </mat-checkbox>
+
+      <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="loading">
+        <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">Create Account</span>
+      </button>
+    </form>
+
+    <div class="auth-links">
+      Already have an account? <a routerLink="/auth/login">Sign in</a>
+    </div>
+  </div>
+</div>

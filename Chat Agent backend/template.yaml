@@ -1,0 +1,517 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Bedrock Chat Configurator - secure API backend
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+  BedrockRegion:
+    Type: String
+    Default: us-west-2
+  ContentBucketName:
+    Type: String
+    Default: wubba-data-sources
+    Description: Existing S3 bucket for knowledge base content
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures: [arm64]
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        REGION: !Ref AWS::Region
+        ASSISTANTS_TABLE: !Ref AssistantsTable
+        CONTENT_TABLE: !Ref ContentTable
+        TENANTS_TABLE: !Ref TenantsTable
+        METRICS_TABLE: !Ref MetricsTable
+        HIERARCHY_DEFINITIONS_TABLE: !Ref HierarchyDefinitionsTable
+        HIERARCHY_NODES_TABLE: !Ref HierarchyNodesTable
+        NODE_USERS_TABLE: !Ref NodeUsersTable
+        S3_CONTENT_BUCKET: !Ref ContentBucketName
+        BEDROCK_KB_ROLE_ARN: !GetAtt BedrockKbRole.Arn
+        BEDROCK_AGENT_ROLE_ARN: !GetAtt BedrockAgentRole.Arn
+        BEDROCK_EMBEDDING_MODEL_ARN: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+        STRIPE_SECRET_KEY_PARAM: !Sub "/chat-agent/${Stage}/stripe/secret-key"
+        FRONTEND_URL: ""
+
+Resources:
+
+  # ── Cognito User Pool ──────────────────────────────────────────────
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "chat-agent-${Stage}"
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: name
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      DeletionProtection: ACTIVE
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub "chat-agent-client-${Stage}"
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      PreventUserExistenceErrors: ENABLED
+
+  # ── DynamoDB Tables ────────────────────────────────────────────────
+  AssistantsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-assistants-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: tenantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: tenantId-index
+          KeySchema:
+            - AttributeName: tenantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  ContentTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-content-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: assistantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: assistantId-index
+          KeySchema:
+            - AttributeName: assistantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  TenantsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-tenants-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  MetricsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-metrics-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: assistantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: assistantId-index
+          KeySchema:
+            - AttributeName: assistantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  HierarchyDefinitionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-hierarchy-definitions-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: organizationId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: organizationId
+          KeyType: HASH
+
+  HierarchyNodesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-hierarchy-nodes-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: organizationId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: organizationId-index
+          KeySchema:
+            - AttributeName: organizationId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  NodeUsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-node-users-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  # ── IAM Roles ──────────────────────────────────────────────────────
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "chat-agent-lambda-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ChatAgentPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DynamoDBAccess
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt AssistantsTable.Arn
+                  - !Sub "${AssistantsTable.Arn}/index/*"
+                  - !GetAtt ContentTable.Arn
+                  - !Sub "${ContentTable.Arn}/index/*"
+                  - !GetAtt TenantsTable.Arn
+                  - !GetAtt MetricsTable.Arn
+                  - !Sub "${MetricsTable.Arn}/index/*"
+                  - !GetAtt HierarchyDefinitionsTable.Arn
+                  - !GetAtt HierarchyNodesTable.Arn
+                  - !Sub "${HierarchyNodesTable.Arn}/index/*"
+                  - !GetAtt NodeUsersTable.Arn
+              - Sid: S3Access
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${ContentBucketName}"
+                  - !Sub "arn:aws:s3:::${ContentBucketName}/*"
+              - Sid: BedrockAccess
+                Effect: Allow
+                Action:
+                  - bedrock:CreateAgent
+                  - bedrock:UpdateAgent
+                  - bedrock:GetAgent
+                  - bedrock:DeleteAgent
+                  - bedrock:PrepareAgent
+                  - bedrock:CreateAgentAlias
+                  - bedrock:UpdateAgentAlias
+                  - bedrock:AssociateAgentKnowledgeBase
+                  - bedrock:DisassociateAgentKnowledgeBase
+                  - bedrock:CreateKnowledgeBase
+                  - bedrock:GetKnowledgeBase
+                  - bedrock:DeleteKnowledgeBase
+                  - bedrock:CreateDataSource
+                  - bedrock:DeleteDataSource
+                  - bedrock:StartIngestionJob
+                  - bedrock:GetIngestionJob
+                  - bedrock:ListIngestionJobs
+                  - bedrock:CreateGuardrail
+                  - bedrock:UpdateGuardrail
+                  - bedrock:GetGuardrail
+                  - bedrock:DeleteGuardrail
+                  - bedrock:CreateGuardrailVersion
+                  - bedrock:ApplyGuardrail
+                Resource: "*"
+              - Sid: PassRoleForBedrock
+                Effect: Allow
+                Action: iam:PassRole
+                Resource:
+                  - !GetAtt BedrockKbRole.Arn
+                  - !GetAtt BedrockAgentRole.Arn
+              - Sid: SSMAccess
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/chat-agent/${Stage}/*"
+              - Sid: S3VectorsManage
+                Effect: Allow
+                Action:
+                  - s3vectors:CreateVectorBucket
+                  - s3vectors:DeleteVectorBucket
+                  - s3vectors:GetVectorBucket
+                  - s3vectors:ListVectorBuckets
+                  - s3vectors:CreateIndex
+                  - s3vectors:DeleteIndex
+                  - s3vectors:GetIndex
+                  - s3vectors:ListIndexes
+                Resource: "*"
+
+  BedrockKbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "chat-agent-bedrock-kb-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BedrockKbPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${ContentBucketName}"
+                  - !Sub "arn:aws:s3:::${ContentBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+              - Effect: Allow
+                Action:
+                  - s3vectors:PutVectors
+                  - s3vectors:GetVectors
+                  - s3vectors:DeleteVectors
+                  - s3vectors:QueryVectors
+                  - s3vectors:GetIndex
+                Resource: "*"
+
+  BedrockAgentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "chat-agent-bedrock-agent-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BedrockAgentPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:Retrieve
+                Resource: "*"
+
+  # ── Lambda Function ────────────────────────────────────────────────
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "chat-agent-api-${Stage}"
+      CodeUri: ./
+      Handler: dist/handler.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      MemorySize: 512
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+        ApiOptionsEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: OPTIONS
+
+  ProvisionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "chat-agent-provision-${Stage}"
+      CodeUri: ./
+      Handler: dist/handler.provisionHandler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 300
+      MemorySize: 512
+      Events:
+        ProvisionEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /assistants/{id}/provision
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+
+  # ── HTTP API Gateway ───────────────────────────────────────────────
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      Auth:
+        Authorizers:
+          CognitoJwtAuthorizer:
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}"
+              audience:
+                - !Ref UserPoolClient
+            IdentitySource: "$request.header.Authorization"
+        # No DefaultAuthorizer — authorizer applied per-route so OPTIONS preflight passes
+      CorsConfiguration:
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Amz-Date
+          - X-Api-Key
+        AllowOrigins:
+          - "*"
+        MaxAge: 300
+
+# ── Outputs ────────────────────────────────────────────────────────
+Outputs:
+  ApiUrl:
+    Description: API Gateway URL — use as chatApiBaseUrl in Angular environment.ts
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Export:
+      Name: !Sub "chat-agent-api-url-${Stage}"
+
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID — use as cognitoUserPoolId in Angular environment.ts
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub "chat-agent-user-pool-id-${Stage}"
+
+  CognitoClientId:
+    Description: Cognito Client ID — use as cognitoClientId in Angular environment.ts
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub "chat-agent-client-id-${Stage}"
+
+  ContentBucketName:
+    Description: S3 bucket for knowledge base content — use as s3ContentBucket in Angular environment.ts
+    Value: !Ref ContentBucketName
+    Export:
+      Name: !Sub "chat-agent-content-bucket-${Stage}"
+
+  AssistantsTableName:
+    Value: !Ref AssistantsTable
+  ContentTableName:
+    Value: !Ref ContentTable
+  TenantsTableName:
+    Value: !Ref TenantsTable
+  MetricsTableName:
+    Value: !Ref MetricsTable
+  HierarchyDefinitionsTableName:
+    Value: !Ref HierarchyDefinitionsTable
+  HierarchyNodesTableName:
+    Value: !Ref HierarchyNodesTable
+  NodeUsersTableName:
+    Value: !Ref NodeUsersTable
+  BedrockKbRoleArn:
+    Value: !GetAtt BedrockKbRole.Arn
+  BedrockAgentRoleArn:
+    Value: !GetAtt BedrockAgentRole.Arn

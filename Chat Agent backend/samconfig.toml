@@ -1,0 +1,17 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "chat-agent"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+stack_name = "chat-agent"
+region = "us-west-2"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+resolve_s3 = true
+no_confirm_changeset = true
+parameter_overrides = "Stage=dev ContentBucketName=wubba-data-sources"
+profile = "eyentelligence"

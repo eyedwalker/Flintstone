@@ -1,0 +1,32 @@
+.code-preview-container {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #2d2d2d;
+  color: #fff;
+
+  .code-label { font-size: 0.8rem; font-family: monospace; color: #aaa; }
+
+  button { color: #aaa; &:hover { color: #fff; } }
+}
+
+.code-block {
+  margin: 0;
+  padding: 20px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+  max-height: 400px;
+  overflow-y: auto;
+}

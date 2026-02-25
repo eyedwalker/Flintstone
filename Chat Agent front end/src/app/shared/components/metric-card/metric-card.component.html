@@ -1,0 +1,21 @@
+<mat-card class="metric-card" [ngClass]="color">
+  <mat-card-content>
+    <div class="metric-top">
+      <div class="metric-info">
+        <div class="metric-value">{{ value }}<span class="metric-unit" *ngIf="unit"> {{ unit }}</span></div>
+        <div class="metric-label">{{ label }}</div>
+      </div>
+      <div class="metric-icon-wrap">
+        <mat-icon>{{ icon }}</mat-icon>
+      </div>
+    </div>
+    <div class="metric-trend" *ngIf="trend !== undefined">
+      <mat-icon class="trend-icon" [class.up]="trend >= 0" [class.down]="trend < 0">
+        {{ trend >= 0 ? 'trending_up' : 'trending_down' }}
+      </mat-icon>
+      <span class="trend-value" [class.positive]="trend >= 0" [class.negative]="trend < 0">
+        {{ trend >= 0 ? '+' : '' }}{{ trend }}% vs last period
+      </span>
+    </div>
+  </mat-card-content>
+</mat-card>

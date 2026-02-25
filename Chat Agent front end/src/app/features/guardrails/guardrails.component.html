@@ -1,0 +1,213 @@
+<!-- Tab nav -->
+<nav class="assistant-tab-nav">
+  <a [routerLink]="['/assistants', assistantId, 'knowledge-base']"><mat-icon>folder_open</mat-icon> Knowledge Base</a>
+  <a [routerLink]="['/assistants', assistantId, 'model']"><mat-icon>tune</mat-icon> Model</a>
+  <a [routerLink]="['/assistants', assistantId, 'guardrails']" class="active-link"><mat-icon>shield</mat-icon> Guardrails</a>
+  <a [routerLink]="['/assistants', assistantId, 'widget']"><mat-icon>widgets</mat-icon> Widget</a>
+  <a [routerLink]="['/assistants', assistantId, 'embed']"><mat-icon>code</mat-icon> Embed</a>
+  <a [routerLink]="['/assistants', assistantId, 'metrics']"><mat-icon>analytics</mat-icon> Metrics</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Guardrails</h1>
+    <p class="page-subtitle">Control content safety, PII redaction, and hallucination grounding</p>
+  </div>
+  <div class="header-actions">
+    <button mat-stroked-button type="button" (click)="showTestPanel = !showTestPanel">
+      <mat-icon>science</mat-icon> Test
+    </button>
+    <button mat-flat-button color="primary" (click)="save()" [disabled]="saving">
+      <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+      <mat-icon *ngIf="!saving">save</mat-icon>
+      {{ saving ? 'Saving…' : 'Save & Publish' }}
+    </button>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+<div class="guardrails-layout" *ngIf="!loading">
+
+  <!-- Left config column -->
+  <div class="config-col">
+
+    <!-- Content Filters -->
+    <div class="section-card">
+      <h3 class="section-title"><mat-icon>filter_list</mat-icon> Content Filters</h3>
+      <p class="section-desc">Block harmful content categories on inputs and/or outputs.</p>
+      <table class="filter-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Input</th>
+            <th>Output</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of config.contentFilters">
+            <td class="filter-name">{{ f.type | titlecase }}</td>
+            <td>
+              <mat-select [(value)]="f.inputStrength" class="strength-select">
+                <mat-option *ngFor="let s of strengths" [value]="s">{{ s }}</mat-option>
+              </mat-select>
+            </td>
+            <td>
+              <mat-select [(value)]="f.outputStrength" class="strength-select">
+                <mat-option *ngFor="let s of strengths" [value]="s">{{ s }}</mat-option>
+              </mat-select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Blocked Topics -->
+    <div class="section-card">
+      <h3 class="section-title"><mat-icon>block</mat-icon> Blocked Topics</h3>
+      <p class="section-desc">Define topics the assistant should refuse to discuss.</p>
+
+      <div class="topic-item" *ngFor="let t of config.blockedTopics; let i = index">
+        <div class="topic-header">
+          <strong>{{ t.name || 'New Topic' }}</strong>
+          <button mat-icon-button type="button" (click)="removeTopic(i)">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Topic name</mat-label>
+          <input matInput [(ngModel)]="t.name" placeholder="e.g. Competitor Products">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Definition</mat-label>
+          <textarea matInput [(ngModel)]="t.definition" rows="2"
+                    placeholder="Describe what counts as this topic…"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Example phrases (comma-separated)</mat-label>
+          <input matInput [value]="t.examplePhrases.join(', ')"
+                 (change)="updateExamples(t, $event)">
+        </mat-form-field>
+      </div>
+
+      <button mat-stroked-button type="button" (click)="addTopic()" [disabled]="config.blockedTopics.length >= 10">
+        <mat-icon>add</mat-icon> Add Topic
+      </button>
+    </div>
+
+    <!-- Word Filters -->
+    <div class="section-card">
+      <h3 class="section-title"><mat-icon>text_fields</mat-icon> Word Filters</h3>
+      <div class="word-chip-row">
+        <mat-slide-toggle [(ngModel)]="profanityEnabled" color="primary">
+          Block profanity (managed list)
+        </mat-slide-toggle>
+      </div>
+      <mat-chip-set class="word-chips">
+        <mat-chip *ngFor="let w of customWords; let i = index" (removed)="removeWord(i)">
+          {{ w }}
+          <button matChipRemove type="button"><mat-icon>cancel</mat-icon></button>
+        </mat-chip>
+      </mat-chip-set>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Add custom word or phrase</mat-label>
+        <input matInput #wordInput placeholder="Type and press Enter"
+               (keydown.enter)="addWord(wordInput.value); wordInput.value = ''">
+      </mat-form-field>
+    </div>
+
+    <!-- PII -->
+    <div class="section-card">
+      <h3 class="section-title"><mat-icon>fingerprint</mat-icon> PII Detection</h3>
+      <mat-slide-toggle [(ngModel)]="config.piiConfig.enabled" color="primary">
+        Enable PII detection &amp; redaction
+      </mat-slide-toggle>
+      <div class="pii-grid" *ngIf="config.piiConfig.enabled">
+        <div class="pii-item" *ngFor="let e of config.piiConfig.entities">
+          <span class="pii-type">{{ e.type | titlecase }}</span>
+          <mat-select [(value)]="e.action" class="action-select">
+            <mat-option value="ANONYMIZE">Anonymize</mat-option>
+            <mat-option value="BLOCK">Block</mat-option>
+          </mat-select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grounding -->
+    <div class="section-card">
+      <h3 class="section-title"><mat-icon>verified</mat-icon> Hallucination Grounding</h3>
+      <mat-slide-toggle [(ngModel)]="config.groundingConfig.enabled" color="primary">
+        Enable grounding checks
+      </mat-slide-toggle>
+      <div class="grounding-sliders" *ngIf="config.groundingConfig.enabled">
+        <div class="param-row">
+          <div class="param-label">
+            <span>Grounding Threshold</span>
+            <strong>{{ config.groundingConfig.groundingThreshold | number:'1.2-2' }}</strong>
+          </div>
+          <mat-slider min="0" max="1" step="0.05" class="full-width">
+            <input matSliderThumb [(ngModel)]="config.groundingConfig.groundingThreshold">
+          </mat-slider>
+        </div>
+        <div class="param-row">
+          <div class="param-label">
+            <span>Relevance Threshold</span>
+            <strong>{{ config.groundingConfig.relevanceThreshold | number:'1.2-2' }}</strong>
+          </div>
+          <mat-slider min="0" max="1" step="0.05" class="full-width">
+            <input matSliderThumb [(ngModel)]="config.groundingConfig.relevanceThreshold">
+          </mat-slider>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block messages -->
+    <div class="section-card">
+      <h3 class="section-title"><mat-icon>chat_bubble_outline</mat-icon> Block Messages</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Blocked input message</mat-label>
+        <textarea matInput [(ngModel)]="config.blockedInputMessage" rows="2"></textarea>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Blocked output message</mat-label>
+        <textarea matInput [(ngModel)]="config.blockedOutputMessage" rows="2"></textarea>
+      </mat-form-field>
+    </div>
+
+  </div>
+
+  <!-- Right: Test panel -->
+  <div class="test-col" *ngIf="showTestPanel">
+    <div class="section-card test-panel">
+      <h3 class="section-title"><mat-icon>science</mat-icon> Test Guardrail</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Test input</mat-label>
+        <textarea matInput [(ngModel)]="testInput" rows="4" placeholder="Enter sample text to test…"></textarea>
+      </mat-form-field>
+      <mat-button-toggle-group [(ngModel)]="testSource" class="full-width">
+        <mat-button-toggle value="INPUT">Input</mat-button-toggle>
+        <mat-button-toggle value="OUTPUT">Output</mat-button-toggle>
+      </mat-button-toggle-group>
+      <button mat-flat-button color="accent" class="full-width" style="margin-top:12px"
+              (click)="runTest()" [disabled]="testing || !testInput">
+        <mat-spinner diameter="18" *ngIf="testing"></mat-spinner>
+        {{ testing ? 'Testing…' : 'Run Test' }}
+      </button>
+
+      <div class="test-result" *ngIf="testResult">
+        <div class="result-action" [class.blocked]="testResult.action === 'GUARDRAIL_INTERVENED'">
+          <mat-icon>{{ testResult.action === 'NONE' ? 'check_circle' : 'block' }}</mat-icon>
+          {{ testResult.action === 'NONE' ? 'ALLOWED' : 'BLOCKED' }}
+        </div>
+        <div class="result-output" *ngIf="testResult.output">
+          <strong>Output:</strong> {{ testResult.output }}
+        </div>
+        <div class="assessment-list" *ngIf="testResult.assessments.length > 0">
+          <strong>Assessments:</strong>
+          <pre class="assessment-json">{{ testResult.assessments | json }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

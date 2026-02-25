@@ -1,0 +1,149 @@
+<!-- Tab nav -->
+<nav class="assistant-tab-nav">
+  <a [routerLink]="['/assistants', assistantId, 'knowledge-base']" class="active-link">
+    <mat-icon>folder_open</mat-icon> Knowledge Base
+  </a>
+  <a [routerLink]="['/assistants', assistantId, 'model']"><mat-icon>tune</mat-icon> Model</a>
+  <a [routerLink]="['/assistants', assistantId, 'guardrails']"><mat-icon>shield</mat-icon> Guardrails</a>
+  <a [routerLink]="['/assistants', assistantId, 'widget']"><mat-icon>widgets</mat-icon> Widget</a>
+  <a [routerLink]="['/assistants', assistantId, 'embed']"><mat-icon>code</mat-icon> Embed</a>
+  <a [routerLink]="['/assistants', assistantId, 'metrics']"><mat-icon>analytics</mat-icon> Metrics</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Knowledge Base</h1>
+    <p class="page-subtitle">Upload documents and URLs to power your assistant's responses</p>
+  </div>
+  <div class="header-actions">
+    <button mat-stroked-button type="button" (click)="showUrlForm = !showUrlForm">
+      <mat-icon>link</mat-icon> Add URL
+    </button>
+    <label mat-flat-button class="upload-btn" color="primary">
+      <mat-icon>upload_file</mat-icon> Upload Files
+      <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg"
+             (change)="onFileInput($event)" hidden>
+    </label>
+  </div>
+</div>
+
+<!-- Provision warning -->
+<mat-card class="provision-warning" *ngIf="assistant && !assistant.bedrockKnowledgeBaseId">
+  <mat-card-content>
+    <mat-icon color="warn">warning</mat-icon>
+    <span>This assistant has not been provisioned yet. Go to
+      <a [routerLink]="['/assistants', assistantId]">Settings</a>
+      and click <strong>Provision Bedrock</strong> before uploading content.
+    </span>
+  </mat-card-content>
+</mat-card>
+
+<!-- URL ingestion form -->
+<mat-card class="url-form-card" *ngIf="showUrlForm">
+  <mat-card-header>
+    <mat-card-title>Add URL or Website</mat-card-title>
+    <mat-card-subtitle>Supports websites, YouTube, and Vimeo</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="urlForm" (ngSubmit)="ingestUrl()">
+      <div class="url-form-row">
+        <mat-form-field appearance="outline" class="flex-1">
+          <mat-label>URL</mat-label>
+          <input matInput formControlName="url" placeholder="https://example.com or YouTube/Vimeo link">
+          <mat-error>Enter a valid URL starting with https://</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" style="width:200px">
+          <mat-label>Title (optional)</mat-label>
+          <input matInput formControlName="title" placeholder="Short description">
+        </mat-form-field>
+        <mat-form-field appearance="outline" style="width:140px">
+          <mat-label>Scope</mat-label>
+          <mat-select formControlName="scope">
+            <mat-option value="tenant">Tenant only</mat-option>
+            <mat-option value="global">Global (all)</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit"
+                [disabled]="urlForm.invalid || urlIngesting">
+          <mat-spinner diameter="18" *ngIf="urlIngesting"></mat-spinner>
+          <mat-icon *ngIf="!urlIngesting">add</mat-icon>
+          {{ urlIngesting ? 'Adding…' : 'Add' }}
+        </button>
+        <button mat-icon-button type="button" (click)="showUrlForm = false">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<!-- Active uploads -->
+<div class="active-uploads" *ngIf="activeUploads.length > 0">
+  <div class="upload-item" *ngFor="let u of activeUploads">
+    <mat-icon>upload_file</mat-icon>
+    <div class="upload-info">
+      <span class="upload-name">{{ u.name }}</span>
+      <mat-progress-bar mode="determinate" [value]="u.progress"></mat-progress-bar>
+    </div>
+    <span class="upload-pct">{{ u.progress | number:'1.0-0' }}%</span>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-row" *ngIf="content.length > 0">
+  <mat-form-field appearance="outline" class="filter-field">
+    <mat-label>Scope</mat-label>
+    <mat-select [(value)]="scopeFilter">
+      <mat-option value="">All</mat-option>
+      <mat-option value="tenant">Tenant</mat-option>
+      <mat-option value="global">Global</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="filter-field">
+    <mat-label>Type</mat-label>
+    <mat-select [(value)]="typeFilter">
+      <mat-option value="">All types</mat-option>
+      <mat-option value="pdf">PDF</mat-option>
+      <mat-option value="word">Word</mat-option>
+      <mat-option value="youtube">YouTube</mat-option>
+      <mat-option value="vimeo">Vimeo</mat-option>
+      <mat-option value="url">URL</mat-option>
+      <mat-option value="website">Website</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <span class="filter-count">{{ filteredContent.length }} item{{ filteredContent.length !== 1 ? 's' : '' }}</span>
+</div>
+
+<!-- Loading -->
+<div class="loading-state" *ngIf="loading">
+  <mat-spinner diameter="40"></mat-spinner>
+</div>
+
+<!-- Empty state -->
+<div class="empty-state" *ngIf="!loading && content.length === 0">
+  <mat-icon class="empty-icon">folder_open</mat-icon>
+  <h3>No content yet</h3>
+  <p>Upload documents or add URLs to build your assistant's knowledge base</p>
+</div>
+
+<!-- Content list -->
+<div class="content-list" *ngIf="!loading && filteredContent.length > 0">
+  <div class="content-item" *ngFor="let item of filteredContent">
+    <mat-icon class="item-icon" [class]="item.type">{{ getIcon(item.type) }}</mat-icon>
+    <div class="item-info">
+      <span class="item-title">{{ item.title }}</span>
+      <span class="item-meta">
+        {{ item.type | uppercase }} ·
+        <span *ngIf="item.fileSize">{{ formatBytes(item.fileSize) }} · </span>
+        <span class="scope-tag" [class]="item.scope">{{ item.scope }}</span>
+      </span>
+      <a class="item-url" *ngIf="item.sourceUrl" [href]="item.sourceUrl" target="_blank" rel="noopener">
+        {{ item.sourceUrl }}
+      </a>
+    </div>
+    <span class="status-badge" [class]="item.status">{{ item.status }}</span>
+    <button mat-icon-button (click)="deleteContent(item)" matTooltip="Remove">
+      <mat-icon>delete_outline</mat-icon>
+    </button>
+  </div>
+</div>

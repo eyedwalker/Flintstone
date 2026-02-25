@@ -1,0 +1,150 @@
+// ── Core imports ──────────────────────────────────────────────────
+@import 'styles/variables';
+@import 'styles/material-theme';
+
+// ── Google Fonts ──────────────────────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+// ── Reset & Base ──────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: $font-family;
+  font-size: 14px;
+  color: $text-primary;
+  background: $page-bg;
+  -webkit-font-smoothing: antialiased;
+}
+
+// ── Scrollbars ────────────────────────────────────────────────────
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+
+// ── Angular Material overrides ────────────────────────────────────
+.mat-mdc-card { border-radius: $radius-md !important; }
+.mat-mdc-button, .mat-mdc-raised-button, .mat-mdc-stroked-button, .mat-mdc-flat-button {
+  border-radius: $radius-sm !important;
+  font-weight: 600 !important;
+}
+.mat-mdc-snack-bar-container { border-radius: $radius-sm !important; }
+.mat-mdc-dialog-container { border-radius: $radius-lg !important; }
+
+// ── Page layout helpers ───────────────────────────────────────────
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+  gap: $spacing-md;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: $text-primary;
+}
+
+.page-subtitle {
+  color: $text-secondary;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+// ── Section cards ─────────────────────────────────────────────────
+.section-card {
+  background: #fff;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0 0 $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  mat-icon { color: $primary; font-size: 20px; width: 20px; height: 20px; }
+}
+
+// ── Status badges ─────────────────────────────────────────────────
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  &.ready, &.success, &.active { background: rgba(46,125,50,0.12); color: $success; }
+  &.draft, &.pending { background: rgba(0,0,0,0.07); color: $text-secondary; }
+  &.provisioning, &.processing { background: rgba(0,111,180,0.12); color: $primary; }
+  &.error, &.failed { background: rgba(198,40,40,0.1); color: $error; }
+  &.paused { background: rgba(245,124,0,0.1); color: $warn; }
+}
+
+// ── Loading / empty states ────────────────────────────────────────
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  gap: $spacing-md;
+
+  .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #b0bec5; }
+  h3 { margin: 0; font-size: 1.25rem; color: #546e7a; }
+  p { margin: 0; color: #90a4ae; }
+}
+
+// ── Assistant sub-page tab nav ────────────────────────────────────
+.assistant-tab-nav {
+  background: #fff;
+  border-bottom: 1px solid $border;
+  padding: 0 $spacing-lg;
+  margin: -#{$spacing-lg} -#{$spacing-lg} $spacing-lg;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $text-secondary;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    &:hover { color: $primary; background: $primary-faint; }
+    &.active-link { color: $primary; border-bottom-color: $primary; }
+  }
+}
+
+// ── Utility classes ───────────────────────────────────────────────
+.full-width { width: 100%; }
+.text-muted { color: $text-secondary; font-size: 0.875rem; }
+.text-mono { font-family: $font-mono; }
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.gap-sm { gap: $spacing-sm; }
+.gap-md { gap: $spacing-md; }
+.mt-md { margin-top: $spacing-md; }
+.mt-lg { margin-top: $spacing-lg; }

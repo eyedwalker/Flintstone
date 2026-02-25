@@ -1,0 +1,276 @@
+<div class="onboarding-page">
+  <div class="onboarding-card">
+
+    <!-- Logo -->
+    <div class="onboarding-logo">
+      <mat-icon class="logo-icon">smart_toy</mat-icon>
+      <span class="logo-text">Bedrock Chat Configurator</span>
+    </div>
+
+    <!-- Stepper indicator -->
+    <div class="step-indicator">
+      <div
+        *ngFor="let step of steps; let i = index"
+        class="step-item"
+        [class.active]="i === currentStep"
+        [class.done]="i < currentStep">
+        <div class="step-circle">
+          <mat-icon *ngIf="i < currentStep">check</mat-icon>
+          <mat-icon *ngIf="i >= currentStep">{{ step.icon }}</mat-icon>
+        </div>
+        <span class="step-label">{{ step.label }}</span>
+      </div>
+    </div>
+
+    <div class="step-content">
+
+      <!-- ─── Step 0: Organization ─────────────────────────────── -->
+      <div *ngIf="currentStep === 0">
+        <h2 class="step-title">Set up your organization</h2>
+        <p class="step-desc">Tell us about your company so we can configure your workspace.</p>
+
+        <form [formGroup]="orgForm" class="step-form">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Organization Name</mat-label>
+            <input matInput formControlName="organizationName" placeholder="Acme Corporation">
+            <mat-icon matPrefix>business</mat-icon>
+            <mat-error>Organization name is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Industry (optional)</mat-label>
+            <mat-select formControlName="industry">
+              <mat-option value="">— Select —</mat-option>
+              <mat-option value="healthcare">Healthcare</mat-option>
+              <mat-option value="finance">Finance</mat-option>
+              <mat-option value="retail">Retail</mat-option>
+              <mat-option value="technology">Technology</mat-option>
+              <mat-option value="education">Education</mat-option>
+              <mat-option value="legal">Legal</mat-option>
+              <mat-option value="realestate">Real Estate</mat-option>
+              <mat-option value="other">Other</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>category</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Website (optional)</mat-label>
+            <input matInput formControlName="website" placeholder="https://yourcompany.com">
+            <mat-icon matPrefix>language</mat-icon>
+          </mat-form-field>
+        </form>
+      </div>
+
+      <!-- ─── Step 1: Hierarchy ─────────────────────────────────── -->
+      <div *ngIf="currentStep === 1">
+        <h2 class="step-title">Define your structure</h2>
+        <p class="step-desc">
+          How is your organization structured? This determines how your AI assistants
+          are deployed and how users are scoped.
+        </p>
+
+        <!-- Template picker -->
+        <div class="template-grid" *ngIf="!selectedTemplate || selectedTemplate.id === 'custom'">
+          <div
+            *ngFor="let t of templates"
+            class="template-card"
+            [class.selected]="selectedTemplate?.id === t.id"
+            (click)="selectTemplate(t)">
+            <div class="template-name">{{ t.name }}</div>
+            <div class="template-desc">{{ t.description }}</div>
+            <div class="template-example" *ngIf="t.example !== 'Your structure...'">
+              <mat-icon class="example-icon">subdirectory_arrow_right</mat-icon>
+              {{ t.example }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Level builder (shown after template selected) -->
+        <div *ngIf="selectedTemplate" class="level-builder">
+          <div class="level-builder-header">
+            <span class="level-builder-title">
+              <mat-icon>account_tree</mat-icon>
+              {{ selectedTemplate.name }} — Hierarchy Levels
+            </span>
+            <button type="button" mat-stroked-button (click)="selectedTemplate = null" class="change-btn">
+              Change
+            </button>
+          </div>
+
+          <div class="levels-list" [formGroup]="hierarchyForm">
+            <div
+              *ngFor="let ctrl of customLevels.controls; let i = index"
+              class="level-row"
+              [formGroupName]="'customLevels'">
+              <div class="level-depth-badge">{{ i + 1 }}</div>
+
+              <mat-form-field appearance="outline" class="level-name-field" [formGroup]="$any(ctrl)">
+                <mat-label>Level {{ i + 1 }} Name</mat-label>
+                <input matInput formControlName="name" placeholder="e.g. Office">
+              </mat-form-field>
+
+              <!-- Icon picker -->
+              <button type="button" mat-icon-button [matMenuTriggerFor]="iconMenu" class="icon-btn"
+                [matTooltip]="'Choose icon'" aria-label="Choose icon">
+                <mat-icon>{{ $any(ctrl).get('icon')?.value }}</mat-icon>
+              </button>
+              <mat-menu #iconMenu="matMenu">
+                <div class="icon-grid">
+                  <button type="button" mat-icon-button *ngFor="let icon of levelIcons"
+                    (click)="setLevelIcon(i, icon)" [attr.aria-label]="icon">
+                    <mat-icon>{{ icon }}</mat-icon>
+                  </button>
+                </div>
+              </mat-menu>
+
+              <mat-chip class="leaf-chip" *ngIf="i === customLevels.length - 1" color="primary" selected>
+                Assistants here
+              </mat-chip>
+
+              <button type="button" mat-icon-button color="warn"
+                [disabled]="customLevels.length <= 1"
+                (click)="removeCustomLevel(i)"
+                matTooltip="Remove level" aria-label="Remove level">
+                <mat-icon>remove_circle_outline</mat-icon>
+              </button>
+            </div>
+
+            <button type="button" mat-stroked-button (click)="addCustomLevel()"
+              [disabled]="customLevels.length >= 5"
+              class="add-level-btn">
+              <mat-icon>add</mat-icon> Add Level
+            </button>
+          </div>
+
+          <!-- Inheritance toggle -->
+          <div class="inherit-toggle" [formGroup]="hierarchyForm">
+            <mat-slide-toggle formControlName="inheritAssistants" color="primary">
+              Child nodes inherit parent assistant if they have none assigned
+            </mat-slide-toggle>
+          </div>
+
+          <!-- Live preview of hierarchy -->
+          <div class="hierarchy-preview">
+            <div class="preview-title">Preview</div>
+            <div class="preview-tree">
+              <div *ngFor="let level of getLevels(); let i = index"
+                class="preview-level"
+                [style.padding-left.px]="i * 20">
+                <mat-icon class="preview-icon">{{ level.icon }}</mat-icon>
+                <span class="preview-level-name">{{ level.name || ('Level ' + (i + 1)) }}</span>
+                <mat-chip *ngIf="level.allowsAssistants" class="assistant-chip" color="primary" selected>
+                  <mat-icon>smart_toy</mat-icon> assistants
+                </mat-chip>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Step 2: First Node ─────────────────────────────────── -->
+      <div *ngIf="currentStep === 2">
+        <h2 class="step-title">Create your first {{ (getLevels()[0] && getLevels()[0].name) || 'node' }}</h2>
+        <p class="step-desc">
+          This is the top-level entry in your hierarchy. You can add more nodes
+          and sub-nodes after setup.
+        </p>
+
+        <form [formGroup]="nodeForm" class="step-form">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ (getLevels()[0] && getLevels()[0].name) || 'Node' }} Name</mat-label>
+            <input matInput formControlName="nodeName"
+              title="Node name"
+              [placeholder]="'e.g. ' + (orgForm.get('organizationName')?.value || 'My Company')">
+            <mat-icon matPrefix>{{ (getLevels()[0] && getLevels()[0].icon) || 'business' }}</mat-icon>
+            <mat-error>Name is required</mat-error>
+          </mat-form-field>
+        </form>
+
+        <!-- Show hierarchy preview with root node filled in -->
+        <div class="node-preview">
+          <div class="node-preview-title">Your hierarchy will look like:</div>
+          <div class="preview-tree">
+            <div *ngFor="let level of getLevels(); let i = index"
+              class="preview-level"
+              [style.padding-left.px]="i * 20">
+              <mat-icon class="preview-icon">{{ level.icon }}</mat-icon>
+              <span class="preview-level-name">
+                {{ i === 0 ? (nodeForm.get('nodeName')?.value || level.name) : level.name + ' (add later)' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Step 3: Plan ────────────────────────────────────────── -->
+      <div *ngIf="currentStep === 3">
+        <h2 class="step-title">Choose your plan</h2>
+        <p class="step-desc">Start free and upgrade as you grow. No credit card required for Free.</p>
+
+        <div class="plan-grid">
+          <div
+            class="plan-card"
+            [class.selected]="selectedPlan === 'free'"
+            (click)="selectedPlan = 'free'">
+            <div class="plan-name">Free</div>
+            <div class="plan-price">$0<span>/mo</span></div>
+            <ul class="plan-features">
+              <li><mat-icon>check</mat-icon> 1 assistant</li>
+              <li><mat-icon>check</mat-icon> 500 messages/mo</li>
+              <li><mat-icon>check</mat-icon> 100 MB storage</li>
+              <li><mat-icon>check</mat-icon> Claude 3 Haiku</li>
+            </ul>
+          </div>
+
+          <div
+            class="plan-card highlighted"
+            [class.selected]="selectedPlan === 'starter'"
+            (click)="selectedPlan = 'starter'">
+            <div class="plan-badge">Most Popular</div>
+            <div class="plan-name">Starter</div>
+            <div class="plan-price">$49<span>/mo</span></div>
+            <ul class="plan-features">
+              <li><mat-icon>check</mat-icon> 3 assistants</li>
+              <li><mat-icon>check</mat-icon> 10,000 messages/mo</li>
+              <li><mat-icon>check</mat-icon> 5 GB storage</li>
+              <li><mat-icon>check</mat-icon> Claude 3 Haiku + Sonnet</li>
+            </ul>
+          </div>
+
+          <div
+            class="plan-card"
+            [class.selected]="selectedPlan === 'pro'"
+            (click)="selectedPlan = 'pro'">
+            <div class="plan-name">Pro</div>
+            <div class="plan-price">$149<span>/mo</span></div>
+            <ul class="plan-features">
+              <li><mat-icon>check</mat-icon> 10 assistants</li>
+              <li><mat-icon>check</mat-icon> 50,000 messages/mo</li>
+              <li><mat-icon>check</mat-icon> 25 GB storage</li>
+              <li><mat-icon>check</mat-icon> All models</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /step-content -->
+
+    <!-- Navigation buttons -->
+    <div class="step-nav">
+      <button type="button" mat-stroked-button (click)="back()" [disabled]="currentStep === 0 || loading">
+        <mat-icon>arrow_back</mat-icon> Back
+      </button>
+
+      <button type="button" mat-flat-button color="primary"
+        (click)="next()"
+        [disabled]="!canProceed() || loading">
+        <mat-spinner diameter="18" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">
+          {{ currentStep === steps.length - 1 ? 'Finish Setup' : 'Continue' }}
+        </span>
+        <mat-icon *ngIf="!loading">arrow_forward</mat-icon>
+      </button>
+    </div>
+
+  </div>
+</div>

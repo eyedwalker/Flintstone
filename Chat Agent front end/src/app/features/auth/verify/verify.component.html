@@ -1,0 +1,33 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="verify-icon">
+      <mat-icon>mark_email_read</mat-icon>
+    </div>
+    <h2 class="auth-title">Verify your email</h2>
+    <p class="auth-subtitle">
+      We sent a 6-digit code to <strong>{{ email }}</strong>.<br>
+      Check your inbox and enter it below.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Verification Code</mat-label>
+        <input matInput formControlName="code" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+        <mat-icon matPrefix>pin</mat-icon>
+        <mat-error>Enter the 6-digit code from your email</mat-error>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="loading">
+        <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">Verify Email</span>
+      </button>
+    </form>
+
+    <div class="auth-links">
+      Didn't receive it?
+      <button mat-button color="primary" (click)="resend()" [disabled]="resending">
+        {{ resending ? 'Sending...' : 'Resend code' }}
+      </button>
+    </div>
+  </div>
+</div>

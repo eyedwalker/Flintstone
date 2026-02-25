@@ -1,0 +1,83 @@
+<!-- Tab nav -->
+<nav class="assistant-tab-nav">
+  <a [routerLink]="['/assistants', assistantId, 'knowledge-base']"><mat-icon>folder_open</mat-icon> Knowledge Base</a>
+  <a [routerLink]="['/assistants', assistantId, 'model']"><mat-icon>tune</mat-icon> Model</a>
+  <a [routerLink]="['/assistants', assistantId, 'guardrails']"><mat-icon>shield</mat-icon> Guardrails</a>
+  <a [routerLink]="['/assistants', assistantId, 'widget']"><mat-icon>widgets</mat-icon> Widget</a>
+  <a [routerLink]="['/assistants', assistantId, 'embed']"><mat-icon>code</mat-icon> Embed</a>
+  <a [routerLink]="['/assistants', assistantId, 'metrics']" class="active-link"><mat-icon>analytics</mat-icon> Metrics</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Metrics</h1>
+    <p class="page-subtitle">Usage statistics and quality KPIs for this assistant</p>
+  </div>
+  <mat-button-toggle-group [value]="period" (change)="changePeriod($event.value)">
+    <mat-button-toggle value="7d">7 days</mat-button-toggle>
+    <mat-button-toggle value="30d">30 days</mat-button-toggle>
+    <mat-button-toggle value="90d">90 days</mat-button-toggle>
+  </mat-button-toggle-group>
+</div>
+
+<div class="loading-state" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+<div *ngIf="!loading">
+
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let kpi of kpis">
+      <div class="kpi-icon" [style.background]="kpi.color + '1a'" [style.color]="kpi.color">
+        <mat-icon>{{ kpi.icon }}</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-label">{{ kpi.label }}</p>
+        <p class="kpi-value">{{ kpi.value }}</p>
+        <p class="kpi-trend" *ngIf="kpi.trend">{{ kpi.trend }} vs prev period</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent conversations -->
+  <div class="section-card">
+    <h3 class="section-title"><mat-icon>history</mat-icon> Recent Conversations</h3>
+
+    <div class="empty-state" style="padding:40px 0" *ngIf="recentConversations.length === 0">
+      <mat-icon class="empty-icon" style="font-size:48px;width:48px;height:48px">chat_bubble_outline</mat-icon>
+      <h3>No conversations yet</h3>
+      <p>Conversations will appear here once users start chatting with this assistant.</p>
+    </div>
+
+    <table class="conversations-table" *ngIf="recentConversations.length > 0">
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Date</th>
+          <th>Satisfied</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of recentConversations">
+          <td class="query-cell">{{ c.query }}</td>
+          <td class="date-cell">{{ formatDate(c.ts) }}</td>
+          <td class="sat-cell">
+            <mat-icon [style.color]="c.satisfied ? '#2e7d32' : '#b0bec5'">
+              {{ c.satisfied ? 'thumb_up' : 'remove' }}
+            </mat-icon>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Info banner -->
+  <div class="info-banner">
+    <mat-icon>info_outline</mat-icon>
+    <span>
+      Full analytics including per-node breakdowns, video citation reports, and guardrail logs
+      are available in the <strong>Dashboard</strong>. Metrics are stored in DynamoDB and updated
+      in real-time by the Lambda chat handler.
+    </span>
+  </div>
+
+</div>

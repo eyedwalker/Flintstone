@@ -1,0 +1,165 @@
+<!-- Tab nav -->
+<nav class="assistant-tab-nav">
+  <a [routerLink]="['/assistants', assistantId, 'knowledge-base']"><mat-icon>folder_open</mat-icon> Knowledge Base</a>
+  <a [routerLink]="['/assistants', assistantId, 'model']" class="active-link"><mat-icon>tune</mat-icon> Model</a>
+  <a [routerLink]="['/assistants', assistantId, 'guardrails']"><mat-icon>shield</mat-icon> Guardrails</a>
+  <a [routerLink]="['/assistants', assistantId, 'widget']"><mat-icon>widgets</mat-icon> Widget</a>
+  <a [routerLink]="['/assistants', assistantId, 'embed']"><mat-icon>code</mat-icon> Embed</a>
+  <a [routerLink]="['/assistants', assistantId, 'metrics']"><mat-icon>analytics</mat-icon> Metrics</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Model Configuration</h1>
+    <p class="page-subtitle">Select a model and tune inference parameters</p>
+  </div>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving || form.invalid">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <mat-icon *ngIf="!saving">save</mat-icon>
+    {{ saving ? 'Saving…' : 'Save Changes' }}
+  </button>
+</div>
+
+<div class="loading-state" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+<form [formGroup]="form" *ngIf="!loading">
+  <div class="model-layout">
+
+    <!-- Left: Model + Prompt -->
+    <div class="left-col">
+
+      <!-- Model picker -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>smart_toy</mat-icon> Language Model</h3>
+
+        <div class="model-groups">
+          <div class="model-group" *ngFor="let group of modelGroups">
+            <div class="group-label">{{ group.label }}</div>
+            <div class="model-option"
+                 *ngFor="let m of group.models"
+                 [class.selected]="form.get('modelId')?.value === m.modelId"
+                 (click)="selectModel(m)">
+              <div class="model-dot" [style.background]="group.color"></div>
+              <div class="model-info">
+                <span class="model-name">{{ m.modelName }}</span>
+                <span class="model-ctx">{{ (m.contextWindow / 1000).toFixed(0) }}K ctx</span>
+              </div>
+              <span class="model-plan" *ngIf="m.planRequired !== 'free'">{{ m.planRequired }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Self-hosted endpoint -->
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:16px"
+                        *ngIf="form.get('provider')?.value === 'selfhosted'">
+          <mat-label>Self-Hosted Endpoint URL</mat-label>
+          <input matInput formControlName="selfHostedEndpoint" placeholder="https://your-gpu-server/v1/chat">
+          <mat-hint>Your AWS GPU instance running a compatible model API</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- System prompt -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>chat_bubble_outline</mat-icon> System Prompt</h3>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>System prompt</mat-label>
+          <textarea matInput formControlName="systemPrompt" rows="10"
+                    placeholder="You are a helpful assistant…"></textarea>
+          <mat-hint>Instructions that shape the assistant's personality and behavior</mat-hint>
+        </mat-form-field>
+      </div>
+
+    </div>
+
+    <!-- Right: Parameters -->
+    <div class="right-col">
+      <div class="section-card params-card">
+        <h3 class="section-title"><mat-icon>tune</mat-icon> Inference Parameters</h3>
+
+        <div class="param-row">
+          <div class="param-label">
+            <span>Temperature</span>
+            <strong>{{ form.get('temperature')?.value | number:'1.2-2' }}</strong>
+          </div>
+          <mat-slider min="0" max="1" step="0.01" class="full-width">
+            <input matSliderThumb formControlName="temperature">
+          </mat-slider>
+          <p class="param-hint">Higher = more creative. Lower = more deterministic.</p>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="param-row">
+          <div class="param-label">
+            <span>Top P</span>
+            <strong>{{ form.get('topP')?.value | number:'1.2-2' }}</strong>
+          </div>
+          <mat-slider min="0" max="1" step="0.01" class="full-width">
+            <input matSliderThumb formControlName="topP">
+          </mat-slider>
+          <p class="param-hint">Nucleus sampling threshold.</p>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="param-row">
+          <div class="param-label">
+            <span>Top K</span>
+            <strong>{{ form.get('topK')?.value }}</strong>
+          </div>
+          <mat-slider min="1" max="500" step="1" class="full-width">
+            <input matSliderThumb formControlName="topK">
+          </mat-slider>
+          <p class="param-hint">Limits token sampling to top K candidates.</p>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="param-row">
+          <div class="param-label">
+            <span>Max Tokens</span>
+            <strong>{{ form.get('maxTokens')?.value | number }}</strong>
+          </div>
+          <mat-slider min="64" max="8192" step="64" class="full-width">
+            <input matSliderThumb formControlName="maxTokens">
+          </mat-slider>
+          <p class="param-hint">Maximum output length per response.</p>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Stop sequences -->
+        <div class="param-row">
+          <span class="param-label"><span>Stop Sequences</span></span>
+          <mat-chip-set>
+            <mat-chip *ngFor="let seq of stopSequences; let i = index"
+                      (removed)="removeStopSeq(i)">
+              {{ seq }}
+              <button matChipRemove type="button"><mat-icon>cancel</mat-icon></button>
+            </mat-chip>
+          </mat-chip-set>
+          <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
+            <mat-label>Add stop sequence</mat-label>
+            <input matInput #stopInput placeholder='e.g. "\n\n"'
+                   (keydown.enter)="addStopSeq(stopInput.value); stopInput.value = ''">
+            <mat-hint>Press Enter to add</mat-hint>
+          </mat-form-field>
+        </div>
+
+      </div>
+
+      <!-- Cost estimate -->
+      <div class="cost-card" *ngIf="selectedModel">
+        <mat-icon>attach_money</mat-icon>
+        <div>
+          <p class="cost-label">Estimated cost per 1M tokens</p>
+          <p class="cost-value">
+            ${{ (selectedModel.inputPricePerToken * 1000000) | number:'1.2-4' }} in /
+            ${{ (selectedModel.outputPricePerToken * 1000000) | number:'1.2-4' }} out
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>

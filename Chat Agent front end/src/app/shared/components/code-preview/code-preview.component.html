@@ -1,0 +1,14 @@
+<div class="code-preview-container">
+  <div class="code-header">
+    <span class="code-label">{{ label }}</span>
+    <div class="code-actions">
+      <button mat-icon-button (click)="copyToClipboard()" matTooltip="Copy to clipboard">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+      <button mat-icon-button (click)="downloadCode()" matTooltip="Download file">
+        <mat-icon>download</mat-icon>
+      </button>
+    </div>
+  </div>
+  <pre class="code-block"><code>{{ code }}</code></pre>
+</div>

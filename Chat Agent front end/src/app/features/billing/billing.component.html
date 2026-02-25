@@ -1,0 +1,92 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Billing &amp; Plans</h1>
+    <p class="page-subtitle">Manage your subscription, usage, and payment details</p>
+  </div>
+  <button mat-stroked-button type="button" (click)="openPortal()" *ngIf="tenant?.stripeCustomerId">
+    <mat-icon>open_in_new</mat-icon> Manage in Stripe
+  </button>
+</div>
+
+<div class="loading-state" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+<div *ngIf="!loading">
+
+  <!-- Current plan + usage -->
+  <div class="current-plan-card" *ngIf="tenant">
+    <div class="plan-badge">
+      <mat-icon>verified</mat-icon>
+      <span>{{ currentPlan?.name ?? tenant.plan | titlecase }} Plan</span>
+      <span class="status-badge" [class]="tenant.subscriptionStatus">{{ tenant.subscriptionStatus }}</span>
+    </div>
+
+    <div class="usage-grid">
+      <div class="usage-meter">
+        <div class="meter-header">
+          <span>Messages this month</span>
+          <strong>{{ (tenant.usageCurrentMonth.messages | number) }} / {{ tenant.limits.maxMessagesPerMonth | number }}</strong>
+        </div>
+        <mat-progress-bar mode="determinate" [value]="usagePct"
+                          [color]="usagePct > 85 ? 'warn' : 'primary'"></mat-progress-bar>
+        <span class="meter-pct">{{ usagePct }}% used</span>
+      </div>
+
+      <div class="usage-meter">
+        <div class="meter-header">
+          <span>Storage</span>
+          <strong>{{ formatBytes(tenant.usageCurrentMonth.storageBytes) }} / {{ formatBytes(tenant.limits.maxStorageBytes) }}</strong>
+        </div>
+        <mat-progress-bar mode="determinate" [value]="storagePct"
+                          [color]="storagePct > 85 ? 'warn' : 'primary'"></mat-progress-bar>
+        <span class="meter-pct">{{ storagePct }}% used</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interval toggle -->
+  <div class="interval-toggle">
+    <mat-button-toggle-group [(value)]="billingInterval">
+      <mat-button-toggle value="month">Monthly</mat-button-toggle>
+      <mat-button-toggle value="year">Annual <span class="save-badge">Save 20%</span></mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <!-- Plan cards -->
+  <div class="plan-grid">
+    <div class="plan-card" *ngFor="let plan of plans"
+         [class.highlighted]="plan.highlighted"
+         [class.current]="plan.tier === tenant?.plan">
+
+      <div class="popular-badge" *ngIf="plan.highlighted">Most Popular</div>
+
+      <div class="plan-header">
+        <h3 class="plan-name">{{ plan.name }}</h3>
+        <p class="plan-desc">{{ plan.description }}</p>
+        <div class="plan-price">
+          <span class="price-amount" *ngIf="plan.price > 0">
+            ${{ getPrice(plan) }}<span class="price-period">/{{ billingInterval === 'year' ? 'yr' : 'mo' }}</span>
+          </span>
+          <span class="price-amount" *ngIf="plan.price === 0 && plan.tier === 'free'">Free</span>
+          <span class="price-amount" *ngIf="plan.price === 0 && plan.tier === 'enterprise'">Custom</span>
+        </div>
+      </div>
+
+      <ul class="feature-list">
+        <li *ngFor="let f of plan.features">
+          <mat-icon>check</mat-icon> {{ f }}
+        </li>
+      </ul>
+
+      <button mat-flat-button
+              [color]="plan.highlighted ? 'primary' : 'default'"
+              [disabled]="plan.tier === tenant?.plan"
+              (click)="upgrade(plan)"
+              class="full-width plan-btn">
+        {{ plan.tier === tenant?.plan ? 'Current Plan' :
+           plan.tier === 'enterprise' ? 'Contact Sales' :
+           plan.tier === 'free' ? 'Downgrade' : 'Upgrade' }}
+      </button>
+    </div>
+  </div>
+
+</div>

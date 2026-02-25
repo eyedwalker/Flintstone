@@ -1,0 +1,218 @@
+<div class="hierarchy-page">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Organization Hierarchy</h1>
+      <p class="page-subtitle">
+        Structure: <strong *ngIf="definition">{{ getLevelPath() }}</strong>
+      </p>
+    </div>
+    <button type="button" mat-flat-button color="primary" (click)="addRootNode()" [disabled]="!definition">
+      <mat-icon>add</mat-icon> Add {{ getFirstLevelName() }}
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading" class="hierarchy-layout">
+
+    <!-- ── Tree panel ─────────────────────────────────────────── -->
+    <div class="tree-panel">
+      <div class="panel-header">
+        <mat-icon>account_tree</mat-icon>
+        <span>Structure</span>
+      </div>
+
+      <div *ngIf="tree.length === 0" class="empty-tree">
+        <mat-icon>account_tree</mat-icon>
+        <p>No nodes yet. Add your first {{ getFirstLevelName('node') }}.</p>
+      </div>
+
+      <div class="tree-root">
+        <ng-container *ngFor="let node of tree">
+          <ng-container *ngTemplateOutlet="nodeTemplate; context: { node: node, depth: 0 }">
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ── Detail panel ───────────────────────────────────────── -->
+    <div class="detail-panel" [class.has-selection]="selectedNode">
+
+      <div *ngIf="!selectedNode" class="no-selection">
+        <mat-icon>touch_app</mat-icon>
+        <p>Select a node to view details</p>
+      </div>
+
+      <div *ngIf="selectedNode" class="node-detail">
+        <!-- Header -->
+        <div class="detail-header">
+          <div class="detail-title-row">
+            <mat-icon class="detail-level-icon">{{ getLevelIcon(selectedNode) }}</mat-icon>
+            <div>
+              <div class="detail-name">{{ selectedNode.name }}</div>
+              <div class="detail-path">{{ selectedNode.path }}</div>
+            </div>
+          </div>
+          <div class="detail-badges">
+            <span class="level-badge">{{ selectedNode.levelName }}</span>
+            <span class="status-badge active" *ngIf="selectedNode.active">Active</span>
+          </div>
+        </div>
+
+        <mat-divider class="detail-divider"></mat-divider>
+
+        <!-- Assigned assistant -->
+        <div class="detail-section">
+          <div class="section-label">
+            <mat-icon>smart_toy</mat-icon>
+            AI Assistant
+          </div>
+
+          <div *ngIf="!canAssignAssistant(selectedNode)" class="inherit-note">
+            <mat-icon>arrow_upward</mat-icon>
+            Assistants are assigned at the <strong>{{ getLastLevelName() }}</strong> level.
+            This node resolves to: <strong>{{ getAssistantName(selectedNode.resolvedAssistantId) || 'None' }}</strong>
+          </div>
+
+          <div *ngIf="canAssignAssistant(selectedNode)" class="assistant-select-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Assign Assistant</mat-label>
+              <mat-select
+                [value]="selectedNode.assignedAssistantId || ''"
+                (selectionChange)="assignAssistant(selectedNode!.id, $event.value)">
+                <mat-option value="">— Inherit from parent —</mat-option>
+                <mat-option *ngFor="let a of assistants" [value]="a.id">
+                  <div class="assistant-option">
+                    <span class="assistant-dot" [style.background]="a.widgetConfig.primaryColor"></span>
+                    {{ a.name }}
+                    <span class="assistant-status">{{ a.status }}</span>
+                  </div>
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix>smart_toy</mat-icon>
+            </mat-form-field>
+
+            <div *ngIf="definition?.inheritAssistants && !selectedNode.assignedAssistantId" class="resolved-note">
+              <mat-icon>merge_type</mat-icon>
+              Inheriting: <strong>{{ getAssistantName(selectedNode.resolvedAssistantId) || 'None configured' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Embed API key -->
+        <div class="detail-section">
+          <div class="section-label">
+            <mat-icon>vpn_key</mat-icon>
+            Node API Key
+            <span class="section-hint">Used in embed snippets scoped to this node</span>
+          </div>
+
+          <div class="api-key-row">
+            <code class="api-key-display">{{ selectedNode.nodeApiKey }}</code>
+            <button type="button" mat-icon-button (click)="copyApiKey(selectedNode)" matTooltip="Copy key">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+            <button type="button" mat-icon-button color="warn" (click)="regenerateApiKey(selectedNode)"
+              matTooltip="Regenerate key">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Metadata -->
+        <div class="detail-section" *ngIf="selectedNode.metadata && objectKeys(selectedNode.metadata).length > 0">
+          <div class="section-label">
+            <mat-icon>info</mat-icon>
+            Metadata
+          </div>
+          <div class="metadata-grid">
+            <div *ngFor="let key of objectKeys(selectedNode.metadata)" class="metadata-row">
+              <span class="meta-key">{{ key }}</span>
+              <span class="meta-value">{{ selectedNode.metadata[key] }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="detail-actions">
+          <button type="button" mat-stroked-button (click)="editNode(selectedNode)">
+            <mat-icon>edit</mat-icon> Edit Node
+          </button>
+          <button type="button" mat-stroked-button (click)="addChildNode(selectedNode)"
+            *ngIf="canHaveChildren(selectedNode)">
+            <mat-icon>add</mat-icon> Add Child
+          </button>
+          <button type="button" mat-stroked-button color="warn" (click)="deleteNode(selectedNode)">
+            <mat-icon>delete</mat-icon> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Recursive tree node template ──────────────────────────── -->
+<ng-template #nodeTemplate let-node="node" let-depth="depth">
+  <div class="tree-node-wrap">
+    <div
+      class="tree-node"
+      [class.selected]="selectedNode?.id === node.id"
+      [style.padding-left.px]="20 + depth * 20"
+      (click)="selectNode(node)">
+
+      <!-- Expand toggle -->
+      <button type="button" mat-icon-button class="expand-btn"
+        *ngIf="node.children.length > 0"
+        (click)="$event.stopPropagation(); toggleExpand(node)">
+        <mat-icon>{{ isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+      </button>
+      <div class="expand-spacer" *ngIf="node.children.length === 0"></div>
+
+      <!-- Node icon -->
+      <mat-icon class="node-icon">{{ getLevelIcon(node) }}</mat-icon>
+
+      <!-- Node info -->
+      <div class="node-info">
+        <span class="node-name">{{ node.name }}</span>
+        <span class="node-level">{{ node.levelName }}</span>
+      </div>
+
+      <!-- Assigned assistant indicator -->
+      <div class="node-assistant" *ngIf="node.assignedAssistantId">
+        <mat-icon class="assistant-icon">smart_toy</mat-icon>
+        <span class="assistant-name">{{ getAssistantName(node.assignedAssistantId) }}</span>
+      </div>
+
+      <!-- Inherited indicator -->
+      <mat-icon class="inherited-icon" *ngIf="!node.assignedAssistantId && node.resolvedAssistantId"
+        matTooltip="Inheriting assistant from parent">
+        merge_type
+      </mat-icon>
+
+      <!-- Add child button (hover) -->
+      <button type="button" mat-icon-button class="add-child-btn"
+        *ngIf="canHaveChildren(node)"
+        (click)="$event.stopPropagation(); addChildNode(node)"
+        [matTooltip]="'Add ' + getChildLevelName(node.depth)">
+        <mat-icon>add_circle_outline</mat-icon>
+      </button>
+    </div>
+
+    <!-- Recursive children -->
+    <div *ngIf="isExpanded(node) && node.children.length > 0" class="tree-children">
+      <ng-container *ngFor="let child of node.children">
+        <ng-container *ngTemplateOutlet="nodeTemplate; context: { node: child, depth: depth + 1 }">
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</ng-template>

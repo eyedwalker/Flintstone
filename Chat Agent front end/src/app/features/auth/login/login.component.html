@@ -1,0 +1,43 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <mat-icon class="logo-icon">smart_toy</mat-icon>
+      <h1 class="logo-text">Bedrock Chat</h1>
+      <p class="logo-sub">Configurator</p>
+    </div>
+
+    <h2 class="auth-title">Welcome back</h2>
+    <p class="auth-subtitle">Sign in to manage your AI assistants</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="email">
+        <mat-icon matPrefix>email</mat-icon>
+        <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
+        <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" autocomplete="current-password">
+        <mat-icon matPrefix>lock</mat-icon>
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+          <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="form.get('password')?.hasError('required')">Password is required</mat-error>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="loading">
+        <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">Sign In</span>
+      </button>
+    </form>
+
+    <div class="auth-links">
+      <a routerLink="/auth/signup">Create account</a>
+      <span>·</span>
+      <a routerLink="/auth/forgot-password">Forgot password?</a>
+    </div>
+  </div>
+</div>

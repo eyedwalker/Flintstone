@@ -1,0 +1,182 @@
+<!-- Tab nav -->
+<nav class="assistant-tab-nav">
+  <a [routerLink]="['/assistants', assistantId, 'knowledge-base']"><mat-icon>folder_open</mat-icon> Knowledge Base</a>
+  <a [routerLink]="['/assistants', assistantId, 'model']"><mat-icon>tune</mat-icon> Model</a>
+  <a [routerLink]="['/assistants', assistantId, 'guardrails']"><mat-icon>shield</mat-icon> Guardrails</a>
+  <a [routerLink]="['/assistants', assistantId, 'widget']" class="active-link"><mat-icon>widgets</mat-icon> Widget</a>
+  <a [routerLink]="['/assistants', assistantId, 'embed']"><mat-icon>code</mat-icon> Embed</a>
+  <a [routerLink]="['/assistants', assistantId, 'metrics']"><mat-icon>analytics</mat-icon> Metrics</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Widget Configurator</h1>
+    <p class="page-subtitle">Customize the look and behavior of your chat widget</p>
+  </div>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="saving || form?.invalid">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <mat-icon *ngIf="!saving">save</mat-icon>
+    {{ saving ? 'Saving…' : 'Save Changes' }}
+  </button>
+</div>
+
+<div class="loading-state" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+<div class="widget-layout" *ngIf="!loading">
+
+  <!-- Config panel -->
+  <div class="config-col">
+    <form [formGroup]="form">
+
+      <!-- Position -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>open_with</mat-icon> Position</h3>
+        <div class="position-grid">
+          <div class="position-option"
+               *ngFor="let p of positions"
+               [class.selected]="form.get('position')?.value === p.value"
+               (click)="form.get('position')?.setValue(p.value)">
+            <mat-icon>{{ p.icon }}</mat-icon>
+            <span>{{ p.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colors -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>palette</mat-icon> Colors</h3>
+        <div class="color-row">
+          <div class="color-field">
+            <label>Primary Color</label>
+            <div class="color-input-wrap">
+              <input type="color" formControlName="primaryColor" class="color-picker">
+              <mat-form-field appearance="outline" class="hex-field">
+                <input matInput formControlName="primaryColor" placeholder="#006FB4">
+              </mat-form-field>
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Secondary Color</label>
+            <div class="color-input-wrap">
+              <input type="color" formControlName="secondaryColor" class="color-picker">
+              <mat-form-field appearance="outline" class="hex-field">
+                <input matInput formControlName="secondaryColor" placeholder="#004F82">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text content -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>text_fields</mat-icon> Text Content</h3>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Widget Title</mat-label>
+          <input matInput formControlName="title" placeholder="AI Assistant">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Welcome Message</mat-label>
+          <textarea matInput formControlName="welcomeMessage" rows="2"
+                    placeholder="Hello! How can I help you today?"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Input Placeholder</mat-label>
+          <input matInput formControlName="placeholder" placeholder="Ask a question…">
+        </mat-form-field>
+      </div>
+
+      <!-- Behavior toggles -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>settings</mat-icon> Behavior</h3>
+        <div class="toggle-list">
+          <mat-slide-toggle formControlName="showTimestamp" color="primary">Show message timestamps</mat-slide-toggle>
+          <mat-slide-toggle formControlName="persistSession" color="primary">Persist session across page loads</mat-slide-toggle>
+          <mat-slide-toggle formControlName="enableStreaming" color="primary">Enable streaming responses</mat-slide-toggle>
+        </div>
+        <mat-form-field appearance="outline" style="width:160px; margin-top:12px">
+          <mat-label>Z-Index</mat-label>
+          <input matInput type="number" formControlName="zIndex">
+          <mat-hint>Default: 999999</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Trending questions -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>trending_up</mat-icon> Trending Questions</h3>
+        <p class="section-desc">Suggested questions shown in the widget (max 6)</p>
+        <div formArrayName="trendingQuestions" class="trending-list">
+          <div class="trending-row" *ngFor="let ctrl of trendingArray.controls; let i = index">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>Question {{ i + 1 }}</mat-label>
+              <input matInput [formControlName]="i" placeholder="e.g. What are your hours?">
+            </mat-form-field>
+            <button mat-icon-button type="button" (click)="removeQuestion(i)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+        <button mat-stroked-button type="button" (click)="addQuestion()"
+                [disabled]="trendingArray.length >= 6">
+          <mat-icon>add</mat-icon> Add Question
+        </button>
+      </div>
+
+      <!-- Context injection -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>data_object</mat-icon> Context Injection</h3>
+        <p class="section-desc">Pass contextual data from the host page into the chat session.</p>
+        <div class="toggle-list">
+          <mat-slide-toggle formControlName="passCurrentUrl" color="primary">
+            Pass current page URL
+          </mat-slide-toggle>
+          <mat-slide-toggle formControlName="passUserId" color="primary">
+            Pass user ID
+          </mat-slide-toggle>
+        </div>
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:12px"
+                        *ngIf="form.get('passUserId')?.value">
+          <mat-label>User ID JavaScript expression</mat-label>
+          <input matInput formControlName="userIdExpression"
+                 placeholder="window.currentUser?.id">
+          <mat-hint>Evaluated client-side when the widget loads</mat-hint>
+        </mat-form-field>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Live preview -->
+  <div class="preview-col">
+    <div class="preview-card">
+      <h3 class="section-title" style="padding:16px 16px 0">
+        <mat-icon>preview</mat-icon> Live Preview
+      </h3>
+      <div class="browser-mock">
+        <div class="browser-bar">
+          <span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span>
+          <span class="browser-url">yoursite.com</span>
+        </div>
+        <div class="browser-content">
+          <div class="widget-mock" [class]="previewConfig.position">
+            <div class="widget-header" [style.background]="previewConfig.primaryColor">
+              <mat-icon>chat</mat-icon>
+              <span>{{ previewConfig.title }}</span>
+              <mat-icon style="margin-left:auto">minimize</mat-icon>
+            </div>
+            <div class="widget-body">
+              <div class="welcome-bubble">{{ previewConfig.welcomeMessage }}</div>
+              <div class="trending-chips" *ngIf="previewConfig.trendingQuestions.length > 0">
+                <span class="trending-chip" *ngFor="let q of previewConfig.trendingQuestions">{{ q }}</span>
+              </div>
+            </div>
+            <div class="widget-input-bar" [style.border-color]="previewConfig.primaryColor">
+              <span class="input-placeholder">{{ previewConfig.placeholder }}</span>
+              <mat-icon [style.color]="previewConfig.primaryColor">send</mat-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

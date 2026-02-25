@@ -1,0 +1,105 @@
+<!-- Tab nav -->
+<nav class="assistant-tab-nav">
+  <a [routerLink]="['/assistants', assistantId, 'knowledge-base']"><mat-icon>folder_open</mat-icon> Knowledge Base</a>
+  <a [routerLink]="['/assistants', assistantId, 'model']"><mat-icon>tune</mat-icon> Model</a>
+  <a [routerLink]="['/assistants', assistantId, 'guardrails']"><mat-icon>shield</mat-icon> Guardrails</a>
+  <a [routerLink]="['/assistants', assistantId, 'widget']"><mat-icon>widgets</mat-icon> Widget</a>
+  <a [routerLink]="['/assistants', assistantId, 'embed']" class="active-link"><mat-icon>code</mat-icon> Embed</a>
+  <a [routerLink]="['/assistants', assistantId, 'metrics']"><mat-icon>analytics</mat-icon> Metrics</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Embed Code</h1>
+    <p class="page-subtitle">Copy the snippet to add the chat widget to any website</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+<div class="embed-layout" *ngIf="!loading">
+
+  <!-- Scope selector -->
+  <div class="section-card scope-card">
+    <h3 class="section-title"><mat-icon>account_tree</mat-icon> Scope</h3>
+    <p class="section-desc">
+      Generate a snippet for the whole assistant, or scope it to a specific hierarchy node.
+      Node-scoped snippets use the node's own API key.
+    </p>
+    <mat-form-field appearance="outline" style="width:100%">
+      <mat-label>Node (optional)</mat-label>
+      <mat-select [(value)]="selectedNodeId" (selectionChange)="onNodeChange()">
+        <mat-option value="">— Assistant-level (no node scope) —</mat-option>
+        <mat-option *ngFor="let n of nodes" [value]="n.id">
+          {{ n.path }} ({{ n.levelName }})
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Active API Key display -->
+    <div class="api-key-row">
+      <span class="api-key-label">Active API Key</span>
+      <span class="api-key-value">{{ activeApiKey }}</span>
+      <button mat-icon-button type="button" (click)="copyApiKey()" matTooltip="Copy API key">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Snippet card -->
+  <div class="section-card snippet-card">
+    <div class="snippet-header">
+      <mat-button-toggle-group [(value)]="activeTab" class="tab-toggle">
+        <mat-button-toggle value="html">
+          <mat-icon>html</mat-icon> HTML Snippet
+        </mat-button-toggle>
+        <mat-button-toggle value="console">
+          <mat-icon>terminal</mat-icon> Console Snippet
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+      <div class="snippet-actions">
+        <button mat-stroked-button type="button" (click)="copySnippet()">
+          <mat-icon>content_copy</mat-icon> Copy
+        </button>
+        <button mat-stroked-button type="button" (click)="downloadSnippet()">
+          <mat-icon>download</mat-icon> Download
+        </button>
+      </div>
+    </div>
+
+    <pre class="snippet-block"><code>{{ activeSnippet }}</code></pre>
+
+    <div class="snippet-note" *ngIf="activeTab === 'html'">
+      <mat-icon>info_outline</mat-icon>
+      Paste this just before <code>&lt;/body&gt;</code> on any page where you want the chat widget to appear.
+    </div>
+    <div class="snippet-note" *ngIf="activeTab === 'console'">
+      <mat-icon>info_outline</mat-icon>
+      Paste this into the browser console to test the widget without modifying your site.
+    </div>
+  </div>
+
+  <!-- Integration guide -->
+  <div class="section-card guide-card">
+    <h3 class="section-title"><mat-icon>menu_book</mat-icon> Integration Guide</h3>
+    <ol class="guide-steps">
+      <li>
+        <strong>Copy the HTML snippet</strong> above and paste it before the closing
+        <code>&lt;/body&gt;</code> tag on your website.
+      </li>
+      <li>
+        <strong>Set allowed domains</strong> on your assistant to restrict which sites can load the widget.
+        Leave empty to allow any domain.
+      </li>
+      <li>
+        <strong>Optional:</strong> Use a node-scoped snippet if you want different hierarchy nodes
+        (e.g. offices or companies) to have independent API keys and analytics.
+      </li>
+      <li>
+        <strong>Context passing:</strong> Configure context injection in the Widget tab to pass
+        user identity or page URL into the conversation.
+      </li>
+    </ol>
+  </div>
+
+</div>

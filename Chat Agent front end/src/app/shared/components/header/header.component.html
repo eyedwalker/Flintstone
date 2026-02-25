@@ -1,0 +1,29 @@
+<mat-toolbar class="app-header" color="primary">
+  <div class="header-left">
+    <mat-icon class="logo-icon">smart_toy</mat-icon>
+    <span class="app-name">Bedrock Chat Configurator</span>
+  </div>
+
+  <div class="header-spacer"></div>
+
+  <div class="header-right" *ngIf="auth.isAuthenticated">
+    <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-btn">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      <div class="user-info-menu">
+        <div class="user-name">{{ auth.currentUser?.attributes?.['name'] }}</div>
+        <div class="user-email">{{ auth.currentUser?.email }}</div>
+      </div>
+      <mat-divider></mat-divider>
+      <button mat-menu-item routerLink="/billing">
+        <mat-icon>credit_card</mat-icon>
+        <span>Billing</span>
+      </button>
+      <button mat-menu-item (click)="signOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign Out</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>

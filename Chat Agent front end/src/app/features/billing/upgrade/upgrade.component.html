@@ -1,0 +1,20 @@
+<div class="upgrade-page">
+
+  <!-- Redirecting -->
+  <div class="redirect-card" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <h2>Redirecting to Stripe…</h2>
+    <p>You'll be taken to Stripe's secure checkout to complete your upgrade to <strong>{{ plan | titlecase }}</strong>.</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-card" *ngIf="!loading && error">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <h2>Upgrade Failed</h2>
+    <p>{{ error }}</p>
+    <button mat-flat-button color="primary" type="button" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon> Back to Billing
+    </button>
+  </div>
+
+</div>

@@ -1,0 +1,80 @@
+.model-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+.left-col, .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+.model-groups { display: flex; flex-direction: column; gap: 16px; }
+
+.group-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(0,0,0,0.4);
+  margin-bottom: 6px;
+}
+
+.model-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: #006FB4; background: rgba(0,111,180,0.03); }
+  &.selected { border-color: #006FB4; background: rgba(0,111,180,0.06); }
+
+  .model-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .model-info { flex: 1; display: flex; flex-direction: column; }
+  .model-name { font-weight: 600; font-size: 0.875rem; color: #1a2332; }
+  .model-ctx { font-size: 0.72rem; color: rgba(0,0,0,0.4); }
+  .model-plan {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 8px;
+    background: rgba(0,111,180,0.1);
+    color: #006FB4;
+  }
+}
+
+.params-card { display: flex; flex-direction: column; gap: 16px; }
+
+.param-row { padding: 4px 0; }
+
+.param-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+  color: #1a2332;
+  strong { font-weight: 700; color: #006FB4; }
+}
+
+.param-hint {
+  font-size: 0.75rem;
+  color: rgba(0,0,0,0.4);
+  margin: 2px 0 0;
+}
+
+.cost-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 16px;
+  mat-icon { color: #2e7d32; flex-shrink: 0; }
+  .cost-label { font-size: 0.8rem; color: rgba(0,0,0,0.5); margin: 0 0 4px; }
+  .cost-value { font-size: 0.875rem; font-weight: 700; color: #1a2332; margin: 0; }
+}

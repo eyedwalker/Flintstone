@@ -1,0 +1,29 @@
+.sidebar {
+  width: 220px;
+  height: 100%;
+  background: #1a2332;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+
+  &:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+  &.active {
+    background: rgba(0,111,180,0.25);
+    color: #fff;
+    border-left-color: #006FB4;
+  }
+
+  .nav-icon { margin-right: 12px; font-size: 20px; width: 20px; height: 20px; }
+  .nav-label { font-size: 0.875rem; font-weight: 500; }
+}

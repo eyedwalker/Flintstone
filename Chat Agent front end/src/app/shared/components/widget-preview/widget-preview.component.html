@@ -1,0 +1,21 @@
+<div class="preview-container">
+  <div class="preview-label">
+    <mat-icon>visibility</mat-icon>
+    Live Preview
+  </div>
+  <div class="browser-frame">
+    <div class="browser-chrome">
+      <div class="chrome-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="chrome-url">preview.yoursite.com</div>
+    </div>
+    <iframe
+      #previewFrame
+      class="preview-iframe"
+      [srcdoc]="iframeSrcDoc"
+      sandbox="allow-scripts allow-same-origin"
+      title="Widget Preview">
+    </iframe>
+  </div>
+</div>

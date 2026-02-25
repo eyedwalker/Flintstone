@@ -1,0 +1,20 @@
+<div class="placement-picker">
+  <div class="browser-mock">
+    <div class="browser-bar">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="browser-content">
+      <button
+        *ngFor="let pos of positions"
+        class="position-btn"
+        [class.selected]="value === pos.value"
+        [style.grid-row]="pos.row"
+        [style.grid-column]="pos.col"
+        [matTooltip]="pos.label"
+        (click)="select(pos.value)">
+        <mat-icon>chat</mat-icon>
+      </button>
+    </div>
+  </div>
+  <div class="position-label">Position: <strong>{{ value }}</strong></div>
+</div>

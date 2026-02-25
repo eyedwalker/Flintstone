@@ -1,0 +1,107 @@
+<div class="assistant-form-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ isNew ? 'New Assistant' : (assistant?.name || 'Edit Assistant') }}</h1>
+      <p class="page-subtitle">{{ isNew ? 'Configure your AI assistant' : 'Manage assistant settings and resources' }}</p>
+    </div>
+    <div class="header-actions">
+      <span class="status-badge" [class]="assistant?.status" *ngIf="assistant">
+        {{ assistant.status }}
+      </span>
+      <button mat-stroked-button type="button" color="warn" (click)="deleteAssistant()"
+              *ngIf="assistant" [disabled]="provisioning">
+        <mat-icon>delete_outline</mat-icon> Delete
+      </button>
+      <button mat-flat-button color="accent" type="button" (click)="provisionBedrock()"
+              *ngIf="assistant && assistant.status === 'draft'" [disabled]="provisioning">
+        <mat-spinner diameter="18" *ngIf="provisioning"></mat-spinner>
+        <mat-icon *ngIf="!provisioning">cloud_upload</mat-icon>
+        {{ provisioning ? 'Provisioning…' : 'Provision Bedrock' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Sub-tab nav (only shown when editing) -->
+  <nav class="assistant-tab-nav" *ngIf="!isNew && assistant">
+    <a *ngFor="let tab of tabs"
+       [routerLink]="['/assistants', assistantId, tab.path]"
+       [class.active-link]="currentPath === tab.path">
+      <mat-icon>{{ tab.icon }}</mat-icon>
+      {{ tab.label }}
+    </a>
+  </nav>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading assistant…</p>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading">
+    <div class="form-card">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Assistant Name</mat-label>
+        <input matInput formControlName="name" placeholder="e.g. VSP Customer Support">
+        <mat-hint>Shown in the widget header and dashboard</mat-hint>
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+        <mat-error *ngIf="form.get('name')?.hasError('minlength')">At least 2 characters</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description</mat-label>
+        <textarea matInput formControlName="description" rows="2"
+                  placeholder="What does this assistant help with?"></textarea>
+      </mat-form-field>
+
+      <!-- Allowed Domains -->
+      <div class="section-label">
+        <mat-icon>language</mat-icon>
+        Allowed Domains
+        <span class="section-hint">— leave empty to allow all domains</span>
+      </div>
+
+      <div formArrayName="domains" class="domains-list">
+        <div class="domain-row" *ngFor="let ctrl of domainsArray.controls; let i = index">
+          <mat-form-field appearance="outline" class="domain-field">
+            <mat-label>Domain {{ i + 1 }}</mat-label>
+            <input matInput [formControlName]="i" placeholder="example.com">
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="removeDomain(i)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <button mat-stroked-button type="button" (click)="addDomain()" [disabled]="domainsArray.length >= 20">
+          <mat-icon>add</mat-icon> Add Domain
+        </button>
+      </div>
+
+      <!-- Bedrock IDs (read-only when provisioned) -->
+      <div class="bedrock-ids" *ngIf="assistant?.bedrockAgentId">
+        <div class="id-row">
+          <span class="id-label">Bedrock Agent ID</span>
+          <span class="id-value">{{ assistant?.bedrockAgentId }}</span>
+        </div>
+        <div class="id-row" *ngIf="assistant?.bedrockKnowledgeBaseId">
+          <span class="id-label">Knowledge Base ID</span>
+          <span class="id-value">{{ assistant?.bedrockKnowledgeBaseId }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <button mat-button type="button" routerLink="/assistants">Back to list</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving">
+        <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">{{ isNew ? 'add' : 'save' }}</mat-icon>
+        {{ isNew ? 'Create Assistant' : 'Save Changes' }}
+      </button>
+    </div>
+  </form>
+
+</div>

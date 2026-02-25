@@ -1,0 +1,57 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+.angular/
+out/
+build/
+
+# ── AWS SAM ───────────────────────────────────────────────────────────────────
+.aws-sam/
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Other projects in this workspace (not part of Flintstone) ────────────────
+AI Assistant C/
+AI Assistant C#/
+AI Assistant C.zip
+Data Dictionary/
+Direct Agent AWS/
+EI Assistant/
+Example/
+Gensis/
+Guided Shopping Update/
+Information Classification and Handling Standard.pdf
+Lens Catalog/
+LensCatalog_packaging_backup_20251001_090843/
+Timeline/
+am chat/
+clearcall-intelligence-standalone/
+contact-lens-system/
+eyecare-chat-agent/
+eyecare-chat-agent.zip
+eyedwalker/
+eyefinbnb/
+genesis-engine/
+lens-catalog-code-backup-20250930-153935.tar.gz
+stored-proc-analysis/
+windsurf-project/

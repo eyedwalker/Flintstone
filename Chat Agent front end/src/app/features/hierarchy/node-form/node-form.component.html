@@ -1,0 +1,83 @@
+<div class="node-form-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ isNew ? 'Add ' + levelName : 'Edit ' + levelName }}</h1>
+      <p class="page-subtitle" *ngIf="parentNode">Under: {{ parentNode.path }}</p>
+      <p class="page-subtitle" *ngIf="!parentNode && isNew">Root level node</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="cancel()">
+      <mat-icon>close</mat-icon> Cancel
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading...</p>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading">
+    <div class="form-card">
+
+      <!-- Path preview -->
+      <div class="path-preview" *ngIf="form.get('name')?.value">
+        <mat-icon>route</mat-icon>
+        <span>{{ previewPath }}</span>
+      </div>
+
+      <!-- Name field -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ levelName }} Name</mat-label>
+        <input matInput formControlName="name" [placeholder]="'Enter ' + levelName + ' name'" autocomplete="off">
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+        <mat-error *ngIf="form.get('name')?.hasError('minlength')">At least 2 characters</mat-error>
+        <mat-error *ngIf="form.get('name')?.hasError('maxlength')">Max 100 characters</mat-error>
+      </mat-form-field>
+
+      <!-- Metadata -->
+      <div class="section-header">
+        <span class="section-title">
+          <mat-icon>label</mat-icon>
+          Custom Metadata
+          <span class="section-hint">(optional key/value pairs)</span>
+        </span>
+        <button mat-stroked-button type="button" (click)="addMetadata()" [disabled]="metadataArray.length >= 10">
+          <mat-icon>add</mat-icon> Add Field
+        </button>
+      </div>
+
+      <div formArrayName="metadata" class="metadata-list">
+        <div class="metadata-row" *ngFor="let ctrl of metadataArray.controls; let i = index" [formGroupName]="i">
+          <mat-form-field appearance="outline" class="meta-key-field">
+            <mat-label>Key</mat-label>
+            <input matInput formControlName="key" placeholder="e.g. region">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="meta-value-field">
+            <mat-label>Value</mat-label>
+            <input matInput formControlName="value" placeholder="e.g. west-coast">
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="removeMetadata(i)" matTooltip="Remove">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+        <p class="empty-meta" *ngIf="metadataArray.length === 0">
+          No custom fields. Metadata helps filter and route content by location or other attributes.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <button mat-button type="button" (click)="cancel()">Cancel</button>
+      <button mat-raised-button color="primary" type="submit"
+              [disabled]="form.invalid || saving">
+        <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">{{ isNew ? 'add' : 'save' }}</mat-icon>
+        {{ isNew ? 'Create ' + levelName : 'Save Changes' }}
+      </button>
+    </div>
+  </form>
+</div>

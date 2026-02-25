@@ -1,0 +1,19 @@
+<div
+  class="drop-zone"
+  [class.drag-over]="isDragOver"
+  [class.disabled]="disabled"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)">
+  <mat-icon class="upload-icon">cloud_upload</mat-icon>
+  <p class="upload-title">Drop files here or <label class="browse-link" for="fileInput">browse</label></p>
+  <p class="upload-hint">PDF, Word, Excel, PowerPoint, TXT, CSV, Images</p>
+  <input
+    id="fileInput"
+    type="file"
+    [accept]="accept"
+    [multiple]="multiple"
+    [disabled]="disabled"
+    (change)="onFileInput($event)"
+    hidden>
+</div>
