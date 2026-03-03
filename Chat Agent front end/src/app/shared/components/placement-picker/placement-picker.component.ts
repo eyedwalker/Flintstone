@@ -1,10 +1,11 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { WidgetPosition } from '../../../../lib/models/tenant.model';
 
 @Component({
   selector: 'bcc-placement-picker',
   templateUrl: './placement-picker.component.html',
   styleUrls: ['./placement-picker.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlacementPickerComponent {
   @Input() value: WidgetPosition = 'bottom-right';

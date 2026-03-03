@@ -9,6 +9,7 @@ import {
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
   ResendConfirmationCodeCommand,
+  RespondToAuthChallengeCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { IAccessorResult } from '../models/tenant.model';
 import { BaseAccessor } from './base.accessor';
@@ -27,6 +28,16 @@ export interface ICognitoUser {
   sub: string;
   attributes: Record<string, string>;
 }
+
+/** Result from signIn when a challenge is required */
+export interface ICognitoChallenge {
+  challengeName: 'SOFTWARE_TOKEN_MFA' | 'NEW_PASSWORD_REQUIRED';
+  session: string;
+  username: string;
+}
+
+/** Union type for signIn result — either tokens or a challenge */
+export type ISignInResult = { type: 'tokens'; tokens: ICognitoTokens } | { type: 'challenge'; challenge: ICognitoChallenge };
 
 /**
  * Accessor for AWS Cognito User Pool operations.
@@ -79,8 +90,8 @@ export class CognitoAccessor extends BaseAccessor {
     });
   }
 
-  /** Sign in with email and password */
-  async signIn(email: string, password: string): Promise<IAccessorResult<ICognitoTokens>> {
+  /** Sign in with email and password — may return tokens or an MFA/new-password challenge */
+  async signIn(email: string, password: string): Promise<IAccessorResult<ISignInResult>> {
     return this.execute(async () => {
       const command = new InitiateAuthCommand({
         AuthFlow: 'USER_PASSWORD_AUTH',
@@ -91,12 +102,115 @@ export class CognitoAccessor extends BaseAccessor {
         },
       });
       const response = await this.client.send(command);
+
+      // MFA or forced password change challenge
+      if (response.ChallengeName === 'SOFTWARE_TOKEN_MFA' || response.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+        return {
+          type: 'challenge' as const,
+          challenge: {
+            challengeName: response.ChallengeName,
+            session: response.Session ?? '',
+            username: email,
+          },
+        };
+      }
+
       const result = response.AuthenticationResult;
       if (!result) throw new Error('No authentication result returned');
+      return {
+        type: 'tokens' as const,
+        tokens: {
+          accessToken: result.AccessToken ?? '',
+          idToken: result.IdToken ?? '',
+          refreshToken: result.RefreshToken ?? '',
+          expiresIn: result.ExpiresIn ?? 3600,
+        },
+      };
+    });
+  }
+
+  /** Respond to SOFTWARE_TOKEN_MFA challenge with a TOTP code */
+  async respondToMfaChallenge(session: string, username: string, totpCode: string): Promise<IAccessorResult<ICognitoTokens>> {
+    return this.execute(async () => {
+      const response = await this.client.send(new RespondToAuthChallengeCommand({
+        ClientId: this.clientId,
+        ChallengeName: 'SOFTWARE_TOKEN_MFA',
+        Session: session,
+        ChallengeResponses: {
+          USERNAME: username,
+          SOFTWARE_TOKEN_MFA_CODE: totpCode,
+        },
+      }));
+      const result = response.AuthenticationResult;
+      if (!result) throw new Error('MFA verification failed');
       return {
         accessToken: result.AccessToken ?? '',
         idToken: result.IdToken ?? '',
         refreshToken: result.RefreshToken ?? '',
+        expiresIn: result.ExpiresIn ?? 3600,
+      };
+    });
+  }
+
+  /** Respond to NEW_PASSWORD_REQUIRED challenge (admin-created user first login) */
+  async respondToNewPasswordChallenge(
+    session: string, username: string, newPassword: string
+  ): Promise<IAccessorResult<ISignInResult>> {
+    return this.execute(async () => {
+      const response = await this.client.send(new RespondToAuthChallengeCommand({
+        ClientId: this.clientId,
+        ChallengeName: 'NEW_PASSWORD_REQUIRED',
+        Session: session,
+        ChallengeResponses: {
+          USERNAME: username,
+          NEW_PASSWORD: newPassword,
+        },
+      }));
+
+      // After setting new password, Cognito may issue an MFA challenge
+      if (response.ChallengeName === 'SOFTWARE_TOKEN_MFA') {
+        return {
+          type: 'challenge' as const,
+          challenge: {
+            challengeName: response.ChallengeName,
+            session: response.Session ?? '',
+            username,
+          },
+        };
+      }
+
+      const result = response.AuthenticationResult;
+      if (!result) throw new Error('Password change failed');
+      return {
+        type: 'tokens' as const,
+        tokens: {
+          accessToken: result.AccessToken ?? '',
+          idToken: result.IdToken ?? '',
+          refreshToken: result.RefreshToken ?? '',
+          expiresIn: result.ExpiresIn ?? 3600,
+        },
+      };
+    });
+  }
+
+  /** Refresh tokens using a refresh token — returns new access + id tokens */
+  async refreshTokens(refreshToken: string): Promise<IAccessorResult<ICognitoTokens>> {
+    return this.execute(async () => {
+      const command = new InitiateAuthCommand({
+        AuthFlow: 'REFRESH_TOKEN_AUTH',
+        ClientId: this.clientId,
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken,
+        },
+      });
+      const response = await this.client.send(command);
+      const result = response.AuthenticationResult;
+      if (!result) throw new Error('Token refresh failed');
+      return {
+        accessToken: result.AccessToken ?? '',
+        idToken: result.IdToken ?? '',
+        // Cognito does not return a new refresh token on refresh; keep the existing one
+        refreshToken: refreshToken,
         expiresIn: result.ExpiresIn ?? 3600,
       };
     });

@@ -1,0 +1,40 @@
+<div class="section-card">
+  <h3 class="section-title"><mat-icon>pending</mat-icon> Typing Indicator</h3>
+  <p class="section-desc">Choose what users see while the assistant is generating a response.</p>
+
+  <div class="position-grid">
+    <div class="position-option"
+         *ngFor="let s of typingStyles"
+         [class.selected]="form.get('typingIndicatorStyle')?.value === s.value"
+         (click)="form.get('typingIndicatorStyle')?.setValue(s.value)">
+      <mat-icon>{{ s.icon }}</mat-icon>
+      <span>{{ s.label }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="form.get('typingIndicatorStyle')?.value !== 'dots'"
+       class="typing-phrases-section">
+    <h4 class="typing-phrases-title">Custom Phrases</h4>
+    <p class="section-desc">Phrases rotate every 2.5 seconds while waiting for a response (max 12).</p>
+    <div formArrayName="typingPhrases" class="trending-list">
+      <div class="trending-row" *ngFor="let ctrl of typingPhrasesArray.controls; let i = index">
+        <mat-form-field appearance="outline" class="flex-1">
+          <mat-label>Phrase {{ i + 1 }}</mat-label>
+          <input matInput [formControlName]="i" placeholder="e.g. Looking into that...">
+        </mat-form-field>
+        <button mat-icon-button type="button" (click)="removeTypingPhrase(i)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+    <div class="css-actions">
+      <button mat-stroked-button type="button" (click)="addTypingPhrase()"
+              [disabled]="typingPhrasesArray.length >= 12">
+        <mat-icon>add</mat-icon> Add Phrase
+      </button>
+      <button mat-stroked-button type="button" (click)="resetTypingPhrases()">
+        <mat-icon>restart_alt</mat-icon> Reset to Defaults
+      </button>
+    </div>
+  </div>
+</div>

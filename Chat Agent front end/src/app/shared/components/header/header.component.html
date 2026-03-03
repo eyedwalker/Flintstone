@@ -7,6 +7,24 @@
   <div class="header-spacer"></div>
 
   <div class="header-right" *ngIf="auth.isAuthenticated">
+    <!-- Org picker (only if user belongs to multiple orgs) -->
+    <button mat-button [matMenuTriggerFor]="orgMenu" class="org-picker"
+            *ngIf="(orgCtx.orgs$ | async)?.length! > 1">
+      <mat-icon>business</mat-icon>
+      <span class="org-name">{{ (orgCtx.activeOrg$ | async)?.organizationName || 'Organization' }}</span>
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #orgMenu="matMenu">
+      <button mat-menu-item *ngFor="let org of orgCtx.orgs$ | async"
+              (click)="switchOrg(org)"
+              [class.active-org]="org.organizationId === orgCtx.activeOrgId">
+        <mat-icon>{{ org.organizationId === orgCtx.activeOrgId ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon>
+        <span>{{ org.organizationName }}</span>
+        <span class="org-role-badge">{{ org.role }}</span>
+      </button>
+    </mat-menu>
+
+    <!-- User menu -->
     <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-btn">
       <mat-icon>account_circle</mat-icon>
     </button>
@@ -14,9 +32,16 @@
       <div class="user-info-menu">
         <div class="user-name">{{ auth.currentUser?.attributes?.['name'] }}</div>
         <div class="user-email">{{ auth.currentUser?.email }}</div>
+        <div class="user-role" *ngIf="orgCtx.currentRole">
+          Role: {{ orgCtx.currentRole }}
+        </div>
       </div>
       <mat-divider></mat-divider>
-      <button mat-menu-item routerLink="/billing">
+      <button mat-menu-item routerLink="/team/mfa" *ngIf="orgCtx.hasRole('owner')">
+        <mat-icon>security</mat-icon>
+        <span>MFA Setup</span>
+      </button>
+      <button mat-menu-item routerLink="/billing" *ngIf="orgCtx.hasRole('admin')">
         <mat-icon>credit_card</mat-icon>
         <span>Billing</span>
       </button>

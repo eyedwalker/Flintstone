@@ -1,0 +1,77 @@
+.team-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  .subtitle { color: rgba(0,0,0,0.6); margin: 0; }
+  .header-actions { display: flex; gap: 8px; }
+}
+
+.invite-card {
+  margin-bottom: 24px;
+
+  .invite-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+
+    mat-form-field { flex: 1; min-width: 180px; }
+    button { margin-top: 4px; }
+  }
+}
+
+.members-card {
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+  }
+}
+
+.members-table {
+  width: 100%;
+}
+
+.you-badge {
+  font-size: 0.75rem;
+  color: rgba(0,0,0,0.45);
+  margin-left: 4px;
+}
+
+.role-select {
+  max-width: 120px;
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+}
+
+.role-owner { background: #e3f2fd; }
+.role-admin { background: #fff3e0; }
+.role-editor { background: #e8f5e9; }
+.role-viewer { background: #f3e5f5; }
+
+.mfa-on { color: #2e7d32; }
+.mfa-off { color: rgba(0,0,0,0.25); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: rgba(0,0,0,0.5);
+
+  mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; }
+}
+
+.audit-card {
+  margin-top: 24px;
+}
+
+.audit-entry {
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}

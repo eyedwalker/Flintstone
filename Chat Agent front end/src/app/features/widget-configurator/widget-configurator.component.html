@@ -28,6 +28,42 @@
   <div class="config-col">
     <form [formGroup]="form">
 
+      <!-- Visual Presets -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>bookmarks</mat-icon> Visual Presets</h3>
+        <p class="section-desc">Save and reuse visual configurations across assistants</p>
+
+        <div class="preset-row">
+          <mat-form-field appearance="outline" class="preset-select">
+            <mat-label>Load a preset</mat-label>
+            <mat-select [(value)]="selectedPresetId"
+                        (selectionChange)="applyPreset($event.value)">
+              <mat-option value="">-- None --</mat-option>
+              <mat-option *ngFor="let p of presets" [value]="p.id">
+                {{ p.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-stroked-button type="button" (click)="saveAsPreset()"
+                  [disabled]="savingPreset" matTooltip="Save current visual settings as a new preset">
+            <mat-spinner diameter="16" *ngIf="savingPreset"></mat-spinner>
+            <mat-icon *ngIf="!savingPreset">add</mat-icon>
+            Save as Preset
+          </button>
+
+          <button mat-stroked-button type="button" color="warn" (click)="deletePreset()"
+                  *ngIf="selectedPresetId"
+                  [disabled]="deletingPreset" matTooltip="Delete this preset">
+            <mat-spinner diameter="16" *ngIf="deletingPreset"></mat-spinner>
+            <mat-icon *ngIf="!deletingPreset">delete</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- UI Builder sub-component -->
+      <bcc-ui-builder [form]="form" [assistant]="assistant"></bcc-ui-builder>
+
       <!-- Position -->
       <div class="section-card">
         <h3 class="section-title"><mat-icon>open_with</mat-icon> Position</h3>
@@ -67,6 +103,68 @@
         </div>
       </div>
 
+      <!-- Launcher Icon (upload) -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>image</mat-icon> Launcher Icon</h3>
+        <p class="section-desc">Upload a custom image (PNG, SVG, GIF) to replace the default chat bubble icon.</p>
+
+        <div class="icon-upload-row">
+          <div class="icon-preview" *ngIf="form.get('customLauncherIconUrl')?.value">
+            <img [src]="form.get('customLauncherIconUrl')?.value" alt="Custom icon">
+          </div>
+          <div class="icon-preview default" *ngIf="!form.get('customLauncherIconUrl')?.value">
+            <mat-icon>chat_bubble</mat-icon>
+            <span>Default</span>
+          </div>
+          <div class="icon-actions">
+            <button mat-stroked-button type="button" (click)="iconFileInput.click()"
+                    [disabled]="uploadingIcon">
+              <mat-spinner diameter="16" *ngIf="uploadingIcon"></mat-spinner>
+              <mat-icon *ngIf="!uploadingIcon">upload</mat-icon>
+              {{ uploadingIcon ? 'Uploading...' : 'Upload Icon' }}
+            </button>
+            <button mat-stroked-button type="button" (click)="removeIcon()"
+                    *ngIf="form.get('customLauncherIconUrl')?.value">
+              <mat-icon>delete</mat-icon> Remove
+            </button>
+            <input #iconFileInput type="file" accept="image/*" hidden (change)="uploadIcon($event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Styling (AI CSS) — advanced fallback -->
+      <div class="section-card">
+        <h3 class="section-title"><mat-icon>brush</mat-icon> Advanced CSS</h3>
+        <p class="section-desc">
+          Describe the look you want, and AI will generate CSS. Or edit the generated CSS directly.
+        </p>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Design description</mat-label>
+          <textarea matInput [(ngModel)]="cssPrompt" [ngModelOptions]="{ standalone: true }" rows="3"
+                    placeholder="e.g. Modern dark theme with rounded corners, glass morphism effect..."></textarea>
+        </mat-form-field>
+
+        <div class="css-actions">
+          <button mat-stroked-button type="button" (click)="generateCss()"
+                  [disabled]="!cssPrompt?.trim() || generatingCss">
+            <mat-spinner diameter="16" *ngIf="generatingCss"></mat-spinner>
+            <mat-icon *ngIf="!generatingCss">auto_fix_high</mat-icon>
+            {{ generatingCss ? 'Generating...' : 'Generate CSS with AI' }}
+          </button>
+          <button mat-stroked-button type="button" (click)="clearCustomCss()"
+                  *ngIf="form.get('customCss')?.value">
+            <mat-icon>clear</mat-icon> Clear CSS
+          </button>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:12px"
+                        *ngIf="form.get('customCss')?.value">
+          <mat-label>Custom CSS (editable)</mat-label>
+          <textarea matInput formControlName="customCss" rows="8" class="code-textarea" title="Custom CSS"></textarea>
+        </mat-form-field>
+      </div>
+
       <!-- Text content -->
       <div class="section-card">
         <h3 class="section-title"><mat-icon>text_fields</mat-icon> Text Content</h3>
@@ -100,47 +198,14 @@
         </mat-form-field>
       </div>
 
-      <!-- Trending questions -->
-      <div class="section-card">
-        <h3 class="section-title"><mat-icon>trending_up</mat-icon> Trending Questions</h3>
-        <p class="section-desc">Suggested questions shown in the widget (max 6)</p>
-        <div formArrayName="trendingQuestions" class="trending-list">
-          <div class="trending-row" *ngFor="let ctrl of trendingArray.controls; let i = index">
-            <mat-form-field appearance="outline" class="flex-1">
-              <mat-label>Question {{ i + 1 }}</mat-label>
-              <input matInput [formControlName]="i" placeholder="e.g. What are your hours?">
-            </mat-form-field>
-            <button mat-icon-button type="button" (click)="removeQuestion(i)">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-        </div>
-        <button mat-stroked-button type="button" (click)="addQuestion()"
-                [disabled]="trendingArray.length >= 6">
-          <mat-icon>add</mat-icon> Add Question
-        </button>
-      </div>
+      <!-- Typing Indicator sub-component -->
+      <bcc-typing-config [form]="form"></bcc-typing-config>
 
-      <!-- Context injection -->
-      <div class="section-card">
-        <h3 class="section-title"><mat-icon>data_object</mat-icon> Context Injection</h3>
-        <p class="section-desc">Pass contextual data from the host page into the chat session.</p>
-        <div class="toggle-list">
-          <mat-slide-toggle formControlName="passCurrentUrl" color="primary">
-            Pass current page URL
-          </mat-slide-toggle>
-          <mat-slide-toggle formControlName="passUserId" color="primary">
-            Pass user ID
-          </mat-slide-toggle>
-        </div>
-        <mat-form-field appearance="outline" class="full-width" style="margin-top:12px"
-                        *ngIf="form.get('passUserId')?.value">
-          <mat-label>User ID JavaScript expression</mat-label>
-          <input matInput formControlName="userIdExpression"
-                 placeholder="window.currentUser?.id">
-          <mat-hint>Evaluated client-side when the widget loads</mat-hint>
-        </mat-form-field>
-      </div>
+      <!-- Trending Questions sub-component -->
+      <bcc-trending-questions [form]="form"></bcc-trending-questions>
+
+      <!-- Context Injection sub-component -->
+      <bcc-context-config [form]="form"></bcc-context-config>
 
     </form>
   </div>
@@ -157,21 +222,31 @@
           <span class="browser-url">yoursite.com</span>
         </div>
         <div class="browser-content">
-          <div class="widget-mock" [class]="previewConfig.position">
-            <div class="widget-header" [style.background]="previewConfig.primaryColor">
+          <!-- Inject custom CSS into preview scope -->
+          <div *ngIf="previewConfig.customCss" [innerHTML]="previewCssStyle"></div>
+
+          <!-- Launcher bubble preview -->
+          <div class="preview-launcher-bubble awsac-bubble" [ngClass]="previewConfig.position"
+               [style.background]="previewConfig.primaryColor">
+            <div [innerHTML]="launcherPreviewHtml"></div>
+          </div>
+
+          <!-- Chat panel preview -->
+          <div class="widget-mock awsac-panel" [ngClass]="previewConfig.position">
+            <div class="widget-header awsac-header" [style.background]="previewConfig.primaryColor">
               <mat-icon>chat</mat-icon>
               <span>{{ previewConfig.title }}</span>
               <mat-icon style="margin-left:auto">minimize</mat-icon>
             </div>
-            <div class="widget-body">
-              <div class="welcome-bubble">{{ previewConfig.welcomeMessage }}</div>
-              <div class="trending-chips" *ngIf="previewConfig.trendingQuestions.length > 0">
-                <span class="trending-chip" *ngFor="let q of previewConfig.trendingQuestions">{{ q }}</span>
+            <div class="widget-body awsac-messages">
+              <div class="welcome-bubble awsac-welcome">{{ previewConfig.welcomeMessage }}</div>
+              <div class="trending-chips awsac-trending" *ngIf="previewConfig.trendingQuestions.length > 0">
+                <span class="trending-chip awsac-trend-chip" *ngFor="let q of previewConfig.trendingQuestions">{{ q }}</span>
               </div>
             </div>
-            <div class="widget-input-bar" [style.border-color]="previewConfig.primaryColor">
-              <span class="input-placeholder">{{ previewConfig.placeholder }}</span>
-              <mat-icon [style.color]="previewConfig.primaryColor">send</mat-icon>
+            <div class="widget-input-bar awsac-input-wrap" [style.border-color]="previewConfig.primaryColor">
+              <span class="input-placeholder awsac-input">{{ previewConfig.placeholder }}</span>
+              <mat-icon [style.color]="previewConfig.primaryColor" class="awsac-send">send</mat-icon>
             </div>
           </div>
         </div>

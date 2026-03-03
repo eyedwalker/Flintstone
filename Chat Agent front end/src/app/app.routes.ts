@@ -1,0 +1,26 @@
+export const APP_ROUTES = {
+  AUTH: {
+    LOGIN: 'auth/login',
+    SIGNUP: 'auth/signup',
+    VERIFY: 'auth/verify',
+    ONBOARDING: 'auth/onboarding',
+  },
+  DASHBOARD: 'dashboard',
+  ASSISTANTS: {
+    ROOT: 'assistants',
+    NEW: 'assistants/new',
+    DETAIL: (id: string) => `assistants/${id}`,
+    KB: (id: string) => `assistants/${id}/knowledge-base`,
+    KB_PICKER: (id: string) => `assistants/${id}/kb-picker`,
+    MODEL: (id: string) => `assistants/${id}/model`,
+    GUARDRAILS: (id: string) => `assistants/${id}/guardrails`,
+    WIDGET: (id: string) => `assistants/${id}/widget`,
+    EMBED: (id: string) => `assistants/${id}/embed`,
+    METRICS: (id: string) => `assistants/${id}/metrics`,
+  },
+  KNOWLEDGE_BASES: 'knowledge-bases',
+  HIERARCHY: 'hierarchy',
+  TEAM: 'team',
+  ESCALATION: 'escalation',
+  BILLING: 'billing',
+} as const;

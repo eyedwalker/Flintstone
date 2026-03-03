@@ -1,6 +1,7 @@
 import { APIGatewayProxyResultV2 } from 'aws-lambda';
 import * as ddb from '../services/dynamo';
 import { ok, badRequest, serverError } from '../response';
+import { IRequestContext } from '../auth';
 
 const TABLE = process.env['METRICS_TABLE'] ?? '';
 
@@ -10,7 +11,7 @@ export async function handleMetrics(
   _body: Record<string, unknown>,
   _params: Record<string, string>,
   query: Record<string, string>,
-  _tenantId: string
+  _ctx: IRequestContext
 ): Promise<APIGatewayProxyResultV2> {
   try {
     if (method === 'GET') {

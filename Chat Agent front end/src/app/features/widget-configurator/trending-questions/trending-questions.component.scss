@@ -1,0 +1,10 @@
+.section-desc { font-size: 0.85rem; color: rgba(0,0,0,0.5); margin: -4px 0 12px; }
+
+.trending-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.trending-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  .flex-1 { flex: 1; }
+  button { color: #b0bec5; &:hover { color: #e53935; } }
+}

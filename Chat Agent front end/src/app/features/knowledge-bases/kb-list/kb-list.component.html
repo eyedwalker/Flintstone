@@ -1,0 +1,86 @@
+<div class="kb-list-page">
+  <div class="page-header">
+    <h2>Knowledge Bases</h2>
+    <button mat-raised-button color="primary" (click)="showCreateForm = !showCreateForm">
+      <mat-icon>add</mat-icon> New Knowledge Base
+    </button>
+  </div>
+
+  <!-- Create form -->
+  <mat-card *ngIf="showCreateForm" class="create-card">
+    <mat-card-content>
+      <h3>Create Knowledge Base</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Name</mat-label>
+        <input matInput [(ngModel)]="newKbName" placeholder="e.g. Product Documentation" maxlength="100">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description (optional)</mat-label>
+        <textarea matInput [(ngModel)]="newKbDescription" rows="2" maxlength="300"></textarea>
+      </mat-form-field>
+      <mat-checkbox [(ngModel)]="newKbIsDefault">Set as organization default</mat-checkbox>
+      <div class="form-actions">
+        <button mat-button (click)="showCreateForm = false">Cancel</button>
+        <button mat-raised-button color="primary" [disabled]="!newKbName.trim() || creating" (click)="create()">
+          <mat-spinner *ngIf="creating" diameter="18"></mat-spinner>
+          {{ creating ? 'Creating...' : 'Create' }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && knowledgeBases.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">menu_book</mat-icon>
+    <h3>No knowledge bases yet</h3>
+    <p>Create a knowledge base to store content that can be shared across multiple assistants.</p>
+  </div>
+
+  <!-- KB list -->
+  <div class="kb-grid" *ngIf="!loading && knowledgeBases.length > 0">
+    <mat-card *ngFor="let kb of knowledgeBases" class="kb-card" (click)="openDetail(kb)">
+      <mat-card-content>
+        <div class="kb-header">
+          <div class="kb-title-row">
+            <mat-icon [style.color]="getStatusColor(kb.status)">{{ getStatusIcon(kb.status) }}</mat-icon>
+            <h3 class="kb-name">{{ kb.name }}</h3>
+            <mat-chip *ngIf="kb.isDefault" class="default-chip">Default</mat-chip>
+          </div>
+          <p class="kb-desc" *ngIf="kb.description">{{ kb.description }}</p>
+        </div>
+
+        <div class="kb-stats">
+          <div class="stat">
+            <span class="stat-value">{{ kb.contentCount ?? 0 }}</span>
+            <span class="stat-label">Content Items</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">{{ kb.linkedAssistantCount ?? 0 }}</span>
+            <span class="stat-label">Linked Assistants</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value status-{{ kb.status }}">{{ kb.status | titlecase }}</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+
+        <div class="kb-actions" (click)="$event.stopPropagation()">
+          <button mat-icon-button *ngIf="kb.status === 'draft'" (click)="provision(kb)" matTooltip="Provision Bedrock resources">
+            <mat-icon>rocket_launch</mat-icon>
+          </button>
+          <button mat-icon-button *ngIf="!kb.isDefault && kb.status === 'ready'" (click)="setDefault(kb)" matTooltip="Set as default">
+            <mat-icon>star_outline</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="confirmDelete(kb)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

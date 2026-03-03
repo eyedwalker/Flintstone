@@ -1,0 +1,53 @@
+<div class="section-card snippet-card">
+  <div class="snippet-header">
+    <mat-button-toggle-group [(value)]="activeTab" class="tab-toggle">
+      <mat-button-toggle value="html">
+        <mat-icon>html</mat-icon> HTML
+      </mat-button-toggle>
+      <mat-button-toggle value="console">
+        <mat-icon>terminal</mat-icon> Console
+      </mat-button-toggle>
+      <mat-button-toggle value="self-hosted">
+        <mat-icon>cloud_download</mat-icon> Self-Hosted
+      </mat-button-toggle>
+      <mat-button-toggle value="inline" [disabled]="!inlineSnippet">
+        <mat-icon>integration_instructions</mat-icon> Inline
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+    <div class="snippet-actions">
+      <button mat-stroked-button type="button" (click)="copySnippet()">
+        <mat-icon>content_copy</mat-icon> Copy
+      </button>
+      <button mat-stroked-button type="button" (click)="downloadSnippet()">
+        <mat-icon>download</mat-icon> Download
+      </button>
+    </div>
+  </div>
+
+  <pre class="snippet-block"><code>{{ activeSnippet }}</code></pre>
+
+  <div class="snippet-note" *ngIf="activeTab === 'html'">
+    <mat-icon>info_outline</mat-icon>
+    Paste this just before <code>&lt;/body&gt;</code> on any page where you want the chat widget to appear.
+  </div>
+  <div class="snippet-note" *ngIf="activeTab === 'console'">
+    <mat-icon>info_outline</mat-icon>
+    Self-contained inline snippet — paste into the browser DevTools console to demo the widget.
+    Works even on sites with strict CSP since no external scripts are loaded.
+  </div>
+  <div class="snippet-note self-hosted-note" *ngIf="activeTab === 'self-hosted'">
+    <mat-icon>security</mat-icon>
+    <div>
+      <strong>For sites with strict Content Security Policy (CSP)</strong><br>
+      Download the widget script and host it on your own domain to bypass CSP restrictions.
+      <button mat-stroked-button type="button" (click)="downloadWidgetScript()" class="download-script-btn">
+        <mat-icon>download</mat-icon> Download Widget Script
+      </button>
+    </div>
+  </div>
+  <div class="snippet-note" *ngIf="activeTab === 'inline'">
+    <mat-icon>info_outline</mat-icon>
+    Fully self-contained snippet with the widget JS embedded inline.
+    Paste into the browser DevTools console to demo on any site — no external scripts loaded, bypasses all CSP restrictions.
+  </div>
+</div>

@@ -1,12 +1,15 @@
 import { Component } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { OrgContextService } from '../../../core/services/org-context.service';
+import { TeamRole } from '../../../../lib/models/tenant.model';
 
 interface INavItem {
   label: string;
   icon: string;
   route: string;
   exact?: boolean;
+  minRole?: TeamRole;
 }
 
 @Component({
@@ -18,13 +21,17 @@ export class SidebarComponent {
   readonly navItems: INavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', exact: true },
     { label: 'Assistants', icon: 'smart_toy', route: '/assistants' },
+    { label: 'Knowledge Bases', icon: 'menu_book', route: '/knowledge-bases' },
     { label: 'Hierarchy', icon: 'account_tree', route: '/hierarchy' },
-    { label: 'Billing', icon: 'credit_card', route: '/billing' },
+    { label: 'Escalation', icon: 'support_agent', route: '/escalation', minRole: 'admin' },
+    { label: 'Team', icon: 'group', route: '/team', minRole: 'admin' },
+    { label: 'Billing', icon: 'credit_card', route: '/billing', minRole: 'admin' },
+    { label: 'API Docs', icon: 'api', route: '/api-docs' },
   ];
 
   currentUrl = '';
 
-  constructor(private router: Router) {
+  constructor(private router: Router, public orgCtx: OrgContextService) {
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd)
     ).subscribe((e) => {
@@ -36,5 +43,10 @@ export class SidebarComponent {
   isActive(route: string, exact?: boolean): boolean {
     if (exact) return this.currentUrl === route;
     return this.currentUrl.startsWith(route);
+  }
+
+  isVisible(item: INavItem): boolean {
+    if (!item.minRole) return true;
+    return this.orgCtx.hasRole(item.minRole);
   }
 }

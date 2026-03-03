@@ -9,14 +9,21 @@ import { environment } from '../../../../environments/environment';
 })
 export class WidgetPreviewComponent implements OnChanges {
   @Input() assistant!: IAssistant;
+  @Input() customCss = '';
+  @Input() customLauncherHtml = '';
   @ViewChild('previewFrame') frameRef!: ElementRef<HTMLIFrameElement>;
 
   get iframeSrcDoc(): string {
     if (!this.assistant) return '';
     const c = this.assistant.widgetConfig;
+    const escapedCss = (this.customCss || '').replace(/<\/style/gi, '<\\/style');
     return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>body{margin:0;height:100vh;background:#f5f7fa;font-family:sans-serif;}</style></head>
+<head>
+  <meta charset="utf-8">
+  <style>body{margin:0;height:100vh;background:#f5f7fa;font-family:sans-serif;}</style>
+  ${escapedCss ? `<style>${escapedCss}</style>` : ''}
+</head>
 <body>
   <div style="padding:20px;color:#666;font-size:13px;">Preview</div>
   <script src="${environment.widgetCdnUrl}"><\/script>
@@ -34,6 +41,7 @@ export class WidgetPreviewComponent implements OnChanges {
         persistSession: false,
         zIndex: 9999,
         trendingQuestions: ${JSON.stringify(c.trendingQuestions)},
+        ${this.customLauncherHtml ? `customLauncherHtml: '${this.customLauncherHtml.replace(/'/g, "\\'").replace(/\n/g, '')}',` : ''}
       });
     }
   <\/script>

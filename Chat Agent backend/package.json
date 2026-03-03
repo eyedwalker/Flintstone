@@ -3,29 +3,40 @@
   "version": "1.0.0",
   "description": "Secure API Gateway + Lambda backend for Bedrock Chat Configurator",
   "scripts": {
-    "build": "tsc --noEmit false --outDir dist",
+    "build": "tsc --noEmit false --outDir dist && cp src/openapi.yaml dist/openapi.yaml",
     "build:watch": "tsc --watch --outDir dist",
     "deploy": "npm run build && sam deploy",
     "deploy:guided": "npm run build && sam deploy --guided",
-    "local": "npm run build && sam local start-api"
+    "local": "npm run build && sam local start-api",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock": "^3.787.0",
     "@aws-sdk/client-bedrock-agent": "^3.787.0",
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.998.0",
     "@aws-sdk/client-bedrock-runtime": "^3.787.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.999.0",
     "@aws-sdk/client-dynamodb": "^3.787.0",
+    "@aws-sdk/client-lambda": "^3.1000.0",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/client-s3vectors": "^3.997.0",
     "@aws-sdk/client-ssm": "^3.787.0",
     "@aws-sdk/lib-dynamodb": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "stripe": "^17.7.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.147",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.13.11",
     "@types/uuid": "^10.0.0",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "^4.1.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.8.2"
   }
 }

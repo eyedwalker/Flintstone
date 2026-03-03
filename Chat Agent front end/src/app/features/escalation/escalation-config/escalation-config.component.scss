@@ -1,0 +1,91 @@
+.escalation-page {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+
+  h2 { margin: 0 0 4px; font-weight: 500; }
+  .subtitle { color: rgba(0,0,0,0.6); margin: 0 0 24px; }
+  .full-width { width: 100%; }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.enable-toggle {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.config-card {
+  margin-bottom: 20px;
+
+  mat-card-title { font-size: 1rem; }
+}
+
+.file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 16px;
+
+  .key-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #4caf50;
+    font-size: 0.85rem;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  }
+}
+
+.test-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+
+  .test-result {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85rem;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+    &.success { color: #4caf50; }
+    &.error { color: #f44336; }
+  }
+}
+
+.trigger-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.auto-triggers {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+
+  h4 { margin: 0 0 12px; font-weight: 500; color: rgba(0,0,0,0.7); }
+}
+
+.case-defaults-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  mat-form-field { flex: 1; min-width: 180px; }
+}
+
+.save-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
+}

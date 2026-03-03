@@ -1,0 +1,52 @@
+.snippet-card { display: flex; flex-direction: column; gap: 12px; }
+
+.snippet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tab-toggle { height: 36px; }
+
+.snippet-actions { display: flex; gap: 8px; }
+
+.snippet-block {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 0;
+  code {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: #d4d4d4;
+    white-space: pre;
+  }
+}
+
+.snippet-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: rgba(0,0,0,0.5);
+  mat-icon { font-size: 16px; width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 0.78rem; }
+
+  &.self-hosted-note {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 8px;
+    padding: 14px;
+    color: rgba(0,0,0,0.7);
+
+    mat-icon { color: #1976d2; font-size: 20px; width: 20px; height: 20px; margin-top: 2px; }
+
+    .download-script-btn {
+      margin-top: 10px;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; margin-right: 4px; }
+    }
+  }
+}

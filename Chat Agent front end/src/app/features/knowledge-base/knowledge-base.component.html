@@ -19,6 +19,25 @@
     <button mat-stroked-button type="button" (click)="showUrlForm = !showUrlForm">
       <mat-icon>link</mat-icon> Add URL
     </button>
+    <button mat-stroked-button type="button" (click)="showBatchUrlForm = !showBatchUrlForm">
+      <mat-icon>playlist_add</mat-icon> Batch URLs / YouTube
+    </button>
+    <button mat-stroked-button type="button" (click)="browseVimeo()"
+            [disabled]="!assistant?.vimeoAccessToken"
+            matTooltip="Browse and import videos from your Vimeo account">
+      <mat-icon>video_library</mat-icon> Browse Vimeo
+    </button>
+    <mat-slide-toggle [(ngModel)]="useBDA" color="primary"
+                       matTooltip="Bedrock Data Automation — richer extraction from tables, images, charts ($0.01/page)">
+      Enhanced parsing
+    </mat-slide-toggle>
+    <mat-form-field appearance="outline" class="role-picker">
+      <mat-label>Access level</mat-label>
+      <mat-select [(value)]="uploadRoleLevel">
+        <mat-option *ngFor="let r of roleAccessLevels" [value]="r.value">{{ r.label }}</mat-option>
+      </mat-select>
+      <mat-hint>Applied to next upload</mat-hint>
+    </mat-form-field>
     <label mat-flat-button class="upload-btn" color="primary">
       <mat-icon>upload_file</mat-icon> Upload Files
       <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg"
@@ -26,6 +45,38 @@
     </label>
   </div>
 </div>
+
+<!-- Stats overview -->
+<div class="metrics-grid" *ngIf="!loading && content.length > 0">
+  <bcc-metric-card label="Total Content" [value]="totalContentCount" icon="folder_open" color="primary"></bcc-metric-card>
+  <bcc-metric-card label="Storage" [value]="formattedTotalStorage" icon="cloud_upload" color="accent"></bcc-metric-card>
+  <bcc-metric-card label="Processing" [value]="processingCount" icon="hourglass_top" color="warn"></bcc-metric-card>
+  <bcc-metric-card label="Ready" [value]="readyCount" icon="check_circle" color="success"></bcc-metric-card>
+</div>
+
+<!-- Vimeo integration token -->
+<mat-card class="vimeo-token-card" *ngIf="assistant">
+  <mat-card-content>
+    <div class="vimeo-token-row">
+      <mat-icon class="vimeo-icon">video_library</mat-icon>
+      <div class="vimeo-token-info">
+        <span class="vimeo-token-label">Vimeo Access Token</span>
+        <span class="vimeo-token-hint">Required to ingest private Vimeo videos. Get one from
+          <a href="https://developer.vimeo.com/apps" target="_blank" rel="noopener">developer.vimeo.com</a>.
+        </span>
+      </div>
+      <mat-form-field appearance="outline" class="vimeo-token-field">
+        <mat-label>Personal access token</mat-label>
+        <input matInput [(ngModel)]="vimeoToken" type="password" placeholder="Paste token here">
+      </mat-form-field>
+      <button mat-stroked-button type="button" (click)="saveVimeoToken()" [disabled]="savingVimeoToken">
+        <mat-spinner diameter="16" *ngIf="savingVimeoToken"></mat-spinner>
+        <mat-icon *ngIf="!savingVimeoToken">save</mat-icon>
+        {{ savingVimeoToken ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
 
 <!-- Provision warning -->
 <mat-card class="provision-warning" *ngIf="assistant && !assistant.bedrockKnowledgeBaseId">
@@ -52,28 +103,87 @@
           <input matInput formControlName="url" placeholder="https://example.com or YouTube/Vimeo link">
           <mat-error>Enter a valid URL starting with https://</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline" style="width:200px">
+        <mat-form-field appearance="outline" class="field-title">
           <mat-label>Title (optional)</mat-label>
           <input matInput formControlName="title" placeholder="Short description">
         </mat-form-field>
-        <mat-form-field appearance="outline" style="width:140px">
+        <mat-form-field appearance="outline" class="field-scope">
           <mat-label>Scope</mat-label>
           <mat-select formControlName="scope">
             <mat-option value="tenant">Tenant only</mat-option>
             <mat-option value="global">Global (all)</mat-option>
           </mat-select>
         </mat-form-field>
+        <mat-form-field appearance="outline" class="field-role">
+          <mat-label>Access level</mat-label>
+          <mat-select formControlName="minRoleLevel">
+            <mat-option *ngFor="let r of roleAccessLevels" [value]="r.value">{{ r.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
         <button mat-flat-button color="primary" type="submit"
                 [disabled]="urlForm.invalid || urlIngesting">
           <mat-spinner diameter="18" *ngIf="urlIngesting"></mat-spinner>
           <mat-icon *ngIf="!urlIngesting">add</mat-icon>
-          {{ urlIngesting ? 'Adding…' : 'Add' }}
+          {{ urlIngesting ? 'Adding...' : 'Add' }}
         </button>
         <button mat-icon-button type="button" (click)="showUrlForm = false">
           <mat-icon>close</mat-icon>
         </button>
       </div>
+      <!-- Video detected badge (hides crawl depth) -->
+      <div class="video-detected-row" *ngIf="currentVideoType">
+        <mat-icon class="video-platform-icon" [class.vimeo]="currentVideoType === 'vimeo'" [class.youtube]="currentVideoType === 'youtube'">
+          {{ currentVideoType === 'vimeo' ? 'video_library' : 'smart_display' }}
+        </mat-icon>
+        <span class="video-badge" [class.vimeo]="currentVideoType === 'vimeo'" [class.youtube]="currentVideoType === 'youtube'">
+          {{ currentVideoType === 'vimeo' ? 'Vimeo video' : 'YouTube video' }} detected &mdash; transcript &amp; AI summary will be generated
+        </span>
+      </div>
+      <!-- Crawl depth selector (hidden for video URLs) -->
+      <div class="crawl-depth-row" *ngIf="!currentVideoType">
+        <span class="crawl-depth-label">Crawl depth:</span>
+        <mat-button-toggle-group formControlName="crawlDepth" aria-label="Crawl depth">
+          <mat-button-toggle *ngFor="let d of crawlDepthOptions" [value]="d.value"
+                             [matTooltip]="d.label">{{ d.value }}</mat-button-toggle>
+        </mat-button-toggle-group>
+        <span class="crawl-depth-hint">{{ crawlDepthOptions[urlForm.value.crawlDepth - 1]?.label }}</span>
+      </div>
     </form>
+  </mat-card-content>
+</mat-card>
+
+<!-- Batch URL ingestion -->
+<mat-card class="url-form-card" *ngIf="showBatchUrlForm">
+  <mat-card-header>
+    <mat-card-title>Batch URL Import</mat-card-title>
+    <mat-card-subtitle>Paste multiple URLs, one per line — supports websites, YouTube, and Vimeo links</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>URLs (one per line)</mat-label>
+      <textarea matInput [(ngModel)]="batchUrlText" rows="6"
+                placeholder="https://youtube.com/watch?v=abc123&#10;https://youtube.com/watch?v=def456&#10;https://example.com/page1&#10;https://vimeo.com/123456"></textarea>
+      <mat-hint>{{ validBatchUrlCount }} valid URL(s) detected</mat-hint>
+    </mat-form-field>
+    <div class="batch-actions">
+      <mat-progress-bar *ngIf="batchUrlIngesting" mode="determinate"
+        [value]="batchUrlTotal ? (batchUrlProgress / batchUrlTotal) * 100 : 0">
+      </mat-progress-bar>
+      <span *ngIf="batchUrlIngesting" class="batch-progress-text">
+        {{ batchUrlProgress }} / {{ batchUrlTotal }}
+      </span>
+      <div class="batch-buttons">
+        <button mat-flat-button color="primary" type="button" (click)="ingestBatchUrls()"
+                [disabled]="batchUrlIngesting || !batchUrlText.trim()">
+          <mat-spinner diameter="18" *ngIf="batchUrlIngesting"></mat-spinner>
+          <mat-icon *ngIf="!batchUrlIngesting">playlist_add_check</mat-icon>
+          {{ batchUrlIngesting ? 'Processing...' : 'Import All' }}
+        </button>
+        <button mat-icon-button type="button" (click)="showBatchUrlForm = false">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
   </mat-card-content>
 </mat-card>
 
@@ -91,6 +201,15 @@
 
 <!-- Filters -->
 <div class="filters-row" *ngIf="content.length > 0">
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Search content</mat-label>
+    <input matInput [(ngModel)]="searchTerm" placeholder="Filter by name, URL, or description...">
+    <mat-icon matSuffix *ngIf="!searchTerm">search</mat-icon>
+    <button mat-icon-button matSuffix *ngIf="searchTerm" (click)="searchTerm = ''" type="button"
+            aria-label="Clear search">
+      <mat-icon>close</mat-icon>
+    </button>
+  </mat-form-field>
   <mat-form-field appearance="outline" class="filter-field">
     <mat-label>Scope</mat-label>
     <mat-select [(value)]="scopeFilter">
@@ -126,24 +245,241 @@
   <p>Upload documents or add URLs to build your assistant's knowledge base</p>
 </div>
 
-<!-- Content list -->
-<div class="content-list" *ngIf="!loading && filteredContent.length > 0">
-  <div class="content-item" *ngFor="let item of filteredContent">
-    <mat-icon class="item-icon" [class]="item.type">{{ getIcon(item.type) }}</mat-icon>
-    <div class="item-info">
-      <span class="item-title">{{ item.title }}</span>
-      <span class="item-meta">
-        {{ item.type | uppercase }} ·
-        <span *ngIf="item.fileSize">{{ formatBytes(item.fileSize) }} · </span>
-        <span class="scope-tag" [class]="item.scope">{{ item.scope }}</span>
+<!-- Bulk actions bar -->
+<div class="bulk-bar" *ngIf="selectedIds.size > 0">
+  <mat-checkbox [checked]="allSelected" (change)="allSelected ? deselectAll() : selectAll()">
+  </mat-checkbox>
+  <span class="bulk-count">{{ selectedIds.size }} selected</span>
+  <button mat-stroked-button color="warn" type="button" (click)="bulkDelete()">
+    <mat-icon>delete_sweep</mat-icon> Delete selected
+  </button>
+  <button mat-button type="button" (click)="deselectAll()">Cancel</button>
+</div>
+
+<!-- Content table -->
+<div class="content-table" *ngIf="!loading && filteredContent.length > 0">
+  <!-- Table header -->
+  <div class="content-table-header">
+    <span class="col-check">
+      <mat-checkbox [checked]="allSelected" (change)="allSelected ? deselectAll() : selectAll()">
+      </mat-checkbox>
+    </span>
+    <span class="col-icon"></span>
+    <span class="col-name sortable" (click)="toggleSort('title')">
+      Name / Title
+      <mat-icon class="sort-icon" *ngIf="sortColumn === 'title'">
+        {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+      </mat-icon>
+    </span>
+    <span class="col-type sortable" (click)="toggleSort('type')">
+      Type
+      <mat-icon class="sort-icon" *ngIf="sortColumn === 'type'">
+        {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+      </mat-icon>
+    </span>
+    <span class="col-access">Access</span>
+    <span class="col-status sortable" (click)="toggleSort('status')">
+      Status
+      <mat-icon class="sort-icon" *ngIf="sortColumn === 'status'">
+        {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+      </mat-icon>
+    </span>
+    <span class="col-date sortable" (click)="toggleSort('createdAt')">
+      Created
+      <mat-icon class="sort-icon" *ngIf="sortColumn === 'createdAt'">
+        {{ sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+      </mat-icon>
+    </span>
+    <span class="col-actions">Actions</span>
+  </div>
+
+  <!-- Table rows -->
+  <div class="content-table-row" *ngFor="let item of filteredContent"
+       [class.expanded]="expandedItemId === item.id"
+       [class.selected]="selectedIds.has(item.id)">
+    <!-- Main row -->
+    <div class="row-main" (click)="toggleExpand(item)">
+      <span class="col-check" (click)="$event.stopPropagation()">
+        <mat-checkbox [checked]="selectedIds.has(item.id)" (change)="toggleSelect(item.id)">
+        </mat-checkbox>
       </span>
-      <a class="item-url" *ngIf="item.sourceUrl" [href]="item.sourceUrl" target="_blank" rel="noopener">
-        {{ item.sourceUrl }}
-      </a>
+
+      <span class="col-icon">
+        <ng-container *ngIf="item.type === 'vimeo' || item.type === 'youtube'; else fileIconTpl">
+          <img *ngIf="item.videoMetadata?.thumbnailUrl" [src]="item.videoMetadata?.thumbnailUrl"
+               class="video-thumb-sm" alt="thumbnail" loading="lazy">
+          <mat-icon *ngIf="!item.videoMetadata?.thumbnailUrl" class="item-icon" [class]="item.type">
+            {{ getIcon(item.type) }}
+          </mat-icon>
+        </ng-container>
+        <ng-template #fileIconTpl>
+          <mat-icon class="item-icon" [class]="item.type">{{ getIcon(item.type) }}</mat-icon>
+        </ng-template>
+      </span>
+
+      <span class="col-name">
+        <span class="item-title">{{ item.title }}</span>
+        <span class="item-subtitle" *ngIf="item.fileSize">{{ formatBytes(item.fileSize) }}</span>
+        <span class="item-subtitle" *ngIf="item.videoMetadata?.duration">
+          {{ item.videoMetadata!.duration! >= 60
+            ? (item.videoMetadata!.duration! / 60 | number:'1.0-0') + 'm '
+              + (item.videoMetadata!.duration! % 60) + 's'
+            : item.videoMetadata!.duration + 's' }}
+        </span>
+      </span>
+
+      <span class="col-type">
+        <span class="type-badge" [class]="item.type">{{ item.type | uppercase }}</span>
+        <span class="bda-badge" *ngIf="item.bdaEnabled">BDA</span>
+      </span>
+
+      <span class="col-access">
+        <span class="role-badge" [class]="getRoleBadgeClass(item.minRoleLevel)">
+          {{ getRoleLabel(item.minRoleLevel) }}
+        </span>
+      </span>
+
+      <span class="col-status">
+        <span class="status-badge" [class]="item.status"
+              [matTooltip]="item.errorMessage || ''">{{ item.status }}</span>
+        <span class="crawl-progress" *ngIf="item.crawlProgress && item.status === 'processing'">
+          <ng-container [ngSwitch]="item.crawlProgress.phase">
+            <span *ngSwitchCase="'crawling'">
+              <mat-icon class="spin-icon">sync</mat-icon>
+              {{ item.crawlProgress.pagesCrawled }} pages crawled
+            </span>
+            <span *ngSwitchCase="'uploading'">
+              <mat-icon class="spin-icon">cloud_upload</mat-icon>
+              {{ item.crawlProgress.pagesUploaded }}/{{ item.crawlProgress.pagesCrawled }} uploaded
+            </span>
+            <span *ngSwitchCase="'ingesting'">
+              <mat-icon class="spin-icon">psychology</mat-icon>
+              Ingesting {{ item.crawlProgress.pagesCrawled }} pages
+            </span>
+          </ng-container>
+        </span>
+      </span>
+
+      <span class="col-date">{{ item.createdAt | date:'mediumDate' }}</span>
+
+      <span class="col-actions" (click)="$event.stopPropagation()">
+        <a *ngIf="item.sourceUrl" [href]="item.sourceUrl" target="_blank" rel="noopener"
+           mat-icon-button matTooltip="Open source">
+          <mat-icon>open_in_new</mat-icon>
+        </a>
+        <button mat-icon-button type="button" matTooltip="Edit" (click)="editContent(item)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button *ngIf="item.status === 'error'" type="button"
+                matTooltip="Retry ingestion" (click)="retryIngestion(item)">
+          <mat-icon>replay</mat-icon>
+        </button>
+        <button mat-icon-button type="button" matTooltip="Remove" (click)="confirmDelete(item)">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </span>
     </div>
-    <span class="status-badge" [class]="item.status">{{ item.status }}</span>
-    <button mat-icon-button (click)="deleteContent(item)" matTooltip="Remove">
-      <mat-icon>delete_outline</mat-icon>
-    </button>
+
+    <!-- Expanded detail panel -->
+    <div class="row-detail" *ngIf="expandedItemId === item.id">
+      <div class="detail-grid">
+        <div class="detail-item" *ngIf="item.sourceUrl">
+          <span class="detail-label">Source URL</span>
+          <a class="detail-value link" [href]="item.sourceUrl" target="_blank" rel="noopener">{{ item.sourceUrl }}</a>
+        </div>
+        <div class="detail-item" *ngIf="item.s3Key">
+          <span class="detail-label">S3 Key</span>
+          <span class="detail-value mono">{{ item.s3Key }}</span>
+        </div>
+        <div class="detail-item" *ngIf="item.bedrockDataSourceId">
+          <span class="detail-label">Data Source ID</span>
+          <span class="detail-value mono">{{ item.bedrockDataSourceId }}</span>
+        </div>
+        <div class="detail-item" *ngIf="item.scope">
+          <span class="detail-label">Scope</span>
+          <span class="scope-tag" [class]="item.scope">{{ item.scope }}</span>
+        </div>
+        <div class="detail-item" *ngIf="item.mimeType">
+          <span class="detail-label">MIME Type</span>
+          <span class="detail-value">{{ item.mimeType }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Parsing</span>
+          <span class="detail-value">
+            <span class="bda-badge" *ngIf="item.bdaEnabled">Enhanced (BDA)</span>
+            <span *ngIf="!item.bdaEnabled">Standard</span>
+          </span>
+        </div>
+        <div class="detail-item" *ngIf="item.videoMetadata">
+          <span class="detail-label">Video</span>
+          <span class="detail-value">
+            {{ item.videoMetadata.platform | titlecase }} &mdash; {{ item.videoMetadata.videoId }}
+            <span *ngIf="item.videoMetadata.duration">
+              ({{ item.videoMetadata.duration >= 60
+                ? (item.videoMetadata.duration / 60 | number:'1.0-0') + 'm '
+                  + (item.videoMetadata.duration % 60) + 's'
+                : item.videoMetadata.duration + 's' }})
+            </span>
+          </span>
+        </div>
+        <div class="detail-item" *ngIf="item.errorMessage">
+          <span class="detail-label">Error</span>
+          <span class="detail-value error">{{ item.errorMessage }}</span>
+        </div>
+        <div class="detail-item" *ngIf="item.updatedAt">
+          <span class="detail-label">Last Updated</span>
+          <span class="detail-value">{{ item.updatedAt | date:'medium' }}</span>
+        </div>
+        <div class="detail-item" *ngIf="item.tags?.length">
+          <span class="detail-label">Tags</span>
+          <div class="tag-chips">
+            <span class="tag-chip" *ngFor="let tag of item.tags">{{ tag }}</span>
+          </div>
+        </div>
+        <!-- S3 Content Preview -->
+        <div class="preview-section" *ngIf="item.s3Key && item.status === 'ready'">
+          <button mat-stroked-button type="button" (click)="loadPreview(item)"
+                  *ngIf="previewItemId !== item.id" class="preview-btn">
+            <mat-icon>visibility</mat-icon> View stored content
+          </button>
+          <div *ngIf="previewItemId === item.id" class="preview-panel">
+            <div class="preview-header">
+              <span class="preview-title">
+                <mat-icon>storage</mat-icon>
+                S3 Content ({{ previewData?.totalFiles }} file{{ previewData?.totalFiles !== 1 ? 's' : '' }})
+              </span>
+              <button mat-icon-button type="button" (click)="previewItemId = ''" matTooltip="Close preview">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <mat-spinner diameter="24" *ngIf="previewLoading"></mat-spinner>
+            <div class="preview-files" *ngIf="!previewLoading && previewData">
+              <div class="preview-file" *ngFor="let file of previewData.files; let i = index">
+                <div class="preview-file-header">
+                  <mat-icon>description</mat-icon>
+                  <span class="preview-file-name">{{ file.key }}</span>
+                  <span class="preview-file-size">{{ formatBytes(file.size) }}</span>
+                </div>
+                <pre class="preview-file-text">{{ file.text }}</pre>
+              </div>
+              <div class="preview-pagination" *ngIf="previewData.totalFiles > (previewData.limit ?? 20)">
+                <button mat-stroked-button type="button"
+                        [disabled]="(previewData.offset ?? 0) === 0"
+                        (click)="loadPreviewPage(item, (previewData!.offset ?? 0) - (previewData!.limit ?? 20))">
+                  Previous
+                </button>
+                <span>{{ (previewData.offset ?? 0) + 1 }}&ndash;{{ (previewData.offset ?? 0) + previewData.files.length }}
+                  of {{ previewData.totalFiles }}</span>
+                <button mat-stroked-button type="button"
+                        [disabled]="(previewData.offset ?? 0) + previewData.files.length >= previewData.totalFiles"
+                        (click)="loadPreviewPage(item, (previewData!.offset ?? 0) + (previewData!.limit ?? 20))">
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

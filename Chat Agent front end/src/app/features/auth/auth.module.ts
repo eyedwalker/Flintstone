@@ -5,12 +5,14 @@ import { LoginComponent } from './login/login.component';
 import { SignupComponent } from './signup/signup.component';
 import { VerifyComponent } from './verify/verify.component';
 import { OnboardingComponent } from './onboarding/onboarding.component';
+import { GuestGuard } from '../../core/guards/guest.guard';
+import { AuthGuard } from '../../core/guards/auth.guard';
 
 const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'signup', component: SignupComponent },
-  { path: 'verify', component: VerifyComponent },
-  { path: 'onboarding', component: OnboardingComponent },
+  { path: 'login', canActivate: [GuestGuard], component: LoginComponent },
+  { path: 'signup', canActivate: [GuestGuard], component: SignupComponent },
+  { path: 'verify', canActivate: [GuestGuard], component: VerifyComponent },
+  { path: 'onboarding', canActivate: [AuthGuard], component: OnboardingComponent },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 ];
 

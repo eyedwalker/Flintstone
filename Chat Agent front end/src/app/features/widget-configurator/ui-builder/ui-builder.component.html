@@ -1,0 +1,227 @@
+<div class="section-card ui-builder-card">
+  <h3 class="section-title"><mat-icon>design_services</mat-icon> UI Builder</h3>
+  <p class="section-desc">
+    Customize the launcher button and chat interface with templates, AI generation, or your own code.
+  </p>
+
+  <!-- Component tabs -->
+  <mat-button-toggle-group [(value)]="activeUiComponent" class="ui-component-toggle">
+    <mat-button-toggle value="launcher">
+      <mat-icon>touch_app</mat-icon> Icon Launcher
+    </mat-button-toggle>
+    <mat-button-toggle value="chat">
+      <mat-icon>forum</mat-icon> Chat Interface
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <!-- LAUNCHER DESIGN -->
+  <div *ngIf="activeUiComponent === 'launcher'" class="ui-builder-panel">
+
+    <!-- Template Carousel -->
+    <h4 class="builder-subtitle">Templates</h4>
+    <div class="template-carousel">
+      <div class="template-card"
+           *ngFor="let t of launcherTemplates"
+           [class.selected]="selectedLauncherTemplate === t.id"
+           (click)="selectLauncherTemplate(t)">
+        <div class="template-icon">
+          <mat-icon>{{ t.icon }}</mat-icon>
+        </div>
+        <span class="template-name">{{ t.name }}</span>
+        <span class="template-desc">{{ t.description }}</span>
+      </div>
+    </div>
+
+    <!-- AI Generation -->
+    <h4 class="builder-subtitle">AI Generate</h4>
+    <p class="section-desc">Describe the launcher design you want, or paste an image for AI to recreate.</p>
+    <div class="ai-gen-row">
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Describe your launcher</mat-label>
+        <input matInput [(ngModel)]="launcherAiPrompt" [ngModelOptions]="{ standalone: true }"
+               placeholder="e.g. Floating eye icon with gradient blue-purple background, subtle glow effect">
+      </mat-form-field>
+      <button mat-stroked-button type="button" (click)="generateLauncherUi()"
+              [disabled]="!launcherAiPrompt?.trim() || generatingLauncherUi">
+        <mat-spinner diameter="16" *ngIf="generatingLauncherUi"></mat-spinner>
+        <mat-icon *ngIf="!generatingLauncherUi">auto_fix_high</mat-icon>
+        {{ generatingLauncherUi ? 'Generating...' : 'Generate' }}
+      </button>
+    </div>
+
+    <!-- Image paste/drop zone -->
+    <div class="image-drop-zone"
+         [class.active]="imageDropActive"
+         [class.has-image]="pastedImagePreview && activeUiComponent === 'launcher'"
+         (drop)="onImageDrop($event)"
+         (dragover)="onImageDragOver($event)"
+         (dragleave)="onImageDragLeave()">
+      <div *ngIf="!pastedImagePreview" class="drop-placeholder">
+        <mat-icon>content_paste</mat-icon>
+        <span>Paste or drop a screenshot — AI will recreate it</span>
+        <span class="drop-hint">Ctrl+V to paste from clipboard</span>
+      </div>
+      <div *ngIf="pastedImagePreview" class="pasted-image-preview">
+        <img [src]="pastedImagePreview" alt="Pasted design">
+        <div class="pasted-image-actions">
+          <button mat-flat-button color="primary" type="button" (click)="generateFromImage()"
+                  [disabled]="generatingLauncherUi">
+            <mat-spinner diameter="16" *ngIf="generatingLauncherUi"></mat-spinner>
+            <mat-icon *ngIf="!generatingLauncherUi">auto_fix_high</mat-icon>
+            Generate from Image
+          </button>
+          <button mat-stroked-button type="button" (click)="clearPastedImage()">
+            <mat-icon>clear</mat-icon> Clear
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Editor -->
+    <div class="code-editor-header">
+      <h4 class="builder-subtitle">Code</h4>
+      <mat-button-toggle-group [(value)]="launcherCodeMode" class="code-mode-toggle">
+        <mat-button-toggle value="visual">Visual</mat-button-toggle>
+        <mat-button-toggle value="code">Edit Code</mat-button-toggle>
+      </mat-button-toggle-group>
+      <button mat-icon-button type="button" (click)="resetLauncher()" matTooltip="Reset to default">
+        <mat-icon>restart_alt</mat-icon>
+      </button>
+    </div>
+
+    <!-- Visual preview of launcher -->
+    <div *ngIf="launcherCodeMode === 'visual'" class="launcher-visual-preview">
+      <div class="launcher-preview-bubble" [style.background]="form.get('primaryColor')?.value">
+        <div [innerHTML]="launcherPreviewHtml"></div>
+      </div>
+      <span class="preview-label">Launcher preview</span>
+    </div>
+
+    <!-- Code editing -->
+    <div *ngIf="launcherCodeMode === 'code'" class="code-editors">
+
+      <!-- Unified paste box -->
+      <mat-form-field appearance="outline" class="full-width paste-box">
+        <mat-label>Paste anything here — Figma CSS, HTML, SVG, or mixed code</mat-label>
+        <textarea matInput
+                  rows="3" class="code-textarea"
+                  placeholder="Paste Figma CSS properties, SVG code, HTML+CSS, etc. — it will be auto-sorted into the right fields below."
+                  (paste)="onUnifiedPaste($event, 'launcher')"></textarea>
+        <mat-hint>Raw CSS properties (like from Figma) will be wrapped in .awsac-bubble &#123; ... &#125; automatically</mat-hint>
+      </mat-form-field>
+
+      <mat-divider></mat-divider>
+
+      <!-- HTML field -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Launcher HTML (SVG icon inside the bubble)</mat-label>
+        <textarea matInput [(ngModel)]="launcherCode" [ngModelOptions]="{ standalone: true }"
+                  rows="4" class="code-textarea"
+                  placeholder="<svg viewBox='0 0 24 24' fill='white'><path d='...'/></svg>"
+                  (input)="applyLauncherCode()"></textarea>
+      </mat-form-field>
+
+      <!-- CSS field -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Launcher CSS (styles for .awsac-bubble)</mat-label>
+        <textarea matInput [(ngModel)]="launcherCssCode" [ngModelOptions]="{ standalone: true }"
+                  rows="4" class="code-textarea"
+                  placeholder=".awsac-bubble {&#10;  width: 60px;&#10;  height: 60px;&#10;  background: #3366CC;&#10;  box-shadow: 0 4px 16px rgba(0,0,0,0.15);&#10;}"
+                  (input)="applyLauncherCode()"></textarea>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- CHAT INTERFACE DESIGN -->
+  <div *ngIf="activeUiComponent === 'chat'" class="ui-builder-panel">
+
+    <!-- Template Carousel -->
+    <h4 class="builder-subtitle">Templates</h4>
+    <div class="template-carousel">
+      <div class="template-card"
+           *ngFor="let t of chatTemplates"
+           [class.selected]="selectedChatTemplate === t.id"
+           (click)="selectChatTemplate(t)">
+        <div class="template-icon">
+          <mat-icon>{{ t.icon }}</mat-icon>
+        </div>
+        <span class="template-name">{{ t.name }}</span>
+        <span class="template-desc">{{ t.description }}</span>
+      </div>
+    </div>
+
+    <!-- AI Generation -->
+    <h4 class="builder-subtitle">AI Generate</h4>
+    <p class="section-desc">Describe the chat interface style you want, or paste a screenshot.</p>
+    <div class="ai-gen-row">
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Describe your chat interface</mat-label>
+        <input matInput [(ngModel)]="chatAiPrompt" [ngModelOptions]="{ standalone: true }"
+               placeholder="e.g. Slack-like interface with rounded bubbles, dark header, compact layout">
+      </mat-form-field>
+      <button mat-stroked-button type="button" (click)="generateChatUi()"
+              [disabled]="!chatAiPrompt?.trim() || generatingChatUi">
+        <mat-spinner diameter="16" *ngIf="generatingChatUi"></mat-spinner>
+        <mat-icon *ngIf="!generatingChatUi">auto_fix_high</mat-icon>
+        {{ generatingChatUi ? 'Generating...' : 'Generate' }}
+      </button>
+    </div>
+
+    <!-- Image paste/drop zone -->
+    <div class="image-drop-zone"
+         [class.active]="imageDropActive"
+         [class.has-image]="pastedImagePreview && activeUiComponent === 'chat'"
+         (drop)="onImageDrop($event)"
+         (dragover)="onImageDragOver($event)"
+         (dragleave)="onImageDragLeave()">
+      <div *ngIf="!pastedImagePreview" class="drop-placeholder">
+        <mat-icon>content_paste</mat-icon>
+        <span>Paste or drop a screenshot — AI will recreate it</span>
+        <span class="drop-hint">Ctrl+V to paste from clipboard</span>
+      </div>
+      <div *ngIf="pastedImagePreview" class="pasted-image-preview">
+        <img [src]="pastedImagePreview" alt="Pasted design">
+        <div class="pasted-image-actions">
+          <button mat-flat-button color="primary" type="button" (click)="generateFromImage()"
+                  [disabled]="generatingChatUi">
+            <mat-spinner diameter="16" *ngIf="generatingChatUi"></mat-spinner>
+            <mat-icon *ngIf="!generatingChatUi">auto_fix_high</mat-icon>
+            Generate from Image
+          </button>
+          <button mat-stroked-button type="button" (click)="clearPastedImage()">
+            <mat-icon>clear</mat-icon> Clear
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Editor -->
+    <div class="code-editor-header">
+      <h4 class="builder-subtitle">Code</h4>
+      <mat-button-toggle-group [(value)]="chatCodeMode" class="code-mode-toggle">
+        <mat-button-toggle value="visual">Visual</mat-button-toggle>
+        <mat-button-toggle value="code">Edit Code</mat-button-toggle>
+      </mat-button-toggle-group>
+      <button mat-icon-button type="button" (click)="resetChat()" matTooltip="Reset to default">
+        <mat-icon>restart_alt</mat-icon>
+      </button>
+    </div>
+
+    <!-- Visual preview hint -->
+    <div *ngIf="chatCodeMode === 'visual'" class="chat-visual-hint">
+      <mat-icon>visibility</mat-icon>
+      <span>See the Live Preview panel on the right to preview chat interface changes</span>
+    </div>
+
+    <!-- Code editing -->
+    <div *ngIf="chatCodeMode === 'code'" class="code-editors">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Chat Interface CSS</mat-label>
+        <textarea matInput [(ngModel)]="chatCssCode" [ngModelOptions]="{ standalone: true }"
+                  rows="10" class="code-textarea"
+                  placeholder=".awsac-panel { ... }&#10;.awsac-header { ... }&#10;.awsac-msg.user .awsac-msg-text { ... }"
+                  (input)="applyChatCode()"></textarea>
+      </mat-form-field>
+    </div>
+  </div>
+</div>

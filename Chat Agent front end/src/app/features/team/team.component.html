@@ -1,0 +1,142 @@
+<div class="team-page">
+  <div class="page-header">
+    <div>
+      <h1>Team Management</h1>
+      <p class="subtitle">Manage who has access to this organization</p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button *ngIf="orgCtx.hasRole('owner')" (click)="loadAuditLog()">
+        <mat-icon>history</mat-icon> Audit Log
+      </button>
+      <button mat-flat-button color="primary" (click)="showInvite = !showInvite">
+        <mat-icon>person_add</mat-icon> Invite Member
+      </button>
+    </div>
+  </div>
+
+  <!-- Invite Form -->
+  <mat-card *ngIf="showInvite" class="invite-card">
+    <mat-card-header>
+      <mat-card-title>Invite a new team member</mat-card-title>
+      <mat-card-subtitle>They will receive an email with a temporary password</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="invite-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" [(ngModel)]="inviteEmail" placeholder="user@company.com">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput [(ngModel)]="inviteName" placeholder="Full name">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Role</mat-label>
+          <mat-select [(ngModel)]="inviteRole">
+            <mat-option *ngFor="let r of roles" [value]="r">{{ roleLabel(r) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" (click)="invite()" [disabled]="inviting || !inviteEmail || !inviteName">
+          <mat-spinner diameter="18" *ngIf="inviting"></mat-spinner>
+          <span *ngIf="!inviting">Send Invite</span>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Members Table -->
+  <mat-card class="members-card">
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <table mat-table [dataSource]="members" *ngIf="!loading" class="members-table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let m">
+          {{ m.name }}
+          <span class="you-badge" *ngIf="isCurrentUser(m)">(you)</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let m">{{ m.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef>Role</th>
+        <td mat-cell *matCellDef="let m">
+          <mat-chip-listbox *ngIf="!canChangeRole(m)">
+            <mat-chip [class]="'role-' + m.role">{{ roleLabel(m.role) }}</mat-chip>
+          </mat-chip-listbox>
+          <mat-form-field appearance="outline" class="role-select" *ngIf="canChangeRole(m)">
+            <mat-select [value]="m.role" (selectionChange)="changeRole(m, $event.value)"
+                        [disabled]="changingRole === m.userId">
+              <mat-option *ngFor="let r of roles" [value]="r">{{ roleLabel(r) }}</mat-option>
+              <mat-option value="owner" *ngIf="orgCtx.hasRole('owner')">Owner</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="mfa">
+        <th mat-header-cell *matHeaderCellDef>MFA</th>
+        <td mat-cell *matCellDef="let m">
+          <mat-icon [class]="m.mfaEnabled ? 'mfa-on' : 'mfa-off'">
+            {{ m.mfaEnabled ? 'verified_user' : 'shield' }}
+          </mat-icon>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="joined">
+        <th mat-header-cell *matHeaderCellDef>Joined</th>
+        <td mat-cell *matCellDef="let m">{{ m.joinedAt | date:'mediumDate' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let m">
+          <button mat-icon-button color="warn" *ngIf="canRemove(m)" (click)="removeMember(m)"
+                  matTooltip="Remove member">
+            <mat-icon>person_remove</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="!loading && members.length === 0" class="empty-state">
+      <mat-icon>group</mat-icon>
+      <p>No team members yet. Invite someone to get started.</p>
+    </div>
+  </mat-card>
+
+  <!-- Audit Log -->
+  <mat-card *ngIf="showAudit" class="audit-card">
+    <mat-card-header>
+      <mat-card-title>Audit Log</mat-card-title>
+      <mat-card-subtitle>Recent security and team events</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div *ngIf="auditLog.length === 0" class="empty-state">
+        <p>No audit events yet.</p>
+      </div>
+      <mat-list *ngIf="auditLog.length > 0">
+        <mat-list-item *ngFor="let entry of auditLog" class="audit-entry">
+          <mat-icon matListItemIcon>event_note</mat-icon>
+          <div matListItemTitle>{{ entry['action'] }}</div>
+          <div matListItemLine>
+            {{ $any(entry['createdAt']) | date:'medium' }}
+            <span *ngIf="entry['ip']"> &mdash; {{ entry['ip'] }}</span>
+          </div>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -25,17 +25,17 @@ export class ModelConfigComponent implements OnInit {
     {
       label: 'Anthropic Claude', color: '#d97706',
       models: [
-        { modelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0', modelName: 'Claude 3.5 Sonnet v2', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.000003, outputPricePerToken: 0.000015, planRequired: 'starter' },
-        { modelId: 'anthropic.claude-3-haiku-20240307-v1:0', modelName: 'Claude 3 Haiku', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.00000025, outputPricePerToken: 0.00000125, planRequired: 'free' },
-        { modelId: 'anthropic.claude-3-sonnet-20240229-v1:0', modelName: 'Claude 3 Sonnet', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.000003, outputPricePerToken: 0.000015, planRequired: 'starter' },
-        { modelId: 'anthropic.claude-3-opus-20240229-v1:0', modelName: 'Claude 3 Opus', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.000015, outputPricePerToken: 0.000075, planRequired: 'pro' },
+        { modelId: 'us.anthropic.claude-sonnet-4-6', modelName: 'Claude Sonnet 4.6', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.000003, outputPricePerToken: 0.000015, planRequired: 'pro' },
+        { modelId: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', modelName: 'Claude Sonnet 4.5', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.000003, outputPricePerToken: 0.000015, planRequired: 'starter' },
+        { modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0', modelName: 'Claude Haiku 4.5', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.0000008, outputPricePerToken: 0.000004, planRequired: 'free' },
+        { modelId: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0', modelName: 'Claude 3.5 Sonnet v2', provider: 'anthropic', providerLabel: 'Anthropic', category: 'claude', contextWindow: 200000, supportsStreaming: true, inputPricePerToken: 0.000003, outputPricePerToken: 0.000015, planRequired: 'starter' },
       ],
     },
     {
       label: 'Amazon Nova', color: '#f97316',
       models: [
-        { modelId: 'amazon.nova-lite-v1:0', modelName: 'Nova Lite', provider: 'amazon', providerLabel: 'Amazon', category: 'nova', contextWindow: 128000, supportsStreaming: true, inputPricePerToken: 0.0000006, outputPricePerToken: 0.0000024, planRequired: 'free' },
-        { modelId: 'amazon.nova-pro-v1:0', modelName: 'Nova Pro', provider: 'amazon', providerLabel: 'Amazon', category: 'nova', contextWindow: 300000, supportsStreaming: true, inputPricePerToken: 0.0000008, outputPricePerToken: 0.0000032, planRequired: 'starter' },
+        { modelId: 'us.amazon.nova-lite-v1:0', modelName: 'Nova Lite', provider: 'amazon', providerLabel: 'Amazon', category: 'nova', contextWindow: 128000, supportsStreaming: true, inputPricePerToken: 0.0000006, outputPricePerToken: 0.0000024, planRequired: 'free' },
+        { modelId: 'us.amazon.nova-pro-v1:0', modelName: 'Nova Pro', provider: 'amazon', providerLabel: 'Amazon', category: 'nova', contextWindow: 300000, supportsStreaming: true, inputPricePerToken: 0.0000008, outputPricePerToken: 0.0000032, planRequired: 'starter' },
       ],
     },
     {
@@ -128,8 +128,8 @@ export class ModelConfigComponent implements OnInit {
 
   private defaultConfig(): IModelConfig {
     return {
-      provider: 'bedrock', modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
-      modelName: 'Claude 3 Haiku', systemPrompt: 'You are a helpful assistant.',
+      provider: 'bedrock', modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+      modelName: 'Claude Haiku 4.5', systemPrompt: 'You are a helpful assistant.',
       temperature: 0.7, topP: 0.9, topK: 250, maxTokens: 2048, stopSequences: [],
     };
   }

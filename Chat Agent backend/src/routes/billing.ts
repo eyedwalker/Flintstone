@@ -1,7 +1,7 @@
 import { APIGatewayProxyResultV2 } from 'aws-lambda';
 import * as stripe from '../services/stripe';
-import { ok, badRequest, serverError } from '../response';
-import { parseBody } from '../auth';
+import { ok, badRequest, forbidden, serverError } from '../response';
+import { IRequestContext, requireRole, parseBody } from '../auth';
 
 const FRONTEND_URL = process.env['FRONTEND_URL'] ?? 'https://localhost:4200';
 
@@ -11,9 +11,14 @@ export async function handleBilling(
   body: Record<string, unknown>,
   _params: Record<string, string>,
   _query: Record<string, string>,
-  tenantId: string
+  ctx: IRequestContext
 ): Promise<APIGatewayProxyResultV2> {
+  const tenantId = ctx.organizationId;
   try {
+    // Billing: GET requires admin, POST requires owner
+    if (method === 'GET' && !requireRole(ctx, 'admin')) return forbidden('Admin role required');
+    if (method === 'POST' && !requireRole(ctx, 'owner')) return forbidden('Owner role required');
+
     // POST /billing/checkout
     if (method === 'POST' && path.endsWith('/checkout')) {
       const b = parseBody<{

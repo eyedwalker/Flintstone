@@ -46,38 +46,21 @@
     </div>
   </div>
 
-  <!-- Snippet card -->
-  <div class="section-card snippet-card">
-    <div class="snippet-header">
-      <mat-button-toggle-group [(value)]="activeTab" class="tab-toggle">
-        <mat-button-toggle value="html">
-          <mat-icon>html</mat-icon> HTML Snippet
-        </mat-button-toggle>
-        <mat-button-toggle value="console">
-          <mat-icon>terminal</mat-icon> Console Snippet
-        </mat-button-toggle>
-      </mat-button-toggle-group>
-      <div class="snippet-actions">
-        <button mat-stroked-button type="button" (click)="copySnippet()">
-          <mat-icon>content_copy</mat-icon> Copy
-        </button>
-        <button mat-stroked-button type="button" (click)="downloadSnippet()">
-          <mat-icon>download</mat-icon> Download
-        </button>
-      </div>
-    </div>
+  <!-- Snippet display sub-component -->
+  <bcc-snippet-display
+    [htmlSnippet]="htmlSnippet"
+    [consoleSnippet]="consoleSnippet"
+    [selfHostedSnippet]="selfHostedSnippet"
+    [inlineSnippet]="inlineSnippet"
+    [downloadUrl]="widgetDownloadUrl">
+  </bcc-snippet-display>
 
-    <pre class="snippet-block"><code>{{ activeSnippet }}</code></pre>
-
-    <div class="snippet-note" *ngIf="activeTab === 'html'">
-      <mat-icon>info_outline</mat-icon>
-      Paste this just before <code>&lt;/body&gt;</code> on any page where you want the chat widget to appear.
-    </div>
-    <div class="snippet-note" *ngIf="activeTab === 'console'">
-      <mat-icon>info_outline</mat-icon>
-      Paste this into the browser console to test the widget without modifying your site.
-    </div>
-  </div>
+  <!-- Live test chat sub-component -->
+  <bcc-chat-tester
+    [assistantId]="assistantId"
+    [tenantId]="tenantId"
+    [canChat]="canChat">
+  </bcc-chat-tester>
 
   <!-- Integration guide -->
   <div class="section-card guide-card">

@@ -34,8 +34,19 @@ Globals:
         BEDROCK_KB_ROLE_ARN: !GetAtt BedrockKbRole.Arn
         BEDROCK_AGENT_ROLE_ARN: !GetAtt BedrockAgentRole.Arn
         BEDROCK_EMBEDDING_MODEL_ARN: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+        TEAM_MEMBERS_TABLE: !Sub "chat-agent-team-members-${Stage}"
+        KNOWLEDGE_BASES_TABLE: !Sub "chat-agent-knowledge-bases-${Stage}"
+        ASSISTANT_KB_TABLE: !Sub "chat-agent-assistant-kb-${Stage}"
+        ESCALATION_CONFIG_TABLE: !Sub "chat-agent-escalation-config-${Stage}"
+        WIDGET_PRESETS_TABLE: !Ref WidgetPresetsTable
+        ATTACHMENTS_TABLE: !Sub "chat-agent-attachments-${Stage}"
+        AUDIT_LOG_TABLE: !Sub "chat-agent-audit-log-${Stage}"
+        HIPAA_BUCKET: !Sub "chat-agent-hipaa-${Stage}"
+        COGNITO_USER_POOL_ID: !Ref UserPool
+        PROVISION_FUNCTION_NAME: !Sub "chat-agent-provision-${Stage}"
         STRIPE_SECRET_KEY_PARAM: !Sub "/chat-agent/${Stage}/stripe/secret-key"
         FRONTEND_URL: ""
+        ALLOWED_ORIGINS: ""  # Comma-separated list of allowed origins for CORS (empty = allow all)
 
 Resources:
 
@@ -104,6 +115,8 @@ Resources:
           AttributeType: S
         - AttributeName: tenantId
           AttributeType: S
+        - AttributeName: apiKey
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
@@ -111,6 +124,12 @@ Resources:
         - IndexName: tenantId-index
           KeySchema:
             - AttributeName: tenantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: apiKey-index
+          KeySchema:
+            - AttributeName: apiKey
               KeyType: HASH
           Projection:
             ProjectionType: ALL
@@ -238,6 +257,31 @@ Resources:
         - AttributeName: userId
           KeyType: HASH
 
+  WidgetPresetsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-widget-presets-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: tenantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: tenantId-index
+          KeySchema:
+            - AttributeName: tenantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
   # ── IAM Roles ──────────────────────────────────────────────────────
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -278,6 +322,19 @@ Resources:
                   - !GetAtt HierarchyNodesTable.Arn
                   - !Sub "${HierarchyNodesTable.Arn}/index/*"
                   - !GetAtt NodeUsersTable.Arn
+                  # Manually-created tables (not managed by this template)
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-team-members-${Stage}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-team-members-${Stage}/index/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-knowledge-bases-${Stage}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-knowledge-bases-${Stage}/index/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-assistant-kb-${Stage}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-assistant-kb-${Stage}/index/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-escalation-config-${Stage}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-attachments-${Stage}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-attachments-${Stage}/index/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-audit-log-${Stage}"
+                  - !GetAtt WidgetPresetsTable.Arn
+                  - !Sub "${WidgetPresetsTable.Arn}/index/*"
               - Sid: S3Access
                 Effect: Allow
                 Action:
@@ -314,6 +371,9 @@ Resources:
                   - bedrock:DeleteGuardrail
                   - bedrock:CreateGuardrailVersion
                   - bedrock:ApplyGuardrail
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:InvokeAgent
                 Resource: "*"
               - Sid: PassRoleForBedrock
                 Effect: Allow
@@ -323,7 +383,10 @@ Resources:
                   - !GetAtt BedrockAgentRole.Arn
               - Sid: SSMAccess
                 Effect: Allow
-                Action: ssm:GetParameter
+                Action:
+                  - ssm:GetParameter
+                  - ssm:PutParameter
+                  - ssm:DeleteParameter
                 Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/chat-agent/${Stage}/*"
               - Sid: S3VectorsManage
                 Effect: Allow
@@ -413,14 +476,64 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /{proxy+}
             Method: ANY
-            Auth:
-              Authorizer: CognitoJwtAuthorizer
         ApiOptionsEvent:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /{proxy+}
             Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Public widget endpoints — API-key auth, no JWT
+        WidgetChatEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/chat
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WidgetEscalateEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/escalate
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WidgetCheckEscalationEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/check-escalation
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WidgetAttachmentUrlEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/attachment-url
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WidgetAttachmentConfirmEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/attachment-confirm
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        # OpenAPI spec — public, no JWT
+        DocsEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /docs/openapi.yaml
+            Method: GET
+            Auth:
+              Authorizer: NONE
 
   ProvisionFunction:
     Type: AWS::Serverless::Function
@@ -438,8 +551,6 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /assistants/{id}/provision
             Method: POST
-            Auth:
-              Authorizer: CognitoJwtAuthorizer
 
   # ── HTTP API Gateway ───────────────────────────────────────────────
   HttpApi:
@@ -454,12 +565,16 @@ Resources:
               audience:
                 - !Ref UserPoolClient
             IdentitySource: "$request.header.Authorization"
-        # No DefaultAuthorizer — authorizer applied per-route so OPTIONS preflight passes
+        DefaultAuthorizer: CognitoJwtAuthorizer
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 50
+        ThrottlingRateLimit: 100
       CorsConfiguration:
         AllowMethods:
           - GET
           - POST
           - PUT
+          - PATCH
           - DELETE
           - OPTIONS
         AllowHeaders:
@@ -467,6 +582,7 @@ Resources:
           - Authorization
           - X-Amz-Date
           - X-Api-Key
+          - X-Organization-Id
         AllowOrigins:
           - "*"
         MaxAge: 300

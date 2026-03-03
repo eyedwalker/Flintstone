@@ -14,29 +14,44 @@ const client = new S3VectorsClient({ region: process.env['REGION'] ?? 'us-west-2
 const EMBEDDING_DIMENSION = 1024;
 
 /**
- * Create an S3 Vectors bucket and a vector index inside it.
+ * Create an S3 Vectors bucket and a vector index inside it (idempotent).
+ * If the bucket or index already exists they are reused.
  * Returns the bucket ARN and index ARN needed for Bedrock Knowledge Base.
  */
 export async function createVectorStore(
   bucketName: string,
   indexName: string
 ): Promise<{ vectorBucketArn: string; indexArn: string }> {
-  // Create the vector bucket
-  await client.send(new CreateVectorBucketCommand({ vectorBucketName: bucketName }));
+  // Create bucket — ignore "already exists" error
+  try {
+    await client.send(new CreateVectorBucketCommand({ vectorBucketName: bucketName }));
+  } catch (e: any) {
+    const code = e?.name ?? e?.Code ?? '';
+    if (!code.includes('Conflict') && !code.includes('AlreadyExists') && !code.includes('BucketAlreadyExists')) {
+      throw e;
+    }
+  }
 
   // Get the bucket ARN
   const bucketRes = await client.send(new GetVectorBucketCommand({ vectorBucketName: bucketName }));
   const vectorBucketArn = bucketRes.vectorBucket?.vectorBucketArn ?? '';
   if (!vectorBucketArn) throw new Error(`Failed to get ARN for vector bucket: ${bucketName}`);
 
-  // Create the vector index (cosine similarity, float32, 1024 dims for Titan v2)
-  await client.send(new CreateIndexCommand({
-    vectorBucketName: bucketName,
-    indexName,
-    dataType: 'float32',
-    dimension: EMBEDDING_DIMENSION,
-    distanceMetric: 'cosine',
-  }));
+  // Create index — ignore "already exists" error
+  try {
+    await client.send(new CreateIndexCommand({
+      vectorBucketName: bucketName,
+      indexName,
+      dataType: 'float32',
+      dimension: EMBEDDING_DIMENSION,
+      distanceMetric: 'cosine',
+    }));
+  } catch (e: any) {
+    const code = e?.name ?? e?.Code ?? '';
+    if (!code.includes('Conflict') && !code.includes('AlreadyExists') && !code.includes('IndexAlreadyExists')) {
+      throw e;
+    }
+  }
 
   // Get the index ARN
   const indexRes = await client.send(new GetIndexCommand({ vectorBucketName: bucketName, indexName }));

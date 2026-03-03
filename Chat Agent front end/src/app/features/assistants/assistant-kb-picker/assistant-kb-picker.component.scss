@@ -1,0 +1,42 @@
+.kb-picker {
+  padding: 16px 0;
+
+  h3 {
+    font-weight: 500;
+    font-size: 1rem;
+    margin: 0 0 12px;
+    color: rgba(0,0,0,0.7);
+  }
+
+  .available-header {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .empty-msg {
+    padding: 16px 0;
+    color: rgba(0,0,0,0.45);
+    font-size: 0.9rem;
+
+    a { color: #006fb4; }
+  }
+
+  .loading {
+    display: flex;
+    justify-content: center;
+    padding: 32px 0;
+  }
+
+  .content-count {
+    font-size: 0.8rem;
+    color: rgba(0,0,0,0.45);
+  }
+
+  .default-chip {
+    font-size: 0.65rem;
+    min-height: 20px;
+    padding: 0 6px;
+    margin-left: 8px;
+  }
+}

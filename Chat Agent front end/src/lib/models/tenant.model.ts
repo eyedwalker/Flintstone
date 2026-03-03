@@ -1,3 +1,30 @@
+/** Team role hierarchy */
+export type TeamRole = 'owner' | 'admin' | 'editor' | 'viewer';
+
+export const ROLE_LEVEL: Record<TeamRole, number> = {
+  owner: 4, admin: 3, editor: 2, viewer: 1,
+};
+
+/** Team member record */
+export interface ITeamMember {
+  userId: string;
+  organizationId: string;
+  role: TeamRole;
+  email: string;
+  name: string;
+  mfaEnabled?: boolean;
+  invitedBy?: string;
+  joinedAt: string;
+  updatedAt: string;
+}
+
+/** Organization membership (from /team/my-orgs) */
+export interface IOrganizationMembership {
+  organizationId: string;
+  organizationName: string;
+  role: TeamRole;
+}
+
 /** Subscription plan tiers */
 export type PlanTier = 'free' | 'starter' | 'pro' | 'enterprise';
 
@@ -55,6 +82,7 @@ export interface IAssistant {
   bedrockKnowledgeBaseId?: string;
   bedrockGuardrailId?: string;
   bedrockGuardrailVersion?: string;
+  vimeoAccessToken?: string;
   modelConfig: IModelConfig;
   widgetConfig: IWidgetConfig;
   apiKey: string;
@@ -104,9 +132,44 @@ export interface IWidgetConfig {
   zIndex: number;
   trendingQuestions: string[];
   contextConfig: IContextConfig;
+  customLauncherIconUrl?: string;
+  customLauncherHtml?: string;
+  customCss?: string;
+  typingIndicatorStyle?: TypingIndicatorStyle;
+  typingPhrases?: string[];
 }
 
 export type WidgetPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+export type TypingIndicatorStyle = 'dots' | 'phrases' | 'spinner-phrases';
+
+/** Visual-only subset of IWidgetConfig, stored as a reusable org-wide preset */
+export interface IWidgetPreset {
+  id: string;
+  tenantId: string;
+  name: string;
+  position: WidgetPosition;
+  primaryColor: string;
+  secondaryColor: string;
+  customLauncherIconUrl?: string;
+  customLauncherHtml?: string;
+  customCss?: string;
+  typingIndicatorStyle?: TypingIndicatorStyle;
+  typingPhrases?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** The visual config fields that a preset can apply to an assistant's widgetConfig */
+export type WidgetPresetConfig = Pick<IWidgetConfig,
+  | 'position'
+  | 'primaryColor'
+  | 'secondaryColor'
+  | 'customLauncherIconUrl'
+  | 'customLauncherHtml'
+  | 'customCss'
+  | 'typingIndicatorStyle'
+  | 'typingPhrases'
+>;
 
 /** Context injection configuration for the embed snippet */
 export interface IContextConfig {
@@ -116,9 +179,13 @@ export interface IContextConfig {
   customFields: ICustomContextField[];
 }
 
+export type ContextFieldType = 'expression' | 'localStorage' | 'sessionStorage' | 'cookie' | 'dom' | 'meta' | 'userAgent' | 'geolocation';
+
 export interface ICustomContextField {
   key: string;
+  type: ContextFieldType;
   expression: string;
+  label?: string;
 }
 
 /** Bedrock model catalog entry */

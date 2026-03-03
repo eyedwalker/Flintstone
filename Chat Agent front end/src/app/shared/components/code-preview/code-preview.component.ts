@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'bcc-code-preview',
   templateUrl: './code-preview.component.html',
   styleUrls: ['./code-preview.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodePreviewComponent {
   @Input() code = '';

@@ -1,0 +1,79 @@
+<div class="mfa-page">
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Multi-Factor Authentication Setup</h1>
+  </div>
+
+  <!-- Step 1: Intro -->
+  <mat-card *ngIf="step === 'intro'" class="mfa-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="shield-icon">security</mat-icon>
+      <mat-card-title>Secure Your Account</mat-card-title>
+      <mat-card-subtitle>
+        Add an extra layer of security with a TOTP authenticator app
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <p>You'll need an authenticator app like:</p>
+      <ul>
+        <li>Google Authenticator</li>
+        <li>Authy</li>
+        <li>Microsoft Authenticator</li>
+        <li>1Password</li>
+      </ul>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-flat-button color="primary" (click)="beginSetup()" [disabled]="loading">
+        <mat-spinner diameter="18" *ngIf="loading"></mat-spinner>
+        <span *ngIf="!loading">Begin Setup</span>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Step 2: QR / Secret -->
+  <mat-card *ngIf="step === 'qr'" class="mfa-card">
+    <mat-card-header>
+      <mat-card-title>Scan or Enter Secret Key</mat-card-title>
+      <mat-card-subtitle>Open your authenticator app and add a new account</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="secret-display">
+        <p class="instruction">Manually enter this secret key in your authenticator app:</p>
+        <div class="secret-code">{{ secretCode }}</div>
+        <p class="instruction small">
+          Or use this URI with apps that support it:<br>
+          <code class="uri">{{ totpUri }}</code>
+        </p>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="verify-section">
+        <p>Enter the 6-digit code from your authenticator to verify:</p>
+        <mat-form-field appearance="outline">
+          <mat-label>Verification Code</mat-label>
+          <input matInput [(ngModel)]="verifyCode" maxlength="6" inputmode="numeric"
+                 placeholder="000000">
+        </mat-form-field>
+        <button mat-flat-button color="primary" (click)="verifyMfa()"
+                [disabled]="loading || verifyCode.length !== 6">
+          <mat-spinner diameter="18" *ngIf="loading"></mat-spinner>
+          <span *ngIf="!loading">Verify & Enable</span>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Step 3: Done -->
+  <mat-card *ngIf="step === 'done'" class="mfa-card done-card">
+    <mat-card-content class="done-content">
+      <mat-icon class="done-icon">check_circle</mat-icon>
+      <h2>MFA Enabled</h2>
+      <p>Your account is now protected with two-factor authentication.
+         You'll need your authenticator app each time you sign in.</p>
+      <button mat-flat-button color="primary" (click)="goBack()">Return to Team</button>
+    </mat-card-content>
+  </mat-card>
+</div>

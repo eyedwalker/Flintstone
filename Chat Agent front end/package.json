@@ -6,7 +6,21 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "e2e": "npx playwright test --config=e2e/playwright.config.ts",
+    "format": "prettier --write \"src/**/*.{ts,html,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss}\""
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write"
+    ],
+    "*.html": [
+      "prettier --write"
+    ],
+    "*.scss": [
+      "prettier --write"
+    ]
   },
   "private": true,
   "dependencies": {
@@ -40,6 +54,7 @@
     "ng2-charts": "^8.0.0",
     "ngx-color-picker": "^20.1.1",
     "rxjs": "~7.8.0",
+    "swagger-ui-dist": "^5.32.0",
     "tslib": "^2.3.0",
     "uuid": "^13.0.0",
     "zone.js": "~0.14.3"
@@ -48,14 +63,19 @@
     "@angular-devkit/build-angular": "^17.3.17",
     "@angular/cli": "^17.3.17",
     "@angular/compiler-cli": "^17.3.0",
+    "@playwright/test": "^1.58.2",
     "@types/jasmine": "~5.1.0",
     "@types/uuid": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "lint-staged": "^16.3.1",
+    "prettier": "^3.8.1",
     "typescript": "~5.4.2"
   }
 }

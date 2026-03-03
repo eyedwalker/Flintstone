@@ -5,6 +5,7 @@
       class="nav-item"
       [class.active]="isActive(item.route, item.exact)"
       [routerLink]="item.route"
+      [hidden]="!isVisible(item)"
       matRipple>
       <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
       <span class="nav-label">{{ item.label }}</span>

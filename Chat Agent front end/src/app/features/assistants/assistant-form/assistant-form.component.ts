@@ -25,6 +25,7 @@ export class AssistantFormComponent implements OnInit {
 
   readonly tabs = [
     { label: 'Knowledge Base', icon: 'folder_open', path: 'knowledge-base' },
+    { label: 'KB Library', icon: 'menu_book', path: 'kb-picker' },
     { label: 'Model', icon: 'tune', path: 'model' },
     { label: 'Guardrails', icon: 'shield', path: 'guardrails' },
     { label: 'Widget', icon: 'widgets', path: 'widget' },

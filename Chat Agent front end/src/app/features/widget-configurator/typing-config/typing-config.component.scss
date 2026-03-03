@@ -1,0 +1,43 @@
+.section-desc { font-size: 0.85rem; color: rgba(0,0,0,0.5); margin: -4px 0 12px; }
+
+.position-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.position-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1.5px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.875rem;
+  color: rgba(0,0,0,0.6);
+
+  &:hover { border-color: #006FB4; }
+  &.selected { border-color: #006FB4; background: rgba(0,111,180,0.06); color: #006FB4; font-weight: 600; }
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}
+
+.typing-phrases-section { margin-top: 16px; }
+.typing-phrases-title { font-size: 0.9rem; font-weight: 600; color: rgba(0,0,0,0.7); margin-bottom: 4px; }
+
+.trending-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.trending-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  .flex-1 { flex: 1; }
+  button { color: #b0bec5; &:hover { color: #e53935; } }
+}
+
+.css-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}

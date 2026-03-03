@@ -1,0 +1,19 @@
+<div class="section-card">
+  <h3 class="section-title"><mat-icon>trending_up</mat-icon> Trending Questions</h3>
+  <p class="section-desc">Suggested questions shown in the widget (max 6)</p>
+  <div formArrayName="trendingQuestions" class="trending-list">
+    <div class="trending-row" *ngFor="let ctrl of trendingArray.controls; let i = index">
+      <mat-form-field appearance="outline" class="flex-1">
+        <mat-label>Question {{ i + 1 }}</mat-label>
+        <input matInput [formControlName]="i" placeholder="e.g. What are your hours?">
+      </mat-form-field>
+      <button mat-icon-button type="button" (click)="removeQuestion(i)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+  <button mat-stroked-button type="button" (click)="addQuestion()"
+          [disabled]="trendingArray.length >= 6">
+    <mat-icon>add</mat-icon> Add Question
+  </button>
+</div>

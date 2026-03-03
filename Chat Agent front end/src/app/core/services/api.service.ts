@@ -1,85 +1,85 @@
 import { Injectable } from '@angular/core';
-import { AuthService } from './auth.service';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { IAccessorResult } from '../../../lib/models/tenant.model';
 import { environment } from '../../../environments/environment';
 
 /**
  * Centralized HTTP client for all API Gateway calls.
- * Attaches the Cognito ID token as the Authorization header.
- * Replaces all direct AWS SDK calls (DynamoDB, S3, Bedrock) from the browser.
+ * Auth headers (Authorization, X-Organization-Id) are now
+ * attached automatically by the AuthInterceptor.
  */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly base = environment.apiBaseUrl;
+  private readonly baseUrl = environment.apiBaseUrl;
 
-  constructor(private auth: AuthService) {}
-
-  private headers(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': this.auth.idToken ?? '',
-    };
-  }
+  constructor(private http: HttpClient) {}
 
   async get<T>(path: string, query?: Record<string, string>): Promise<IAccessorResult<T>> {
-    const url = query
-      ? `${this.base}${path}?${new URLSearchParams(query).toString()}`
-      : `${this.base}${path}`;
     try {
-      const res = await fetch(url, { method: 'GET', headers: this.headers() });
-      if (!res.ok) return { success: false, error: await res.text() };
-      return { success: true, data: await res.json() as T };
-    } catch (e) {
-      return { success: false, error: String(e) };
+      const params = query ? new HttpParams({ fromObject: query }) : undefined;
+      const data = await firstValueFrom(
+        this.http.get<T>(`${this.baseUrl}${path}`, { params }),
+      );
+      return { success: true, data };
+    } catch (e: any) {
+      const message = e?.error?.error ?? e?.error?.message ?? e?.message ?? String(e);
+      return { success: false, error: message };
     }
   }
 
   async post<T>(path: string, body?: unknown): Promise<IAccessorResult<T>> {
     try {
-      const res = await fetch(`${this.base}${path}`, {
-        method: 'POST',
-        headers: this.headers(),
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      });
-      if (!res.ok) return { success: false, error: await res.text() };
-      const text = await res.text();
-      return { success: true, data: (text ? JSON.parse(text) : null) as T };
-    } catch (e) {
-      return { success: false, error: String(e) };
+      const data = await firstValueFrom(
+        this.http.post<T>(`${this.baseUrl}${path}`, body ?? null),
+      );
+      return { success: true, data: data ?? (null as T) };
+    } catch (e: any) {
+      const message = e?.error?.error ?? e?.error?.message ?? e?.message ?? String(e);
+      return { success: false, error: message };
     }
   }
 
   async put<T>(path: string, body?: unknown): Promise<IAccessorResult<T>> {
     try {
-      const res = await fetch(`${this.base}${path}`, {
-        method: 'PUT',
-        headers: this.headers(),
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      });
-      if (!res.ok) return { success: false, error: await res.text() };
-      const text = await res.text();
-      return { success: true, data: (text ? JSON.parse(text) : null) as T };
-    } catch (e) {
-      return { success: false, error: String(e) };
+      const data = await firstValueFrom(
+        this.http.put<T>(`${this.baseUrl}${path}`, body ?? null),
+      );
+      return { success: true, data: data ?? (null as T) };
+    } catch (e: any) {
+      const message = e?.error?.error ?? e?.error?.message ?? e?.message ?? String(e);
+      return { success: false, error: message };
+    }
+  }
+
+  async patch<T>(path: string, body?: unknown): Promise<IAccessorResult<T>> {
+    try {
+      const data = await firstValueFrom(
+        this.http.patch<T>(`${this.baseUrl}${path}`, body ?? null),
+      );
+      return { success: true, data: data ?? (null as T) };
+    } catch (e: any) {
+      const message = e?.error?.error ?? e?.error?.message ?? e?.message ?? String(e);
+      return { success: false, error: message };
     }
   }
 
   async delete<T>(path: string): Promise<IAccessorResult<T>> {
     try {
-      const res = await fetch(`${this.base}${path}`, {
-        method: 'DELETE',
-        headers: this.headers(),
-      });
-      if (!res.ok) return { success: false, error: await res.text() };
+      await firstValueFrom(
+        this.http.delete(`${this.baseUrl}${path}`),
+      );
       return { success: true, data: null as T };
-    } catch (e) {
-      return { success: false, error: String(e) };
+    } catch (e: any) {
+      const message = e?.error?.error ?? e?.error?.message ?? e?.message ?? String(e);
+      return { success: false, error: message };
     }
   }
 
   /**
    * Upload a file directly to S3 via a presigned PUT URL.
    * Emits progress via the provided callback.
+   * Kept as raw XHR — S3 presigned URLs should NOT go through our interceptor.
    */
   uploadToS3(
     presignedUrl: string,

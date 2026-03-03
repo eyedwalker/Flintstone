@@ -1,7 +1,7 @@
 import { APIGatewayProxyResultV2 } from 'aws-lambda';
 import * as guardrails from '../services/bedrock-guardrails';
-import { ok, created, badRequest, serverError } from '../response';
-import { parseBody } from '../auth';
+import { ok, created, badRequest, forbidden, serverError } from '../response';
+import { IRequestContext, requireRole, parseBody } from '../auth';
 
 export async function handleGuardrails(
   method: string,
@@ -9,9 +9,11 @@ export async function handleGuardrails(
   body: Record<string, unknown>,
   params: Record<string, string>,
   _query: Record<string, string>,
-  _tenantId: string
+  ctx: IRequestContext
 ): Promise<APIGatewayProxyResultV2> {
   try {
+    // Guardrails: write operations require editor+
+    if (method !== 'GET' && !requireRole(ctx, 'editor')) return forbidden('Editor role required');
     const id = params['id'];
 
     // POST /guardrails

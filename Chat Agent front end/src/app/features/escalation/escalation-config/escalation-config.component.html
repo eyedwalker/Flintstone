@@ -1,0 +1,144 @@
+<div class="escalation-page">
+  <h2>Escalation Configuration</h2>
+  <p class="subtitle">Configure Salesforce integration for escalating chat sessions to human agents.</p>
+
+  <!-- Assistant selector -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Select Assistant</mat-label>
+    <mat-select [(ngModel)]="selectedAssistantId" (selectionChange)="onAssistantChange()">
+      <mat-option *ngFor="let a of assistants" [value]="a.id">{{ a.name }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div *ngIf="loading && selectedAssistantId" class="loading">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && selectedAssistantId" class="config-sections">
+    <!-- Enable toggle -->
+    <mat-slide-toggle [(ngModel)]="enabled" class="enable-toggle">
+      Enable Escalation
+    </mat-slide-toggle>
+
+    <!-- Salesforce Connection -->
+    <mat-card class="config-card">
+      <mat-card-header>
+        <mat-card-title>Salesforce Connection</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Instance URL</mat-label>
+          <input matInput [(ngModel)]="salesforceInstanceUrl" placeholder="https://yourorg.my.salesforce.com">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Consumer Key (Connected App)</mat-label>
+          <input matInput [(ngModel)]="salesforceConsumerKey">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput [(ngModel)]="salesforceUsername" placeholder="admin@yourorg.com">
+        </mat-form-field>
+        <div class="file-upload-row">
+          <button mat-stroked-button (click)="keyFileInput.click()">
+            <mat-icon>vpn_key</mat-icon>
+            {{ privateKeyFile ? privateKeyFile.name : 'Upload Private Key (.pem)' }}
+          </button>
+          <input #keyFileInput type="file" hidden accept=".pem,.key" (change)="onKeyFileSelected($event)">
+          <span class="key-status" *ngIf="config?.hasPrivateKey && !privateKeyFile">
+            <mat-icon>check_circle</mat-icon> Key stored
+          </span>
+        </div>
+
+        <div class="test-row">
+          <button mat-raised-button (click)="testConnection()" [disabled]="!canTest || testing">
+            <mat-icon>wifi_tethering</mat-icon>
+            {{ testing ? 'Testing...' : 'Test Connection' }}
+          </button>
+          <span *ngIf="testResult" class="test-result" [class.success]="testResult.success" [class.error]="!testResult.success">
+            <mat-icon>{{ testResult.success ? 'check_circle' : 'error' }}</mat-icon>
+            {{ testResult.success ? 'Connected successfully' : testResult.error }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Trigger Mode -->
+    <mat-card class="config-card">
+      <mat-card-header>
+        <mat-card-title>Trigger Mode</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-radio-group [(ngModel)]="triggerMode" class="trigger-radio-group">
+          <mat-radio-button value="manual">Manual only (user clicks button)</mat-radio-button>
+          <mat-radio-button value="auto">Auto-detect only</mat-radio-button>
+          <mat-radio-button value="both">Both manual + auto-detect</mat-radio-button>
+        </mat-radio-group>
+
+        <div class="auto-triggers" *ngIf="triggerMode !== 'manual'">
+          <h4>Auto-Trigger Rules</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Trigger Keywords</mat-label>
+            <mat-chip-grid #chipGrid>
+              <mat-chip-row *ngFor="let kw of keywords" (removed)="removeKeyword(kw)">
+                {{ kw }}
+                <button matChipRemove><mat-icon>cancel</mat-icon></button>
+              </mat-chip-row>
+              <input placeholder="Add keyword..."
+                     [matChipInputFor]="chipGrid"
+                     [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+                     (matChipInputTokenEnd)="addKeyword($event)">
+            </mat-chip-grid>
+            <mat-hint>Press Enter or comma to add. E.g.: "speak to human", "frustrated"</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max Turns Before Escalation</mat-label>
+            <input matInput type="number" [(ngModel)]="maxTurns" min="1" max="100" placeholder="e.g. 10">
+            <mat-hint>Auto-escalate after this many back-and-forth messages</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Case Defaults -->
+    <mat-card class="config-card">
+      <mat-card-header>
+        <mat-card-title>Case Defaults</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="case-defaults-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Priority</mat-label>
+            <mat-select [(ngModel)]="casePriority">
+              <mat-option *ngFor="let p of priorities" [value]="p">{{ p }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Origin</mat-label>
+            <mat-select [(ngModel)]="caseOrigin">
+              <mat-option *ngFor="let o of origins" [value]="o">{{ o }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="caseStatus">
+              <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Record Type ID (optional)</mat-label>
+          <input matInput [(ngModel)]="caseRecordTypeId" placeholder="Leave blank for default">
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Save button -->
+    <div class="save-bar">
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="saving">
+        <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+        {{ saving ? 'Saving...' : 'Save Configuration' }}
+      </button>
+    </div>
+  </div>
+</div>

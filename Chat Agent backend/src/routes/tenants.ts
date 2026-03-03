@@ -1,6 +1,7 @@
 import { APIGatewayProxyResultV2 } from 'aws-lambda';
 import * as ddb from '../services/dynamo';
-import { ok, serverError } from '../response';
+import { ok, forbidden, serverError } from '../response';
+import { IRequestContext, requireRole } from '../auth';
 
 const TABLE = process.env['TENANTS_TABLE'] ?? '';
 
@@ -10,17 +11,19 @@ export async function handleTenants(
   body: Record<string, unknown>,
   _params: Record<string, string>,
   _query: Record<string, string>,
-  tenantId: string
+  ctx: IRequestContext
 ): Promise<APIGatewayProxyResultV2> {
+  const tenantId = ctx.organizationId;
   try {
-    // GET /tenants/me
+    // GET /tenants/me — viewer+
     if (method === 'GET') {
       const tenant = await ddb.getItem(TABLE, { id: tenantId });
       return ok(tenant ?? { id: tenantId, plan: 'free' });
     }
 
-    // PUT /tenants/me
+    // PUT /tenants/me — owner only
     if (method === 'PUT') {
+      if (!requireRole(ctx, 'owner')) return forbidden('Owner role required');
       const { id: _id, ...rest } = body; void _id;
       const updates: Record<string, unknown> = { ...rest, updatedAt: new Date().toISOString() };
       const existing = await ddb.getItem<Record<string, unknown>>(TABLE, { id: tenantId });

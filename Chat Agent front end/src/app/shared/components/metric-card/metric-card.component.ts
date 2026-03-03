@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'bcc-metric-card',
   templateUrl: './metric-card.component.html',
   styleUrls: ['./metric-card.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MetricCardComponent {
   @Input() label = '';

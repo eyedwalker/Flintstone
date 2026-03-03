@@ -1,15 +1,19 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 import { AssistantManager } from '../../../lib/managers/assistant.manager';
 import { HierarchyManager } from '../../../lib/managers/hierarchy.manager';
+import { EscalationManager } from '../../../lib/managers/escalation.manager';
 import { EmbedCodeEngine, IEmbedCodeOptions } from '../../../lib/engines/embed-code.engine';
+import { IEscalationConfig } from '../../../lib/models/escalation.model';
 import { AuthService } from '../../core/services/auth.service';
 import { IAssistant } from '../../../lib/models/tenant.model';
 import { IHierarchyTreeNode } from '../../../lib/models/hierarchy.model';
 import { environment } from '../../../environments/environment';
 
-/** Embed Code — generate HTML snippets scoped to assistant or hierarchy node */
+/** Embed Code — generate HTML snippets and live-test the assistant */
 @Component({
   selector: 'bcc-embed-code',
   templateUrl: './embed-code.component.html',
@@ -22,14 +26,20 @@ export class EmbedCodeComponent implements OnInit {
   nodes: IHierarchyTreeNode[] = [];
   selectedNodeId = '';
   loading = true;
+  escalationConfig: IEscalationConfig | null = null;
   htmlSnippet = '';
   consoleSnippet = '';
-  activeTab: 'html' | 'console' = 'html';
+  selfHostedSnippet = '';
+  inlineSnippet = '';
+  widgetDownloadUrl = '';
+  private widgetSource = '';
 
   constructor(
     private route: ActivatedRoute,
+    private http: HttpClient,
     private assistantManager: AssistantManager,
     private hierarchyManager: HierarchyManager,
+    private escalationManager: EscalationManager,
     private embedEngine: EmbedCodeEngine,
     private auth: AuthService,
     private snackBar: MatSnackBar,
@@ -38,18 +48,35 @@ export class EmbedCodeComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.assistantId = this.route.snapshot.paramMap.get('id') ?? '';
     this.tenantId = this.auth.currentUser?.sub ?? '';
-    const [aRes, tRes] = await Promise.all([
+    const [aRes, tRes, escRes] = await Promise.all([
       this.assistantManager.getAssistant(this.assistantId),
       this.hierarchyManager.getTree(this.tenantId),
+      this.escalationManager.getConfig(this.assistantId),
     ]);
     this.assistant = aRes.data ?? null;
     this.nodes = this.flattenTree(tRes.data ?? []);
+    this.escalationConfig = escRes.data ?? null;
+
+    // Load widget JS source for inline console snippet
+    try {
+      this.widgetSource = await firstValueFrom(
+        this.http.get('assets/aws-agent-chat.min.js', { responseType: 'text' }),
+      );
+    } catch {
+      this.widgetSource = '';
+    }
+
     this.generateSnippets();
     this.loading = false;
   }
 
   onNodeChange(): void {
     this.generateSnippets();
+  }
+
+  get canChat(): boolean {
+    return this.assistant?.status === 'ready' &&
+      !!this.assistant?.bedrockAgentId;
   }
 
   private generateSnippets(): void {
@@ -74,30 +101,22 @@ export class EmbedCodeComponent implements OnInit {
             },
           }
         : undefined,
+      escalation: this.escalationConfig?.enabled
+        ? {
+            enabled: true,
+            mode: this.escalationConfig.triggerMode,
+            buttonLabel: 'Talk to a Human',
+          }
+        : undefined,
     };
 
     this.htmlSnippet = this.embedEngine.generateHtmlSnippet(this.assistant, options);
     this.consoleSnippet = this.embedEngine.generateConsoleSnippet(this.assistant, options);
-  }
-
-  get activeSnippet(): string {
-    return this.activeTab === 'html' ? this.htmlSnippet : this.consoleSnippet;
-  }
-
-  async copySnippet(): Promise<void> {
-    await navigator.clipboard.writeText(this.activeSnippet);
-    this.snackBar.open('Snippet copied to clipboard', '', { duration: 2000 });
-  }
-
-  downloadSnippet(): void {
-    const ext = this.activeTab === 'html' ? 'html' : 'js';
-    const blob = new Blob([this.activeSnippet], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `assistant-embed.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    this.selfHostedSnippet = this.embedEngine.generateSelfHostedSnippet(this.assistant, options);
+    this.inlineSnippet = this.widgetSource
+      ? this.embedEngine.generateInlineSnippet(this.assistant, options, this.widgetSource)
+      : '';
+    this.widgetDownloadUrl = this.embedEngine.getWidgetDownloadUrl(options);
   }
 
   async copyApiKey(): Promise<void> {

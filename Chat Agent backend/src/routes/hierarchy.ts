@@ -2,7 +2,7 @@ import { APIGatewayProxyResultV2 } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import * as ddb from '../services/dynamo';
 import { ok, created, noContent, badRequest, forbidden, notFound, serverError } from '../response';
-import { assertOwnership, parseBody } from '../auth';
+import { IRequestContext, requireRole, assertOwnership, parseBody } from '../auth';
 
 const DEF_TABLE = process.env['HIERARCHY_DEFINITIONS_TABLE'] ?? '';
 const NODES_TABLE = process.env['HIERARCHY_NODES_TABLE'] ?? '';
@@ -34,9 +34,12 @@ export async function handleHierarchy(
   body: Record<string, unknown>,
   params: Record<string, string>,
   _query: Record<string, string>,
-  tenantId: string
+  ctx: IRequestContext
 ): Promise<APIGatewayProxyResultV2> {
+  const tenantId = ctx.organizationId;
   try {
+    // Read operations require viewer, write operations require admin
+    if (method !== 'GET' && !requireRole(ctx, 'admin')) return forbidden('Admin role required');
     // ── Definition routes ─────────────────────────────────────────
     if (path.includes('/definition')) {
       if (method === 'GET') {
@@ -160,6 +163,20 @@ export async function handleHierarchy(
       if (children.length > 0) return badRequest('Delete child nodes first');
       await ddb.deleteItem(NODES_TABLE, { id });
       return noContent();
+    }
+
+    // POST /hierarchy/users  — assign a user to a node
+    if (path.endsWith('/users') && method === 'POST') {
+      const { userId, nodeId, organizationId: orgId, role, email, name: userName } = body as {
+        userId: string; nodeId: string; organizationId: string;
+        role: string; email: string; name: string;
+      };
+      if (!userId || !nodeId) return badRequest('userId and nodeId are required');
+      await ddb.putItem(NODE_USERS_TABLE, {
+        userId, nodeId, organizationId: orgId, role, email, name: userName,
+        createdAt: new Date().toISOString(),
+      });
+      return ok({ success: true });
     }
 
     // GET /hierarchy/users/:userId

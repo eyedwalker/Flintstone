@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   appName: 'Bedrock Chat Configurator',
   apiBaseUrl: 'https://2p595psdt1.execute-api.us-west-2.amazonaws.com/dev',
-  widgetCdnUrl: 'https://your-cdn.cloudfront.net/aws-agent-chat.min.js',
+  widgetCdnUrl: 'https://d3srbl2yqx3tra.cloudfront.net/assets/aws-agent-chat.min.js',
   chatApiBaseUrl: 'https://2p595psdt1.execute-api.us-west-2.amazonaws.com/dev',
 
   aws: {

@@ -1,0 +1,17 @@
+.section-desc { font-size: 0.85rem; color: rgba(0,0,0,0.5); margin: -4px 0 12px; }
+
+.toggle-list { display: flex; flex-direction: column; gap: 12px; }
+
+// ── Context Injection Fields ────────────────────────────────────────
+.context-fields-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.context-field-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  .ctx-key-field { width: 120px; flex-shrink: 0; }
+  .ctx-type-field { width: 140px; flex-shrink: 0; }
+  .ctx-expr-field { flex: 1; }
+  .ctx-remove-btn { color: #b0bec5; flex-shrink: 0; &:hover { color: #e53935; } }
+}
+.ctx-add-row { margin-top: 4px; }
+.ctx-template-picker { width: 240px; }

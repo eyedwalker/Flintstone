@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { CognitoAccessor, ICognitoTokens, ICognitoUser } from '../../../lib/accessors/cognito.accessor';
+import { CognitoAccessor, ICognitoTokens, ICognitoUser, ISignInResult } from '../../../lib/accessors/cognito.accessor';
 
 const MOCK_TOKENS: ICognitoTokens = {
   accessToken: 'access-token',
@@ -9,6 +9,8 @@ const MOCK_TOKENS: ICognitoTokens = {
   refreshToken: 'refresh-token',
   expiresIn: 3600,
 };
+
+const MOCK_SIGN_IN_RESULT: ISignInResult = { type: 'tokens', tokens: MOCK_TOKENS };
 
 const MOCK_USER: ICognitoUser = {
   username: 'test@example.com',
@@ -59,12 +61,12 @@ describe('AuthService', () => {
 
   describe('signIn()', () => {
     it('sets authenticated state on success', async () => {
-      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_TOKENS }));
+      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_SIGN_IN_RESULT }));
       cognitoSpy.getUser.and.returnValue(Promise.resolve({ success: true, data: MOCK_USER }));
 
       const result = await service.signIn('test@example.com', 'P@ssword1');
 
-      expect(result.success).toBeTrue();
+      expect(result.status).toBe('success');
       expect(service.isAuthenticated).toBeTrue();
       expect(service.idToken).toBe('id-token');
       expect(service.accessToken).toBe('access-token');
@@ -76,23 +78,23 @@ describe('AuthService', () => {
 
       const result = await service.signIn('test@example.com', 'wrong');
 
-      expect(result.success).toBeFalse();
-      expect(result.error).toBe('Incorrect username or password');
+      expect(result.status).toBe('error');
+      expect((result as { status: 'error'; error: string }).error).toBe('Incorrect username or password');
       expect(service.isAuthenticated).toBeFalse();
     });
 
     it('returns error when getUser fails after token exchange', async () => {
-      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_TOKENS }));
+      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_SIGN_IN_RESULT }));
       cognitoSpy.getUser.and.returnValue(Promise.resolve({ success: false, error: 'User not found' }));
 
       const result = await service.signIn('test@example.com', 'P@ssword1');
 
-      expect(result.success).toBeFalse();
+      expect(result.status).toBe('error');
       expect(service.isAuthenticated).toBeFalse();
     });
 
     it('persists tokens and user in sessionStorage', async () => {
-      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_TOKENS }));
+      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_SIGN_IN_RESULT }));
       cognitoSpy.getUser.and.returnValue(Promise.resolve({ success: true, data: MOCK_USER }));
 
       await service.signIn('test@example.com', 'P@ssword1');
@@ -106,7 +108,7 @@ describe('AuthService', () => {
 
   describe('signOut()', () => {
     beforeEach(async () => {
-      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_TOKENS }));
+      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_SIGN_IN_RESULT }));
       cognitoSpy.getUser.and.returnValue(Promise.resolve({ success: true, data: MOCK_USER }));
       cognitoSpy.signOut.and.returnValue(Promise.resolve({ success: true }));
       await service.signIn('test@example.com', 'P@ssword1');
@@ -207,7 +209,7 @@ describe('AuthService', () => {
 
   describe('authState$', () => {
     it('emits new state after signIn', (done) => {
-      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_TOKENS }));
+      cognitoSpy.signIn.and.returnValue(Promise.resolve({ success: true, data: MOCK_SIGN_IN_RESULT }));
       cognitoSpy.getUser.and.returnValue(Promise.resolve({ success: true, data: MOCK_USER }));
 
       const states: boolean[] = [];

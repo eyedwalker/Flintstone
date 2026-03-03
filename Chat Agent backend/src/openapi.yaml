@@ -1,0 +1,2675 @@
+openapi: 3.0.3
+info:
+  title: Bedrock Chat Configurator API
+  description: |
+    API backend for the Bedrock Chat Configurator (Flintstone).
+    Manages AI assistants, knowledge bases, widget configuration,
+    team management, escalation, and billing.
+
+    ## Authentication
+    Most endpoints require a **Cognito JWT** token in the `Authorization: Bearer <token>` header.
+    Public widget endpoints use an **API key** in the `X-Api-Key` header instead.
+
+    ## Roles
+    Role hierarchy (ascending): `viewer` < `editor` < `admin` < `owner`.
+    Each endpoint specifies the minimum role required.
+  version: 1.0.0
+
+servers:
+  - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}
+    description: AWS API Gateway
+    variables:
+      apiId:
+        default: "2p595psdt1"
+      region:
+        default: us-west-2
+      stage:
+        default: dev
+        enum: [dev, prod]
+
+tags:
+  - name: Assistants
+    description: AI assistant CRUD and configuration
+  - name: Widget
+    description: Public widget endpoints (API key auth)
+  - name: Knowledge Base Definitions
+    description: Organization-level knowledge base management
+  - name: Knowledge Base Content
+    description: Content upload, ingestion, and management
+  - name: Hierarchy
+    description: Organization hierarchy and node management
+  - name: Guardrails
+    description: Bedrock guardrail configuration and testing
+  - name: Tenants
+    description: Organization/tenant settings
+  - name: Metrics
+    description: Usage analytics
+  - name: Billing
+    description: Stripe billing integration
+  - name: Team
+    description: Team member management and MFA
+  - name: Escalation
+    description: Salesforce escalation configuration
+  - name: Attachments
+    description: Escalation file attachments
+  - name: Widget Presets
+    description: Reusable widget visual presets
+
+security:
+  - CognitoJWT: []
+
+components:
+  securitySchemes:
+    CognitoJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito ID token
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Assistant API key for public widget endpoints
+
+  parameters:
+    OrganizationId:
+      name: X-Organization-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Active organization ID (auto-resolved if user belongs to one org)
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    ServerError:
+      type: object
+      properties:
+        error:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+
+    Assistant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, provisioning, ready, error]
+        modelConfig:
+          $ref: "#/components/schemas/ModelConfig"
+        widgetConfig:
+          $ref: "#/components/schemas/WidgetConfig"
+        apiKey:
+          type: string
+        allowedDomains:
+          type: array
+          items:
+            type: string
+        bedrockAgentId:
+          type: string
+        bedrockAgentAliasId:
+          type: string
+        bedrockKnowledgeBaseId:
+          type: string
+        bedrockGuardrailId:
+          type: string
+        bedrockGuardrailVersion:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ModelConfig:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [bedrock, openai, vertex, azure, selfhosted]
+        modelId:
+          type: string
+        modelName:
+          type: string
+        systemPrompt:
+          type: string
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+        topP:
+          type: number
+        topK:
+          type: integer
+        maxTokens:
+          type: integer
+        stopSequences:
+          type: array
+          items:
+            type: string
+
+    WidgetConfig:
+      type: object
+      properties:
+        position:
+          type: string
+          enum: [bottom-right, bottom-left, top-right, top-left]
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        title:
+          type: string
+        welcomeMessage:
+          type: string
+        placeholder:
+          type: string
+        launcherIcon:
+          type: string
+        customLauncherIconUrl:
+          type: string
+        customLauncherHtml:
+          type: string
+        customCss:
+          type: string
+        showTimestamp:
+          type: boolean
+        persistSession:
+          type: boolean
+        enableStreaming:
+          type: boolean
+        zIndex:
+          type: integer
+        trendingQuestions:
+          type: array
+          items:
+            type: string
+        typingIndicatorStyle:
+          type: string
+        typingPhrases:
+          type: array
+          items:
+            type: string
+        contextConfig:
+          $ref: "#/components/schemas/ContextConfig"
+
+    ContextConfig:
+      type: object
+      properties:
+        passCurrentUrl:
+          type: boolean
+        passUserId:
+          type: boolean
+        userIdExpression:
+          type: string
+        customFields:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              type:
+                type: string
+                enum: [expression, localStorage, sessionStorage, cookie, dom, meta, userAgent, geolocation]
+              expression:
+                type: string
+              label:
+                type: string
+
+    KnowledgeBaseDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        isDefault:
+          type: boolean
+        bedrockKnowledgeBaseId:
+          type: string
+        vectorBucketName:
+          type: string
+        vectorIndexName:
+          type: string
+        status:
+          type: string
+          enum: [draft, provisioning, ready, error]
+        contentCount:
+          type: integer
+        linkedAssistantCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContentItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        assistantId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [file, url, youtube, vimeo]
+        scope:
+          type: string
+        minRoleLevel:
+          type: integer
+          description: "0=everyone, 1=authenticated, 2=staff, 3=doctor, 4=admin"
+        status:
+          type: string
+          enum: [uploading, processing, ready, error]
+        s3Key:
+          type: string
+        sourceUrl:
+          type: string
+        dataSourceId:
+          type: string
+        ingestionJobId:
+          type: string
+        knowledgeBaseId:
+          type: string
+        fileSize:
+          type: integer
+        bdaEnabled:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        crawlProgress:
+          type: object
+          properties:
+            phase:
+              type: string
+              enum: [crawling, uploading, ingesting]
+            pagesCrawled:
+              type: integer
+            pagesQueued:
+              type: integer
+            pagesUploaded:
+              type: integer
+        errorMessage:
+          type: string
+        videoMetadata:
+          type: object
+          properties:
+            platform:
+              type: string
+            videoId:
+              type: string
+            thumbnailUrl:
+              type: string
+            duration:
+              type: number
+            description:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    HierarchyNode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        levelId:
+          type: string
+        depth:
+          type: integer
+        name:
+          type: string
+        path:
+          type: string
+        parentNodeId:
+          type: string
+          format: uuid
+        ancestorIds:
+          type: array
+          items:
+            type: string
+        assignedAssistantId:
+          type: string
+          format: uuid
+        nodeApiKey:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        active:
+          type: boolean
+        levelName:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/HierarchyNode"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TeamMember:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, admin, editor, viewer]
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        mfaEnabled:
+          type: boolean
+        invitedBy:
+          type: string
+        joinedAt:
+          type: string
+          format: date-time
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationName:
+          type: string
+        plan:
+          type: string
+          enum: [free, starter, pro, enterprise]
+        subscriptionStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EscalationConfig:
+      type: object
+      properties:
+        assistantId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        enabled:
+          type: boolean
+        salesforceInstanceUrl:
+          type: string
+        salesforceConsumerKey:
+          type: string
+        salesforceUsername:
+          type: string
+        hasPrivateKey:
+          type: boolean
+        triggerMode:
+          type: string
+          enum: [manual, auto, both]
+        autoTriggers:
+          type: object
+          properties:
+            keywords:
+              type: array
+              items:
+                type: string
+            sentimentThreshold:
+              type: number
+            maxTurns:
+              type: integer
+        caseDefaults:
+          type: object
+          properties:
+            priority:
+              type: string
+            origin:
+              type: string
+            status:
+              type: string
+            recordTypeId:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WidgetPreset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        position:
+          type: string
+          enum: [bottom-right, bottom-left, top-right, top-left]
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        customLauncherIconUrl:
+          type: string
+        customLauncherHtml:
+          type: string
+        customCss:
+          type: string
+        typingIndicatorStyle:
+          type: string
+        typingPhrases:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        escalationId:
+          type: string
+        assistantId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        contentType:
+          type: string
+        fileSize:
+          type: integer
+        s3Key:
+          type: string
+        status:
+          type: string
+          enum: [pending, uploaded, confirmed, error]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ServerError"
+
+paths:
+  # ── Assistants ──────────────────────────────────────────────────
+  /assistants:
+    get:
+      tags: [Assistants]
+      summary: List all assistants
+      description: Returns all assistants for the tenant. Requires viewer+.
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: List of assistants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assistant"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Assistants]
+      summary: Create assistant
+      description: Creates a new AI assistant with default config. Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Assistant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assistant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /assistants/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Assistants]
+      summary: Get assistant
+      description: Requires viewer+.
+      responses:
+        "200":
+          description: Assistant details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assistant"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Assistants]
+      summary: Update assistant
+      description: Partial update. Requires editor+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Assistant"
+      responses:
+        "200":
+          description: Updated assistant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assistant"
+    delete:
+      tags: [Assistants]
+      summary: Delete assistant
+      description: Requires admin+.
+      responses:
+        "204":
+          description: Deleted
+
+  /assistants/{id}/upload-asset:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Assistants]
+      summary: Get presigned upload URL for widget asset
+      description: Returns a presigned S3 URL for uploading images/icons. Requires owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, contentType]
+              properties:
+                fileName:
+                  type: string
+                contentType:
+                  type: string
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                  s3Key:
+                    type: string
+                  publicUrl:
+                    type: string
+
+  /assistants/{id}/generate-css:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Assistants]
+      summary: AI-generate widget CSS
+      description: Uses Bedrock to generate CSS from a text description. Requires owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt:
+                  type: string
+                currentCss:
+                  type: string
+      responses:
+        "200":
+          description: Generated CSS
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  css:
+                    type: string
+
+  /assistants/{id}/generate-ui:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Assistants]
+      summary: AI-generate widget UI from text or image
+      description: Uses Bedrock to generate launcher/chat HTML+CSS. Requires owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [component]
+              properties:
+                component:
+                  type: string
+                  enum: [launcher, chat]
+                prompt:
+                  type: string
+                image:
+                  type: string
+                  description: Base64-encoded image for vision model
+                currentCode:
+                  type: string
+      responses:
+        "200":
+          description: Generated UI code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  html:
+                    type: string
+                  css:
+                    type: string
+
+  /assistants/{id}/regenerate-key:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Assistants]
+      summary: Regenerate API key
+      description: Generates a new API key, invalidating the old one. Requires owner.
+      responses:
+        "200":
+          description: New API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    type: string
+
+  /assistants/{id}/knowledge-bases:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Assistants]
+      summary: List linked knowledge bases
+      description: Returns all KBs linked to this assistant. Requires viewer+.
+      responses:
+        "200":
+          description: Linked KBs with definition details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assistantId:
+                      type: string
+                    knowledgeBaseId:
+                      type: string
+                    linkedAt:
+                      type: string
+                    knowledgeBase:
+                      $ref: "#/components/schemas/KnowledgeBaseDefinition"
+    post:
+      tags: [Assistants]
+      summary: Link a knowledge base
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [knowledgeBaseId]
+              properties:
+                knowledgeBaseId:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: KB linked
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /assistants/{id}/knowledge-bases/{kbId}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+      - name: kbId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Assistants]
+      summary: Unlink a knowledge base
+      description: Requires editor+.
+      responses:
+        "204":
+          description: Unlinked
+
+  /assistants/{id}/provision:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Assistants]
+      summary: Provision Bedrock agent
+      description: Creates/updates the Bedrock agent and associates KBs. Long-running (up to 5 min). Requires admin+.
+      responses:
+        "200":
+          description: Provision result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  bedrockAgentId:
+                    type: string
+                  bedrockAgentAliasId:
+                    type: string
+                  associatedKnowledgeBases:
+                    type: array
+                    items:
+                      type: string
+
+  /assistants/{id}/chat:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Assistants]
+      summary: Chat with assistant
+      description: Sends a message to the Bedrock agent. Requires authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                sessionId:
+                  type: string
+                userId:
+                  type: string
+                nodeId:
+                  type: string
+                testRoleLevel:
+                  type: integer
+                  description: Override role level for testing (admin only)
+      responses:
+        "200":
+          description: Chat reply
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                  sessionId:
+                    type: string
+
+  # ── Widget (public, API key auth) ──────────────────────────────
+  /widget/chat:
+    post:
+      tags: [Widget]
+      summary: Widget chat message
+      description: Public endpoint for the embedded widget. Uses API key auth.
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                sessionId:
+                  type: string
+                userId:
+                  type: string
+                nodeId:
+                  type: string
+                image:
+                  type: string
+                  description: Base64-encoded image
+                context:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        "200":
+          description: Chat reply
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      reply:
+                        type: string
+                      sessionId:
+                        type: string
+
+  /widget/escalate:
+    post:
+      tags: [Widget]
+      summary: Escalate chat to Salesforce
+      description: Creates a Salesforce case with the chat transcript. Uses API key auth.
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chatHistory]
+              properties:
+                chatHistory:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                      content:
+                        type: string
+                      timestamp:
+                        type: string
+                sessionId:
+                  type: string
+                context:
+                  type: object
+                  additionalProperties:
+                    type: string
+                userInfo:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                reason:
+                  type: string
+                attachmentIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Escalation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  caseId:
+                    type: string
+                  caseNumber:
+                    type: string
+
+  /widget/check-escalation:
+    post:
+      tags: [Widget]
+      summary: Check auto-escalation triggers
+      description: Analyzes recent messages for escalation triggers. Uses API key auth.
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                      content:
+                        type: string
+                turnCount:
+                  type: integer
+      responses:
+        "200":
+          description: Escalation check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shouldEscalate:
+                    type: boolean
+                  reason:
+                    type: string
+
+  /widget/attachment-url:
+    post:
+      tags: [Widget]
+      summary: Get upload URL for attachment
+      description: Returns a presigned URL for uploading files to the HIPAA bucket. Uses API key auth.
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, contentType]
+              properties:
+                fileName:
+                  type: string
+                contentType:
+                  type: string
+                escalationId:
+                  type: string
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      attachmentId:
+                        type: string
+                      uploadUrl:
+                        type: string
+                      s3Key:
+                        type: string
+
+  /widget/attachment-confirm:
+    post:
+      tags: [Widget]
+      summary: Confirm attachment upload
+      description: Confirms upload and triggers EXIF stripping. Uses API key auth.
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attachmentId]
+              properties:
+                attachmentId:
+                  type: string
+      responses:
+        "200":
+          description: Confirmation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      attachmentId:
+                        type: string
+                      status:
+                        type: string
+
+  # ── Knowledge Base Definitions ─────────────────────────────────
+  /knowledge-bases:
+    get:
+      tags: [Knowledge Base Definitions]
+      summary: List knowledge base definitions
+      description: Returns all KB definitions for the tenant with enriched counts. Requires viewer+.
+      responses:
+        "200":
+          description: List of KB definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KnowledgeBaseDefinition"
+    post:
+      tags: [Knowledge Base Definitions]
+      summary: Create knowledge base definition
+      description: Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                isDefault:
+                  type: boolean
+      responses:
+        "201":
+          description: KB definition created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeBaseDefinition"
+
+  /knowledge-bases/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Knowledge Base Definitions]
+      summary: Get knowledge base definition
+      description: Returns KB definition with linked assistant IDs. Requires viewer+.
+      responses:
+        "200":
+          description: KB definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeBaseDefinition"
+    put:
+      tags: [Knowledge Base Definitions]
+      summary: Update knowledge base definition
+      description: Requires editor+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeBaseDefinition"
+    delete:
+      tags: [Knowledge Base Definitions]
+      summary: Delete knowledge base definition
+      description: Fails if assistants are still linked. Requires admin+.
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /knowledge-bases/{id}/provision:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Knowledge Base Definitions]
+      summary: Provision Bedrock knowledge base
+      description: Creates S3 Vectors bucket and Bedrock KB. Requires admin+.
+      responses:
+        "200":
+          description: Provision result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  bedrockKnowledgeBaseId:
+                    type: string
+                  vectorBucketName:
+                    type: string
+                  vectorIndexName:
+                    type: string
+
+  /knowledge-bases/{id}/set-default:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Knowledge Base Definitions]
+      summary: Set as default knowledge base
+      description: Clears other defaults and sets this KB as default. Requires admin+.
+      responses:
+        "200":
+          description: Updated KB
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KnowledgeBaseDefinition"
+
+  # ── Knowledge Base Content ─────────────────────────────────────
+  /knowledge-base/content:
+    get:
+      tags: [Knowledge Base Content]
+      summary: List content items
+      description: Requires viewer+.
+      parameters:
+        - name: assistantId
+          in: query
+          schema:
+            type: string
+        - name: knowledgeBaseId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Content items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentItem"
+
+  /knowledge-base/upload-url:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Get upload URL for file
+      description: Returns presigned S3 URL and creates content record. Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, contentType, assistantId, knowledgeBaseId]
+              properties:
+                fileName:
+                  type: string
+                contentType:
+                  type: string
+                assistantId:
+                  type: string
+                knowledgeBaseId:
+                  type: string
+                scope:
+                  type: string
+                minRoleLevel:
+                  type: integer
+                fileSize:
+                  type: integer
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                  contentId:
+                    type: string
+                  s3Key:
+                    type: string
+
+  /knowledge-base/sync:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Start ingestion job
+      description: Triggers Bedrock ingestion after file upload. Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contentId, knowledgeBaseId, assistantId]
+              properties:
+                contentId:
+                  type: string
+                knowledgeBaseId:
+                  type: string
+                assistantId:
+                  type: string
+                useBDA:
+                  type: boolean
+      responses:
+        "200":
+          description: Ingestion started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataSourceId:
+                    type: string
+                  ingestionJobId:
+                    type: string
+
+  /knowledge-base/ingest-url:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Crawl and ingest URL
+      description: Crawls a website asynchronously and ingests content. Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, assistantId, knowledgeBaseId]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                assistantId:
+                  type: string
+                knowledgeBaseId:
+                  type: string
+                title:
+                  type: string
+                scope:
+                  type: string
+                minRoleLevel:
+                  type: integer
+                crawlDepth:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                maxPages:
+                  type: integer
+                useBDA:
+                  type: boolean
+      responses:
+        "201":
+          description: Content item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentItem"
+
+  /knowledge-base/ingest-video:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Ingest video (Vimeo/YouTube)
+      description: Fetches transcript, generates AI summary, and ingests. Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, assistantId, knowledgeBaseId]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                assistantId:
+                  type: string
+                knowledgeBaseId:
+                  type: string
+                scope:
+                  type: string
+                minRoleLevel:
+                  type: integer
+                useBDA:
+                  type: boolean
+      responses:
+        "201":
+          description: Content item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentItem"
+
+  /knowledge-base/jobs/{kbId}/{dsId}/{jobId}:
+    parameters:
+      - name: kbId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dsId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Knowledge Base Content]
+      summary: Get ingestion job status
+      description: Requires viewer+.
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /knowledge-base/vimeo/browse:
+    post:
+      tags: [Knowledge Base Content]
+      summary: List Vimeo account videos
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assistantId]
+              properties:
+                assistantId:
+                  type: string
+                page:
+                  type: integer
+                perPage:
+                  type: integer
+                query:
+                  type: string
+      responses:
+        "200":
+          description: Video list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  videos:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+
+  /knowledge-base/vimeo/bulk-ingest:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Bulk ingest Vimeo videos
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assistantId, knowledgeBaseId, videoIds]
+              properties:
+                assistantId:
+                  type: string
+                knowledgeBaseId:
+                  type: string
+                videoIds:
+                  type: array
+                  items:
+                    type: string
+                scope:
+                  type: string
+                minRoleLevel:
+                  type: integer
+                useBDA:
+                  type: boolean
+      responses:
+        "200":
+          description: Bulk ingest results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        videoId:
+                          type: string
+                        contentId:
+                          type: string
+                        error:
+                          type: string
+                  total:
+                    type: integer
+                  succeeded:
+                    type: integer
+
+  /knowledge-base/check-status:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Poll ingestion job statuses
+      description: Updates processing items from Bedrock. Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assistantId]
+              properties:
+                assistantId:
+                  type: string
+      responses:
+        "200":
+          description: Updated content items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentItem"
+
+  /knowledge-base/content/bulk-delete:
+    post:
+      tags: [Knowledge Base Content]
+      summary: Bulk delete content items
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Delete result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  total:
+                    type: integer
+
+  /knowledge-base/content/{id}/retry:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Knowledge Base Content]
+      summary: Retry failed ingestion
+      description: Requires editor+. Only works on items with status "error".
+      responses:
+        "200":
+          description: Retry started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataSourceId:
+                    type: string
+                  ingestionJobId:
+                    type: string
+
+  /knowledge-base/content/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    patch:
+      tags: [Knowledge Base Content]
+      summary: Edit content metadata
+      description: Requires editor+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                scope:
+                  type: string
+                minRoleLevel:
+                  type: integer
+      responses:
+        "200":
+          description: Updated content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentItem"
+    delete:
+      tags: [Knowledge Base Content]
+      summary: Delete content item
+      description: Removes S3 object and DynamoDB record. Requires editor+.
+      responses:
+        "204":
+          description: Deleted
+
+  /knowledge-base/content/{id}/preview:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Knowledge Base Content]
+      summary: Preview stored content
+      description: Returns the text content of S3 files. Requires viewer+.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: File previews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        size:
+                          type: integer
+                        text:
+                          type: string
+                  totalFiles:
+                    type: integer
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+
+  # ── Hierarchy ──────────────────────────────────────────────────
+  /hierarchy/definition:
+    get:
+      tags: [Hierarchy]
+      summary: Get hierarchy definition
+      description: Returns the level definitions. Requires viewer+.
+      responses:
+        "200":
+          description: Hierarchy definition
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      tags: [Hierarchy]
+      summary: Update hierarchy definition
+      description: Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                levels:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      depth:
+                        type: integer
+      responses:
+        "200":
+          description: Updated definition
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /hierarchy/tree:
+    get:
+      tags: [Hierarchy]
+      summary: Get full hierarchy tree
+      description: Returns all nodes as a nested tree. Requires viewer+.
+      responses:
+        "200":
+          description: Hierarchy tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HierarchyNode"
+
+  /hierarchy/nodes:
+    post:
+      tags: [Hierarchy]
+      summary: Create node
+      description: Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, levelId, depth]
+              properties:
+                name:
+                  type: string
+                levelId:
+                  type: string
+                depth:
+                  type: integer
+                parentNodeId:
+                  type: string
+                  format: uuid
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        "201":
+          description: Node created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HierarchyNode"
+
+  /hierarchy/nodes/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Hierarchy]
+      summary: Get node
+      description: Requires viewer+.
+      responses:
+        "200":
+          description: Node details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HierarchyNode"
+    put:
+      tags: [Hierarchy]
+      summary: Update node
+      description: Requires admin+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HierarchyNode"
+      responses:
+        "200":
+          description: Updated node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HierarchyNode"
+    delete:
+      tags: [Hierarchy]
+      summary: Delete node
+      description: Fails if node has children. Requires admin+.
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /hierarchy/nodes/{id}/assign:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Hierarchy]
+      summary: Assign assistant to node
+      description: Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assistantId:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        "200":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /hierarchy/nodes/{id}/regen-key:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Hierarchy]
+      summary: Regenerate node API key
+      description: Requires admin+.
+      responses:
+        "200":
+          description: New key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodeApiKey:
+                    type: string
+
+  /hierarchy/users:
+    post:
+      tags: [Hierarchy]
+      summary: Assign user to node
+      description: Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, nodeId]
+              properties:
+                userId:
+                  type: string
+                nodeId:
+                  type: string
+                organizationId:
+                  type: string
+                role:
+                  type: string
+                email:
+                  type: string
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /hierarchy/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Hierarchy]
+      summary: Get user node assignment
+      description: Requires admin+.
+      responses:
+        "200":
+          description: User assignment
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ── Guardrails ─────────────────────────────────────────────────
+  /guardrails:
+    post:
+      tags: [Guardrails]
+      summary: Create guardrail
+      description: Creates a Bedrock guardrail. Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Guardrail created
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /guardrails/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    put:
+      tags: [Guardrails]
+      summary: Update guardrail
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /guardrails/{id}/test:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    post:
+      tags: [Guardrails]
+      summary: Test guardrail
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input]
+              properties:
+                input:
+                  type: string
+                source:
+                  type: string
+                  enum: [INPUT, OUTPUT]
+                  default: INPUT
+                version:
+                  type: string
+                  default: DRAFT
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ── Tenants ────────────────────────────────────────────────────
+  /tenants/me:
+    get:
+      tags: [Tenants]
+      summary: Get tenant info
+      description: Requires viewer+.
+      responses:
+        "200":
+          description: Tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+    put:
+      tags: [Tenants]
+      summary: Update tenant
+      description: Requires owner.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Tenant"
+      responses:
+        "200":
+          description: Updated tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  # ── Metrics ────────────────────────────────────────────────────
+  /metrics:
+    get:
+      tags: [Metrics]
+      summary: Get assistant metrics
+      description: Returns usage metrics for an assistant.
+      parameters:
+        - name: assistantId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ── Billing ────────────────────────────────────────────────────
+  /billing/portal-url:
+    get:
+      tags: [Billing]
+      summary: Get Stripe customer portal URL
+      description: Requires admin+.
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: returnUrl
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /billing/checkout:
+    post:
+      tags: [Billing]
+      summary: Create Stripe checkout session
+      description: Requires owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [priceId]
+              properties:
+                priceId:
+                  type: string
+                successUrl:
+                  type: string
+                cancelUrl:
+                  type: string
+                customerId:
+                  type: string
+      responses:
+        "200":
+          description: Checkout session
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ── Team ───────────────────────────────────────────────────────
+  /team/my-orgs:
+    get:
+      tags: [Team]
+      summary: List user's organizations
+      description: Any authenticated user.
+      responses:
+        "200":
+          description: Organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    organizationId:
+                      type: string
+                    organizationName:
+                      type: string
+                    role:
+                      type: string
+                      enum: [owner, admin, editor, viewer]
+
+  /team/members:
+    get:
+      tags: [Team]
+      summary: List org members
+      description: Requires admin+.
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMember"
+
+  /team/invite:
+    post:
+      tags: [Team]
+      summary: Invite team member
+      description: Creates Cognito user if needed. Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+                role:
+                  type: string
+                  enum: [owner, admin, editor, viewer]
+      responses:
+        "201":
+          description: Member invited
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  role:
+                    type: string
+
+  /team/members/{userId}/role:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags: [Team]
+      summary: Change member role
+      description: Requires admin+. Only owners can assign owner role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [owner, admin, editor, viewer]
+      responses:
+        "200":
+          description: Role changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  oldRole:
+                    type: string
+                  newRole:
+                    type: string
+
+  /team/members/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      tags: [Team]
+      summary: Remove team member
+      description: Cannot remove yourself or last owner. Requires admin+.
+      responses:
+        "204":
+          description: Removed
+
+  /team/transfer-ownership:
+    post:
+      tags: [Team]
+      summary: Transfer ownership
+      description: Atomically transfers owner role. Requires owner + password re-auth.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUserId, password]
+              properties:
+                targetUserId:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Transferred
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /team/audit-log:
+    get:
+      tags: [Team]
+      summary: Get audit log
+      description: Requires owner.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: startKey
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /team/mfa/setup:
+    post:
+      tags: [Team]
+      summary: Setup MFA
+      description: Returns TOTP secret for authenticator app. Any authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accessToken]
+              properties:
+                accessToken:
+                  type: string
+      responses:
+        "200":
+          description: MFA setup info
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /team/mfa/verify:
+    post:
+      tags: [Team]
+      summary: Verify MFA setup
+      description: Verifies TOTP code and enables MFA. Any authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accessToken, totpCode]
+              properties:
+                accessToken:
+                  type: string
+                totpCode:
+                  type: string
+      responses:
+        "200":
+          description: MFA verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /team/mfa/disable:
+    post:
+      tags: [Team]
+      summary: Disable MFA
+      description: Requires owner + password re-auth.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: MFA disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  # ── Escalation ─────────────────────────────────────────────────
+  /escalation/config/{assistantId}:
+    parameters:
+      - name: assistantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Escalation]
+      summary: Get escalation config
+      description: Returns null if not configured. Requires admin+.
+      responses:
+        "200":
+          description: Escalation config (or null)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EscalationConfig"
+    put:
+      tags: [Escalation]
+      summary: Update escalation config
+      description: Creates or updates the config. Stores private key in SSM. Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled, salesforceInstanceUrl, salesforceConsumerKey, salesforceUsername, triggerMode]
+              properties:
+                enabled:
+                  type: boolean
+                salesforceInstanceUrl:
+                  type: string
+                salesforceConsumerKey:
+                  type: string
+                salesforceUsername:
+                  type: string
+                privateKey:
+                  type: string
+                  description: PEM private key (stored in SSM, not returned)
+                triggerMode:
+                  type: string
+                  enum: [manual, auto, both]
+                autoTriggers:
+                  type: object
+                  properties:
+                    keywords:
+                      type: array
+                      items:
+                        type: string
+                    sentimentThreshold:
+                      type: number
+                    maxTurns:
+                      type: integer
+                caseDefaults:
+                  type: object
+                  properties:
+                    priority:
+                      type: string
+                    origin:
+                      type: string
+                    status:
+                      type: string
+                    recordTypeId:
+                      type: string
+      responses:
+        "200":
+          description: Updated config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EscalationConfig"
+    delete:
+      tags: [Escalation]
+      summary: Delete escalation config
+      description: Also deletes the SSM private key. Requires admin+.
+      responses:
+        "204":
+          description: Deleted
+
+  /escalation/test-connection/{assistantId}:
+    parameters:
+      - name: assistantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Escalation]
+      summary: Test Salesforce connection
+      description: Attempts to get a Salesforce access token. Requires admin+.
+      responses:
+        "200":
+          description: Connection test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  instanceUrl:
+                    type: string
+                  error:
+                    type: string
+
+  # ── Attachments ────────────────────────────────────────────────
+  /attachments:
+    get:
+      tags: [Attachments]
+      summary: List attachments
+      description: Requires admin+.
+      parameters:
+        - name: escalationId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attachments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Attachment"
+
+  /attachments/{id}/download-url:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Attachments]
+      summary: Get download URL
+      description: Returns a time-limited (15 min) presigned download URL. Requires admin+.
+      responses:
+        "200":
+          description: Download URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      downloadUrl:
+                        type: string
+                      expiresIn:
+                        type: integer
+                        example: 900
+
+  # ── Widget Presets ─────────────────────────────────────────────
+  /widget-presets:
+    get:
+      tags: [Widget Presets]
+      summary: List widget presets
+      description: Returns all presets for the tenant. Requires viewer+.
+      responses:
+        "200":
+          description: Presets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WidgetPreset"
+    post:
+      tags: [Widget Presets]
+      summary: Create widget preset
+      description: Requires editor+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, primaryColor]
+              properties:
+                name:
+                  type: string
+                position:
+                  type: string
+                primaryColor:
+                  type: string
+                secondaryColor:
+                  type: string
+                customLauncherIconUrl:
+                  type: string
+                customLauncherHtml:
+                  type: string
+                customCss:
+                  type: string
+                typingIndicatorStyle:
+                  type: string
+                typingPhrases:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Preset created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetPreset"
+
+  /widget-presets/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Widget Presets]
+      summary: Get widget preset
+      description: Requires viewer+.
+      responses:
+        "200":
+          description: Preset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetPreset"
+    put:
+      tags: [Widget Presets]
+      summary: Update widget preset
+      description: Requires editor+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WidgetPreset"
+      responses:
+        "200":
+          description: Updated preset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetPreset"
+    delete:
+      tags: [Widget Presets]
+      summary: Delete widget preset
+      description: Requires editor+.
+      responses:
+        "204":
+          description: Deleted

@@ -1,0 +1,52 @@
+<div class="kb-picker">
+  <div *ngIf="loading" class="loading">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Linked KBs -->
+    <h3>Linked Knowledge Bases</h3>
+    <div *ngIf="linkedKbs.length === 0" class="empty-msg">
+      No knowledge bases linked. Link one below or the org default will be used when provisioning.
+    </div>
+
+    <mat-list *ngIf="linkedKbs.length > 0">
+      <mat-list-item *ngFor="let link of linkedKbs">
+        <mat-icon matListItemIcon>menu_book</mat-icon>
+        <div matListItemTitle>{{ getLinkedKbDef(link)?.name ?? link.knowledgeBaseId }}</div>
+        <div matListItemLine *ngIf="getLinkedKbDef(link)?.description">
+          {{ getLinkedKbDef(link)?.description }}
+        </div>
+        <div matListItemLine>
+          <span class="content-count">{{ getLinkedKbDef(link)?.contentCount ?? 0 }} content items</span>
+          <mat-chip *ngIf="getLinkedKbDef(link)?.isDefault" class="default-chip">Default</mat-chip>
+        </div>
+        <button matListItemMeta mat-icon-button color="warn" (click)="unlink(link)" matTooltip="Unlink">
+          <mat-icon>link_off</mat-icon>
+        </button>
+      </mat-list-item>
+    </mat-list>
+
+    <!-- Available KBs -->
+    <h3 class="available-header" *ngIf="availableKbs.length > 0">Available Knowledge Bases</h3>
+    <mat-list *ngIf="availableKbs.length > 0">
+      <mat-list-item *ngFor="let kb of availableKbs">
+        <mat-icon matListItemIcon color="primary">add_circle_outline</mat-icon>
+        <div matListItemTitle>{{ kb.name }}</div>
+        <div matListItemLine *ngIf="kb.description">{{ kb.description }}</div>
+        <div matListItemLine>
+          <span class="content-count">{{ kb.contentCount ?? 0 }} content items</span>
+          <mat-chip *ngIf="kb.isDefault" class="default-chip">Default</mat-chip>
+        </div>
+        <button matListItemMeta mat-icon-button color="primary" (click)="link(kb)" [disabled]="linking" matTooltip="Link">
+          <mat-icon>add_link</mat-icon>
+        </button>
+      </mat-list-item>
+    </mat-list>
+
+    <div *ngIf="allKbs.length === 0" class="empty-msg">
+      No provisioned knowledge bases found. Create one from the
+      <a routerLink="/knowledge-bases">Knowledge Bases</a> page.
+    </div>
+  </div>
+</div>

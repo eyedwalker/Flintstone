@@ -1,0 +1,64 @@
+<div class="section-card">
+  <h3 class="section-title"><mat-icon>data_object</mat-icon> Context Injection</h3>
+  <p class="section-desc">Configure what data the widget captures from the host page and passes to the chat agent.</p>
+
+  <div class="toggle-list">
+    <mat-slide-toggle formControlName="passCurrentUrl" color="primary">
+      Pass current page URL
+    </mat-slide-toggle>
+    <mat-slide-toggle formControlName="passUserId" color="primary">
+      Pass user ID
+    </mat-slide-toggle>
+  </div>
+  <mat-form-field appearance="outline" class="full-width" style="margin-top:12px"
+                  *ngIf="form.get('passUserId')?.value">
+    <mat-label>User ID JavaScript expression</mat-label>
+    <input matInput formControlName="userIdExpression"
+           placeholder="window.currentUser?.id">
+    <mat-hint>Evaluated client-side when the widget loads</mat-hint>
+  </mat-form-field>
+
+  <!-- Custom context fields -->
+  <h4 style="margin-top:16px;font-size:0.9rem;font-weight:600;color:rgba(0,0,0,0.7)">Custom Context Fields</h4>
+  <p class="section-desc">Add fields to extract data from localStorage, cookies, DOM elements, geolocation, or any JS expression.</p>
+
+  <div formArrayName="customFields" class="context-fields-list">
+    <div *ngFor="let field of customFieldsArray.controls; let i = index"
+         [formGroupName]="i" class="context-field-row">
+      <mat-form-field appearance="outline" class="ctx-key-field">
+        <mat-label>Key</mat-label>
+        <input matInput formControlName="key" placeholder="fieldName">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="ctx-type-field">
+        <mat-label>Type</mat-label>
+        <mat-select formControlName="type">
+          <mat-option value="expression">JS Expression</mat-option>
+          <mat-option value="localStorage">localStorage</mat-option>
+          <mat-option value="sessionStorage">sessionStorage</mat-option>
+          <mat-option value="cookie">Cookie</mat-option>
+          <mat-option value="dom">DOM Selector</mat-option>
+          <mat-option value="userAgent">User Agent</mat-option>
+          <mat-option value="geolocation">Geolocation</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="ctx-expr-field">
+        <mat-label>{{ getExpressionLabel(field.get('type')?.value) }}</mat-label>
+        <input matInput formControlName="expression" title="Expression value"
+               [placeholder]="getExpressionPlaceholder(field.get('type')?.value)">
+      </mat-form-field>
+      <button mat-icon-button type="button" (click)="removeContextField(i)" class="ctx-remove-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="ctx-add-row">
+    <mat-form-field appearance="outline" class="ctx-template-picker">
+      <mat-label>Add context field</mat-label>
+      <mat-select (selectionChange)="addContextFromTemplate($event.value); contextPicker.value = null"
+                  #contextPicker>
+        <mat-option *ngFor="let t of contextTemplates" [value]="t">{{ t.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>

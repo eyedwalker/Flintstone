@@ -1,0 +1,49 @@
+<div class="section-card chat-card">
+  <h3 class="section-title">
+    <mat-icon>chat</mat-icon> Live Test
+    <span class="section-hint" *ngIf="!canChat">— Provision the assistant first to enable testing</span>
+    <div class="chat-title-actions" *ngIf="canChat">
+      <mat-form-field appearance="outline" class="role-test-picker">
+        <mat-label>Test as</mat-label>
+        <mat-select [(value)]="testRoleLevel" (selectionChange)="onTestRoleChange()">
+          <mat-option *ngFor="let r of roleAccessLevels" [value]="r.value">{{ r.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-icon-button type="button" (click)="clearChat()" *ngIf="chatMessages.length > 0" matTooltip="Clear conversation">
+        <mat-icon>restart_alt</mat-icon>
+      </button>
+    </div>
+  </h3>
+
+  <div *ngIf="!canChat" class="chat-unavailable">
+    <mat-icon>lock</mat-icon>
+    <span>This assistant is not yet provisioned. Click <strong>Provision Bedrock</strong> on the assistant page to create the Bedrock Agent.</span>
+  </div>
+
+  <div *ngIf="canChat" class="chat-container">
+    <div class="chat-body" #chatBody>
+      <div *ngIf="chatMessages.length === 0" class="chat-empty">
+        <mat-icon>smart_toy</mat-icon>
+        <p>Send a message to test your assistant</p>
+      </div>
+      <div *ngFor="let msg of chatMessages" class="chat-message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+        <div class="chat-bubble">{{ msg.text }}</div>
+      </div>
+      <div *ngIf="chatLoading" class="chat-message assistant">
+        <div class="chat-bubble typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <mat-form-field appearance="outline" class="chat-field">
+        <input matInput [(ngModel)]="chatInput" (keydown)="onChatKeydown($event)"
+          placeholder="Type a message..." [disabled]="chatLoading" autocomplete="off">
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="button"
+        (click)="sendChatMessage()" [disabled]="!chatInput.trim() || chatLoading">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>

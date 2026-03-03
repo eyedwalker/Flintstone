@@ -1,6 +1,20 @@
 /** Scope of content — global shared or tenant-specific */
 export type ContentScope = 'global' | 'tenant';
 
+/**
+ * Role access levels for knowledge base content.
+ * Higher value = more restricted. A user at level N can read all content at levels 0–N.
+ */
+export const ROLE_ACCESS_LEVELS = [
+  { value: 0, label: 'Everyone',      description: 'No restriction — all users including unauthenticated' },
+  { value: 1, label: 'Authenticated', description: 'Any logged-in user' },
+  { value: 2, label: 'Staff+',        description: 'Practice staff, doctors, and admins' },
+  { value: 3, label: 'Doctor+',       description: 'Doctors and admins only' },
+  { value: 4, label: 'Admin only',    description: 'Practice or regional admins only' },
+] as const;
+
+export type RoleLevelValue = 0 | 1 | 2 | 3 | 4;
+
 /** Type of content being ingested */
 export type ContentType =
   | 'pdf'
@@ -17,7 +31,7 @@ export type ContentType =
   | 'custom';
 
 /** Status of a knowledge base content item */
-export type ContentStatus = 'pending' | 'uploading' | 'processing' | 'ready' | 'failed' | 'deleted';
+export type ContentStatus = 'pending' | 'uploading' | 'processing' | 'ready' | 'failed' | 'error' | 'deleted';
 
 /** A single piece of ingested content */
 export interface IKnowledgeBaseContent {
@@ -25,6 +39,8 @@ export interface IKnowledgeBaseContent {
   assistantId: string;
   tenantId: string;
   scope: ContentScope;
+  /** Minimum role level required to retrieve this content (0 = public, 4 = admin only) */
+  minRoleLevel: RoleLevelValue;
   type: ContentType;
   title: string;
   description?: string;
@@ -36,6 +52,8 @@ export interface IKnowledgeBaseContent {
   status: ContentStatus;
   bedrockDataSourceId?: string;
   ingestionJobId?: string;
+  bdaEnabled?: boolean;
+  crawlProgress?: ICrawlProgress;
   errorMessage?: string;
   tags: string[];
   videoMetadata?: IVideoMetadata;
@@ -53,6 +71,22 @@ export interface IVideoMetadata {
   description?: string;
 }
 
+/** Crawl progress for URL ingestion */
+export interface ICrawlProgress {
+  phase: 'crawling' | 'uploading' | 'ingesting';
+  pagesCrawled: number;
+  pagesQueued?: number;
+  pagesUploaded?: number;
+}
+
+/** Preview of S3-stored content for a content item */
+export interface IContentPreview {
+  files: { key: string; size: number; text: string }[];
+  totalFiles: number;
+  offset?: number;
+  limit?: number;
+}
+
 /** Upload progress tracker */
 export interface IUploadProgress {
   contentId: string;
@@ -68,6 +102,7 @@ export interface IUploadProgress {
 export interface IUrlIngestionRequest {
   url: string;
   scope: ContentScope;
+  minRoleLevel?: RoleLevelValue;
   title?: string;
   crawlDepth?: number;
   includePaths?: string[];
@@ -91,6 +126,34 @@ export interface IIngestionJob {
   updatedAt: string;
 }
 
+/** A Vimeo video from the account browse endpoint */
+export interface IVimeoVideoItem {
+  videoId: string;
+  name: string;
+  description: string;
+  duration: number;
+  thumbnailUrl: string;
+  link: string;
+  createdTime: string;
+  alreadyImported: boolean;
+}
+
+/** Result from browsing the Vimeo account */
+export interface IVimeoBrowseResult {
+  videos: IVimeoVideoItem[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
+}
+
+/** Result from bulk Vimeo video ingestion */
+export interface IVimeoBulkResult {
+  results: { videoId: string; contentId?: string; error?: string }[];
+  total: number;
+  succeeded: number;
+}
+
 /** Filter for listing content */
 export interface IContentFilter {
   assistantId?: string;
@@ -99,4 +162,35 @@ export interface IContentFilter {
   type?: ContentType;
   status?: ContentStatus;
   searchTerm?: string;
+}
+
+// ── Knowledge Base Definitions (shared KB library) ──────────────────────────
+
+export type KbDefStatus = 'draft' | 'provisioning' | 'ready' | 'error';
+
+/** A reusable knowledge base definition that can be linked to multiple assistants */
+export interface IKnowledgeBaseDefinition {
+  id: string;
+  tenantId: string;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  bedrockKnowledgeBaseId?: string;
+  vectorBucketName?: string;
+  vectorIndexName?: string;
+  status: KbDefStatus;
+  contentCount?: number;
+  linkedAssistantCount?: number;
+  linkedAssistantIds?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A link between an assistant and a knowledge base definition */
+export interface IAssistantKbLink {
+  assistantId: string;
+  knowledgeBaseId: string;
+  tenantId: string;
+  linkedAt: string;
+  knowledgeBase?: IKnowledgeBaseDefinition | null;
 }

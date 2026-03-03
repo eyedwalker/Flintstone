@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { IAssistant, IWidgetConfig } from '../models/tenant.model';
+import { IAssistant, IWidgetConfig, ICustomContextField } from '../models/tenant.model';
 import { IHierarchyNode, ITenantContext } from '../models/hierarchy.model';
 
 export interface IEmbedCodeOptions {
@@ -13,6 +13,12 @@ export interface IEmbedCodeOptions {
     node: IHierarchyNode;
     tenantContext: ITenantContext;
   };
+  /** Escalation config for this assistant (if configured) */
+  escalation?: {
+    enabled: boolean;
+    mode: string;
+    buttonLabel?: string;
+  };
 }
 
 /**
@@ -24,68 +30,157 @@ export class EmbedCodeEngine {
 
   /** Generate the full HTML embed snippet */
   generateHtmlSnippet(assistant: IAssistant, options: IEmbedCodeOptions): string {
-    const config = assistant.widgetConfig;
+    const initCall = this.buildInitCall(assistant, options, '  ');
     const lines: string[] = [];
-
     lines.push(`<!-- ${assistant.name} AI Chat Widget -->`);
     lines.push(`<script src="${options.widgetCdnUrl}"></script>`);
     lines.push(`<script>`);
-    lines.push(`  AWSAgentChat.init({`);
-    lines.push(`    apiEndpoint: '${options.apiEndpoint}',`);
+    lines.push(initCall);
+    lines.push(`</script>`);
+    return lines.join('\n');
+  }
+
+  /**
+   * Generate a console-pasteable snippet that dynamically loads the widget
+   * via a script tag injection.
+   */
+  generateConsoleSnippet(assistant: IAssistant, options: IEmbedCodeOptions): string {
+    const initCall = this.buildInitCall(assistant, options, '    ');
+    const lines: string[] = [];
+    lines.push(`(function() {`);
+    lines.push(`  var script = document.createElement('script');`);
+    lines.push(`  script.src = '${options.widgetCdnUrl}';`);
+    lines.push(`  script.onload = function() {`);
+    lines.push(initCall);
+    lines.push(`  };`);
+    lines.push(`  document.head.appendChild(script);`);
+    lines.push(`})();`);
+    return lines.join('\n');
+  }
+
+  /**
+   * Generate a fully self-contained inline snippet with the widget JS
+   * source code embedded. Paste into the browser console to demo on any
+   * site — bypasses CSP since no external scripts are loaded.
+   */
+  generateInlineSnippet(assistant: IAssistant, options: IEmbedCodeOptions, widgetSource: string): string {
+    const initCall = this.buildInitCall(assistant, options, '');
+    return widgetSource + '\n\n// === Widget Configuration ===\n' + initCall;
+  }
+
+  /**
+   * Generate a self-hosted embed snippet for sites with strict CSP.
+   * The client downloads the widget JS and hosts it on their own domain.
+   */
+  generateSelfHostedSnippet(assistant: IAssistant, options: IEmbedCodeOptions): string {
+    const initCall = this.buildInitCall(assistant, options, '  ');
+    const lines: string[] = [];
+    lines.push(`<!--`);
+    lines.push(`  SELF-HOSTED WIDGET SETUP`);
+    lines.push(`  ========================`);
+    lines.push(`  1. Download the widget script from:`);
+    lines.push(`     ${options.widgetCdnUrl}`);
+    lines.push(`  2. Host it on your own domain (e.g. /assets/aws-agent-chat.min.js)`);
+    lines.push(`  3. Update the script src below to your hosted path`);
+    lines.push(`-->`);
+    lines.push(`<script src="/assets/aws-agent-chat.min.js"></script>`);
+    lines.push(`<script>`);
+    lines.push(initCall);
+    lines.push(`</script>`);
+    return lines.join('\n');
+  }
+
+  /** Get the CDN URL for downloading the widget script */
+  getWidgetDownloadUrl(options: IEmbedCodeOptions): string {
+    return options.widgetCdnUrl;
+  }
+
+  /** Build the AWSAgentChat.init({...}) call as pure JavaScript */
+  private buildInitCall(assistant: IAssistant, options: IEmbedCodeOptions, indent: string): string {
+    const config = assistant.widgetConfig;
+    const lines: string[] = [];
+
+    lines.push(`${indent}AWSAgentChat.init({`);
+    lines.push(`${indent}  apiEndpoint: '${options.apiEndpoint}',`);
 
     if (options.streamingEndpoint) {
-      lines.push(`    streamingEndpoint: '${options.streamingEndpoint}',`);
-      lines.push(`    enableStreaming: true,`);
+      lines.push(`${indent}  streamingEndpoint: '${options.streamingEndpoint}',`);
+      lines.push(`${indent}  enableStreaming: true,`);
     }
 
-    // Use node-scoped API key if generating for a specific hierarchy node
     const activeApiKey = options.nodeContext?.node.nodeApiKey ?? options.apiKey;
-    lines.push(`    apiKey: '${activeApiKey}',`);
+    lines.push(`${indent}  apiKey: '${activeApiKey}',`);
 
-    // Inject tenant node context if provided
     if (options.nodeContext) {
-      const { node, tenantContext } = options.nodeContext;
-      lines.push(`    tenantNodeId: '${node.id}',`);
-      lines.push(`    tenantOrgId: '${node.organizationId}',`);
+      const { node } = options.nodeContext;
+      lines.push(`${indent}  tenantNodeId: '${node.id}',`);
+      lines.push(`${indent}  tenantOrgId: '${node.organizationId}',`);
     }
-    lines.push(`    position: '${config.position}',`);
-    lines.push(`    primaryColor: '${config.primaryColor}',`);
-    lines.push(`    secondaryColor: '${config.secondaryColor}',`);
-    lines.push(`    title: '${this.escapeString(config.title)}',`);
-    lines.push(`    welcomeMessage: '${this.escapeString(config.welcomeMessage)}',`);
-    lines.push(`    placeholder: '${this.escapeString(config.placeholder)}',`);
-    lines.push(`    showTimestamp: ${config.showTimestamp},`);
-    lines.push(`    persistSession: ${config.persistSession},`);
-    lines.push(`    zIndex: ${config.zIndex},`);
+
+    lines.push(`${indent}  position: '${config.position}',`);
+    lines.push(`${indent}  primaryColor: '${config.primaryColor}',`);
+    lines.push(`${indent}  secondaryColor: '${config.secondaryColor}',`);
+    lines.push(`${indent}  title: '${this.escapeString(config.title)}',`);
+    lines.push(`${indent}  welcomeMessage: '${this.escapeString(config.welcomeMessage)}',`);
+    lines.push(`${indent}  placeholder: '${this.escapeString(config.placeholder)}',`);
+    lines.push(`${indent}  showTimestamp: ${config.showTimestamp},`);
+    lines.push(`${indent}  persistSession: ${config.persistSession},`);
+    lines.push(`${indent}  zIndex: ${config.zIndex},`);
+
+    if (config.customLauncherIconUrl) {
+      lines.push(`${indent}  customLauncherIconUrl: '${config.customLauncherIconUrl}',`);
+    }
+    if (config.customLauncherHtml) {
+      lines.push(`${indent}  customLauncherHtml: ${JSON.stringify(config.customLauncherHtml)},`);
+    }
+    if (config.customCss) {
+      lines.push(`${indent}  customCss: ${JSON.stringify(config.customCss)},`);
+    }
+
+    if (config.typingIndicatorStyle && config.typingIndicatorStyle !== 'dots') {
+      lines.push(`${indent}  typingIndicatorStyle: '${config.typingIndicatorStyle}',`);
+    }
+
+    if (config.typingPhrases && config.typingPhrases.length > 0 &&
+        config.typingIndicatorStyle && config.typingIndicatorStyle !== 'dots') {
+      const phrases = config.typingPhrases
+        .map((p) => `${indent}    '${this.escapeString(p)}'`)
+        .join(',\n');
+      lines.push(`${indent}  typingPhrases: [`);
+      lines.push(phrases);
+      lines.push(`${indent}  ],`);
+    }
 
     if (config.trendingQuestions.length > 0) {
       const questions = config.trendingQuestions
-        .map((q) => `      '${this.escapeString(q)}'`)
+        .map((q) => `${indent}    '${this.escapeString(q)}'`)
         .join(',\n');
-      lines.push(`    trendingQuestions: [`);
+      lines.push(`${indent}  trendingQuestions: [`);
       lines.push(questions);
-      lines.push(`    ],`);
+      lines.push(`${indent}  ],`);
     }
 
-    const contextBlock = this.buildContextBlock(config);
+    const contextBlock = this.buildContextBlock(config, indent);
     if (contextBlock) {
       lines.push(contextBlock);
     }
 
-    lines.push(`  });`);
-    lines.push(`</script>`);
+    if (options.escalation?.enabled) {
+      lines.push(`${indent}  escalation: {`);
+      lines.push(`${indent}    enabled: true,`);
+      lines.push(`${indent}    mode: '${options.escalation.mode}',`);
+      if (options.escalation.buttonLabel) {
+        lines.push(`${indent}    buttonLabel: '${this.escapeString(options.escalation.buttonLabel)}',`);
+      }
+      lines.push(`${indent}  },`);
+    }
 
+    lines.push(`${indent}});`);
     return lines.join('\n');
   }
 
-  /** Generate a console-pasteable IIFE for testing */
-  generateConsoleSnippet(assistant: IAssistant, options: IEmbedCodeOptions): string {
-    const inner = this.generateHtmlSnippet(assistant, options);
-    return `(function() {\n  const script = document.createElement('script');\n  script.src = '${options.widgetCdnUrl}';\n  script.onload = function() {\n    ${inner.replace(/\n/g, '\n    ')}\n  };\n  document.head.appendChild(script);\n})();`;
-  }
-
   /** Build the context injection block if any context fields are configured */
-  private buildContextBlock(config: IWidgetConfig): string {
+  private buildContextBlock(config: IWidgetConfig, indent: string = '  '): string {
     const hasContext =
       config.contextConfig.passCurrentUrl ||
       config.contextConfig.passUserId ||
@@ -93,22 +188,43 @@ export class EmbedCodeEngine {
 
     if (!hasContext) return '';
 
-    const lines: string[] = ['    context: {'];
+    const lines: string[] = [`${indent}  context: {`];
 
     if (config.contextConfig.passCurrentUrl) {
-      lines.push(`      getUrl: function() { return window.location.href; },`);
+      lines.push(`${indent}    getUrl: function() { return window.location.href; },`);
     }
 
     if (config.contextConfig.passUserId && config.contextConfig.userIdExpression) {
-      lines.push(`      getUserId: function() { return ${config.contextConfig.userIdExpression}; },`);
+      lines.push(`${indent}    getUserId: function() { return ${config.contextConfig.userIdExpression}; },`);
     }
 
     config.contextConfig.customFields.forEach((field) => {
-      lines.push(`      ${field.key}: function() { return ${field.expression}; },`);
+      const expr = this.buildContextExpression(field);
+      lines.push(`${indent}    ${field.key}: function() { ${expr} },`);
     });
 
-    lines.push(`    },`);
+    lines.push(`${indent}  },`);
     return lines.join('\n');
+  }
+
+  /** Generate the appropriate JS expression for a context field based on its type */
+  private buildContextExpression(field: ICustomContextField): string {
+    switch (field.type) {
+      case 'localStorage':
+        return `return localStorage.getItem('${this.escapeString(field.expression)}')`;
+      case 'sessionStorage':
+        return `return sessionStorage.getItem('${this.escapeString(field.expression)}')`;
+      case 'cookie':
+        return `var m = document.cookie.match('(?:^|; )${this.escapeString(field.expression)}=([^;]*)'); return m ? decodeURIComponent(m[1]) : null`;
+      case 'dom':
+        return `var el = document.querySelector('${this.escapeString(field.expression)}'); return el ? el.textContent : null`;
+      case 'userAgent':
+        return `return navigator.userAgent`;
+      case 'geolocation':
+        return `return new Promise(function(r) { navigator.geolocation.getCurrentPosition(function(p) { r(p.coords.latitude + ',' + p.coords.longitude); }, function() { r(null); }); })`;
+      default: // 'expression' or 'meta'
+        return `return ${field.expression}`;
+    }
   }
 
   /** Validate a widget configuration and return error messages */

@@ -1,0 +1,144 @@
+<div class="kb-detail-page">
+  <!-- Header -->
+  <div class="detail-header">
+    <button mat-icon-button (click)="goBack()"><mat-icon>arrow_back</mat-icon></button>
+    <div class="header-info" *ngIf="kbDef && !editingName">
+      <h2>{{ kbDef.name }}</h2>
+      <p class="description" *ngIf="kbDef.description">{{ kbDef.description }}</p>
+      <button mat-icon-button (click)="startEdit()" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
+    </div>
+    <div class="header-edit" *ngIf="editingName">
+      <mat-form-field appearance="outline">
+        <mat-label>Name</mat-label>
+        <input matInput [(ngModel)]="editName">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Description</mat-label>
+        <input matInput [(ngModel)]="editDescription">
+      </mat-form-field>
+      <button mat-icon-button color="primary" (click)="saveEdit()"><mat-icon>check</mat-icon></button>
+      <button mat-icon-button (click)="cancelEdit()"><mat-icon>close</mat-icon></button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Not provisioned -->
+  <div *ngIf="!loading && kbDef && kbDef.status === 'draft'" class="provision-prompt">
+    <mat-icon>info</mat-icon>
+    <span>This knowledge base has not been provisioned yet. Provision it from the Knowledge Bases list to start adding content.</span>
+  </div>
+
+  <!-- Content area (only when provisioned) -->
+  <div *ngIf="!loading && kbDef && kbDef.status === 'ready'" class="content-area">
+    <!-- Actions bar -->
+    <div class="actions-bar">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search content</mat-label>
+        <input matInput [(ngModel)]="searchTerm" placeholder="Filter...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <div class="action-buttons">
+        <button mat-raised-button color="primary" (click)="fileInput.click()">
+          <mat-icon>upload_file</mat-icon> Upload Files
+        </button>
+        <input #fileInput type="file" hidden multiple (change)="onFileInput($event)">
+        <button mat-stroked-button (click)="showUrlForm = !showUrlForm">
+          <mat-icon>link</mat-icon> Add URL
+        </button>
+      </div>
+    </div>
+
+    <!-- Upload role level selector -->
+    <div class="upload-options">
+      <mat-form-field appearance="outline" class="role-select">
+        <mat-label>Access Level</mat-label>
+        <mat-select [(ngModel)]="uploadRoleLevel">
+          <mat-option *ngFor="let level of roleAccessLevels" [value]="level.value">
+            {{ level.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-checkbox [(ngModel)]="useBDA">Multimodal Parsing (BDA)</mat-checkbox>
+    </div>
+
+    <!-- URL form -->
+    <mat-card *ngIf="showUrlForm" class="url-card">
+      <mat-card-content>
+        <form [formGroup]="urlForm" (ngSubmit)="ingestUrl()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>URL</mat-label>
+            <input matInput formControlName="url" placeholder="https://example.com/docs">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Title (optional)</mat-label>
+            <input matInput formControlName="title">
+          </mat-form-field>
+          <div class="url-form-actions">
+            <button mat-button type="button" (click)="showUrlForm = false">Cancel</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="urlForm.invalid || urlIngesting">
+              {{ urlIngesting ? 'Ingesting...' : 'Ingest URL' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Active uploads -->
+    <mat-card *ngFor="let upload of activeUploads" class="upload-progress-card">
+      <mat-card-content>
+        <div class="upload-row">
+          <mat-icon>upload_file</mat-icon>
+          <span>{{ upload.name }}</span>
+          <mat-progress-bar mode="determinate" [value]="upload.progress"></mat-progress-bar>
+          <span class="pct">{{ upload.progress }}%</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Empty content state -->
+    <div *ngIf="content.length === 0" class="empty-content">
+      <mat-icon>folder_open</mat-icon>
+      <p>No content yet. Upload files or add URLs to get started.</p>
+    </div>
+
+    <!-- Content list -->
+    <mat-card *ngIf="filteredContent.length > 0" class="content-table-card">
+      <table class="content-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Access</th>
+            <th>Status</th>
+            <th>Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredContent">
+            <td><mat-icon class="type-icon">{{ getIcon(item.type) }}</mat-icon></td>
+            <td class="name-cell">
+              <span class="content-name">{{ item.title || item.id }}</span>
+              <span class="source-url" *ngIf="item.sourceUrl">{{ item.sourceUrl }}</span>
+            </td>
+            <td><span class="role-badge">{{ getRoleLabel(item.minRoleLevel) }}</span></td>
+            <td>
+              <span class="status-badge status-{{ item.status }}">{{ item.status }}</span>
+            </td>
+            <td class="date-cell">{{ item.createdAt | date:'shortDate' }}</td>
+            <td>
+              <button mat-icon-button color="warn" (click)="confirmDelete(item)" matTooltip="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card>
+  </div>
+</div>

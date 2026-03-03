@@ -1,0 +1,20 @@
+// Set up environment variables before any module imports
+process.env['REGION'] = 'us-west-2';
+process.env['ASSISTANTS_TABLE'] = 'chat-agent-assistants-dev';
+process.env['CONTENT_TABLE'] = 'chat-agent-content-dev';
+process.env['TENANTS_TABLE'] = 'chat-agent-tenants-dev';
+process.env['METRICS_TABLE'] = 'chat-agent-metrics-dev';
+process.env['HIERARCHY_DEFS_TABLE'] = 'chat-agent-hierarchy-definitions-dev';
+process.env['HIERARCHY_NODES_TABLE'] = 'chat-agent-hierarchy-nodes-dev';
+process.env['NODE_USERS_TABLE'] = 'chat-agent-node-users-dev';
+process.env['TEAM_MEMBERS_TABLE'] = 'chat-agent-team-members-dev';
+process.env['AUDIT_LOG_TABLE'] = 'chat-agent-audit-log-dev';
+process.env['KNOWLEDGE_BASES_TABLE'] = 'chat-agent-knowledge-bases-dev';
+process.env['ASSISTANT_KB_TABLE'] = 'chat-agent-assistant-kb-dev';
+process.env['ESCALATION_CONFIG_TABLE'] = 'chat-agent-escalation-config-dev';
+process.env['ATTACHMENTS_TABLE'] = 'chat-agent-attachments-dev';
+process.env['S3_CONTENT_BUCKET'] = 'wubba-data-sources';
+process.env['HIPAA_BUCKET'] = 'chat-agent-hipaa-dev';
+process.env['COGNITO_USER_POOL_ID'] = 'us-west-2_wtRPN8aXd';
+process.env['BEDROCK_KB_ROLE_ARN'] = 'arn:aws:iam::780457123717:role/chat-agent-bedrock-kb-dev';
+process.env['BEDROCK_AGENT_ROLE_ARN'] = 'arn:aws:iam::780457123717:role/chat-agent-bedrock-agent-dev';
