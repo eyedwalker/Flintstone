@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist.zip
+*.zip
+.aws-sam/
+
+# Deployment config (contains profile names, bucket names)
+samconfig.toml
+
+# Test files with credentials
+test/integration.test.sh
+
+# Crawler output (screenshots, scraped data)
+tools/app-crawler/output/
+tools/app-crawler/screenshots/
+tools/app-crawler/node_modules/
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# IDE
+.idea/
+.vscode/
+*.sublime-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log

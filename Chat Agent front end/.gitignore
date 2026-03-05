@@ -37,6 +37,19 @@ yarn-error.log
 testem.log
 /typings
 
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Deployment artifacts
+*.zip
+
+# Playwright
+playwright-report/
+test-results/
+
 # System files
 .DS_Store
 Thumbs.db
