@@ -1,0 +1,154 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Common/DailyOpening",
+  "module": "Store Operations",
+  "screenName": "Daily Opening",
+  "path": "/Common/DailyOpening",
+  "screenshotFile": "daily-opening.png",
+  "pageTitle": "Daily Opening",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "dailyOpeningTable_length",
+      "type": "select-one"
+    },
+    {
+      "label": "please enter any additional daily opening notes",
+      "type": "textarea"
+    },
+    {
+      "label": "please enter any additional daily opening notes",
+      "type": "textarea"
+    },
+    {
+      "label": "please enter any additional daily opening notes",
+      "type": "textarea"
+    },
+    {
+      "label": "username of who is approving",
+      "type": "text"
+    },
+    {
+      "label": "password of who is approving",
+      "type": "password"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Cancel",
+    "Count Cash",
+    "Clear Table",
+    "Continue",
+    "Recount",
+    "Skip",
+    "Recount",
+    "Save",
+    "Done",
+    "Skip Daily Opening",
+    "Complete Daily Opening",
+    "Cancel",
+    "Continue to Daily Closing"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Daily Opening Till Management"
+    },
+    {
+      "level": "H4",
+      "text": "Cash Count"
+    },
+    {
+      "level": "H4",
+      "text": "Variance Warning"
+    },
+    {
+      "level": "H4",
+      "text": "Approval"
+    },
+    {
+      "level": "H4",
+      "text": "Complete"
+    },
+    {
+      "level": "H4",
+      "text": "Daily Opening Warning"
+    },
+    {
+      "level": "H4",
+      "text": "Store Operations Warning"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "Denomination",
+      "# of Coins/Bills",
+      "Value"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nDaily Opening Till Management\n*Posting Date\nToday's Date\n3/4/2026\nOpened by\nTest Employee\nApproved by\nTest Employee\nCash Count\nAttempts:\n1\nDenomination\t# of Coins/Bills\tValue\n$0.01\t0\t$0.00\n$0.05\t0\t$0.00\n$0.10\t0\t$0.00\n$0.25\t0\t$0.00\n$0.50\t0\t$0.00\n$1.00\t0\t$0.00\n$5.00\t0\t$0.00\n$10.00\t0\t$0.00\n$20.00\t0\t$0.00\n$50.00\t0\t$0.00\n$100.00\t0\t$0.00\nTotal\t\t$0.00\nAdditional Notes (Optional)\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:07:13.352Z"
+}

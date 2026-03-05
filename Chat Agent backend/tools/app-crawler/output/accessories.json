@@ -1,0 +1,60 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/ProductCatalog/AccessoryLookup",
+  "module": "Catalog",
+  "screenName": "Accessories",
+  "path": "/ProductCatalog/AccessoryLookup",
+  "screenshotFile": "accessories.png",
+  "pageTitle": "Accessory Lookup",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "Search for accessories",
+      "type": "text"
+    },
+    {
+      "label": "lookup_searchResults_length",
+      "type": "select-one"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Search",
+    "Clear",
+    "Add Filters",
+    "Hide Filters"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Accessory Lookup"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "Item #",
+      "UPC #",
+      "Item Name",
+      "Item",
+      "Retail",
+      "Allow Zero Price"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nAccessory Lookup\nSearch  Clear\nItem #\tUPC #\tItem Name\tRetail\tAllow Zero Price\n12345090\t829998340119\tAccessory\t$0.00\tfalse\n000007005732\t757026237674\t00110 ANDB FROG (GN)\t$0.00\tfalse\n000007005714\t757026237650\t00110 ANDB OWL0 (PU)\t$0.00\tfalse\n000007001022\t000007001022\t026999 CROCODILE BLACK\t$0.00\tfalse\n000007001004\t000007001004\t026999 CROCODILE BROWN\t$0.00\tfalse\n000007001013\t000007001013\t026999 CROCODILE BURGUNDY\t$0.00\tfalse\n000007000997\t000007000997\t026999 CROCODILE GREEN\t$0.00\tfalse\n000007004065\t010164358077\t074027000 CASE WHITE ZEBR\t$0.00\tfalse\n000007004109\t010164358060\t074065000 CS WHT LEOPARD 1\t$0.00\tfalse\n000007003057\t010164358008\t074141000 CASE BLK STINGR\t$0.00\tfalse\nShowing 1 to 10 of 866 entries\nShow \n5\n10\n20\n50\n Rows\nFirst\nPrevious\n1\n2\n3\n4\n5\n…\n87\nNext\nLast\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:05:47.096Z"
+}

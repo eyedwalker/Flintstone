@@ -10,6 +10,12 @@ export interface ISalesforceConfig {
   ssmPrivateKeyParam: string;
 }
 
+export interface ISalesforcePasswordConfig {
+  loginUrl: string;
+  clientId: string;
+  ssmCredentialsParam: string; // SSM param storing JSON { clientSecret, password, securityToken }
+}
+
 export interface ISalesforceCase {
   Subject: string;
   Description: string;
@@ -96,6 +102,80 @@ export async function getAccessToken(config: ISalesforceConfig): Promise<{ acces
 }
 
 /**
+ * Store Salesforce password credentials in SSM as a JSON SecureString.
+ */
+export async function storePasswordCredentials(
+  paramName: string,
+  creds: { clientSecret: string; password: string; securityToken: string },
+): Promise<void> {
+  await ssmClient.send(new PutParameterCommand({
+    Name: paramName,
+    Value: JSON.stringify(creds),
+    Type: 'SecureString',
+    Overwrite: true,
+  }));
+}
+
+/**
+ * Get a Salesforce access token using the Username-Password OAuth flow.
+ * - POST grant_type=password with client_id, client_secret, username, password+securityToken
+ */
+export async function getAccessTokenPasswordFlow(
+  config: ISalesforcePasswordConfig,
+  username: string,
+): Promise<{ accessToken: string; instanceUrl: string }> {
+  // Retrieve credentials from SSM
+  const paramRes = await ssmClient.send(new GetParameterCommand({
+    Name: config.ssmCredentialsParam,
+    WithDecryption: true,
+  }));
+  const raw = paramRes.Parameter?.Value ?? '';
+  if (!raw) throw new Error('Salesforce credentials not found in SSM');
+
+  const creds = JSON.parse(raw) as { clientSecret: string; password: string; securityToken: string };
+
+  const tokenUrl = `${config.loginUrl}/services/oauth2/token`;
+  const res = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'password',
+      client_id: config.clientId,
+      client_secret: creds.clientSecret,
+      username,
+      password: creds.password + (creds.securityToken || ''),
+    }).toString(),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Salesforce password auth failed: ${res.status} ${errorText}`);
+  }
+
+  const data = await res.json() as { access_token: string; instance_url: string };
+  return {
+    accessToken: data.access_token,
+    instanceUrl: data.instance_url,
+  };
+}
+
+/**
+ * Query available custom fields on the Case object.
+ */
+export async function getCaseFieldMetadata(
+  accessToken: string,
+  instanceUrl: string,
+): Promise<string[]> {
+  const url = `${instanceUrl}/services/data/v60.0/sobjects/Case/describe`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error(`Failed to describe Case object: ${res.status}`);
+  const data = await res.json() as { fields: Array<{ name: string; custom: boolean }> };
+  return data.fields.filter(f => f.custom).map(f => f.name);
+}
+
+/**
  * Create a Case in Salesforce using the REST API.
  */
 export async function createCase(
@@ -134,4 +214,33 @@ export async function createCase(
   } catch { /* non-critical */ }
 
   return { id: result.id, caseNumber };
+}
+
+/**
+ * Add an attachment (file) directly to a Salesforce Case.
+ * Body must be base64-encoded.
+ */
+export async function addAttachment(
+  accessToken: string,
+  instanceUrl: string,
+  attachment: { Name: string; Body: string; ContentType: string; ParentId: string },
+): Promise<string> {
+  const url = `${instanceUrl}/services/data/v60.0/sobjects/Attachment`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(attachment),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Salesforce attachment failed: ${res.status} ${errorText}`);
+  }
+
+  const result = await res.json() as { id: string; success: boolean };
+  if (!result.success) throw new Error('Salesforce attachment returned success=false');
+  return result.id;
 }

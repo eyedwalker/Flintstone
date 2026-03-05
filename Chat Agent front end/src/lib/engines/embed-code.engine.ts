@@ -192,6 +192,8 @@ export class EmbedCodeEngine {
 
     if (config.contextConfig.passCurrentUrl) {
       lines.push(`${indent}    getUrl: function() { return window.location.href; },`);
+      lines.push(`${indent}    getPageTitle: function() { return document.title; },`);
+      lines.push(`${indent}    getBreadcrumb: function() { var bc = document.querySelector('nav[aria-label="breadcrumb"], .breadcrumb, ol.breadcrumb'); if (!bc) return null; var items = bc.querySelectorAll('li'); var parts = []; items.forEach(function(li) { var t = li.textContent.trim(); if (t) parts.push(t); }); return parts.length ? parts.join(' > ') : null; },`);
     }
 
     if (config.contextConfig.passUserId && config.contextConfig.userIdExpression) {

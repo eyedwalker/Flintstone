@@ -1,0 +1,43 @@
+SCREEN NAME: Search / Add Patient
+MODULE: Patients
+URL PATTERN: /Patient/Search
+
+PURPOSE:
+This screen serves as the main patient management interface where users can search for existing patients in the system or add new patients to the practice. It provides comprehensive search functionality using various patient identifiers and demographics to quickly locate patient records.
+
+KEY FEATURES:
+- Patient search form with multiple search criteria (name, DOB, phone, ZIP, MRN)
+- Add new patient functionality with "+ Patient" button
+- Show Responsible Party and Show Inactive patient options
+- Patient search results table displaying key patient information
+- Eligibility insurance verification integration
+- Quick access to patient data through 24/7 data access promotion
+- Search results showing Last Name, First Name, Preferred Name, DOB, Age, Phone, MRN, Address, and Last Exam Purchase date
+
+COMMON USER TASKS:
+1. Search for existing patients using name, phone number, or medical record number
+2. Add new patients to the practice management system
+3. View patient search results and select appropriate patient record
+4. Access patient eligibility and insurance information
+5. Toggle between showing active and inactive patients
+6. Search for responsible parties associated with patient accounts
+7. Navigate to patient records from search results
+
+STEP-BY-STEP: Search for Existing Patient
+1. Enter patient information in any of the search fields (Last Name, First Name, DOB, Phone, ZIP Code, or MRN)
+2. Check "Show Inactive" if searching for inactive patient records
+3. Click the "Search" button to execute the search
+4. Review search results in the table below
+5. Click on desired patient record to access their full patient profile
+
+NAVIGATION:
+- How to get here: Main menu > Patients (first option in navigation bar)
+- Accessible from here: Patient profiles, Appointments module, Quick List, EHR system, other practice management modules
+
+TIPS AND NOTES:
+- The search function works with partial information - you don't need to fill all fields
+- Use the "Show Responsible Party" option when searching for guarantors or parents of minor patients
+- MRN (Medical Record Number) provides the most precise search results
+- The "+ Patient" button initiates the new patient registration workflow
+- Phone numbers should be entered in the format shown: (   )   -
+- Date of birth should be entered in mm/dd/yyyy format

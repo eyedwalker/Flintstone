@@ -1,0 +1,47 @@
+SCREEN NAME: Contact Lens Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/ContactLensLookup
+
+PURPOSE:
+This screen allows users to browse and search the contact lens catalog to find specific contact lens products for ordering or patient fitting. Users can filter by various criteria including manufacturer, lens category, base/diameter, and sphere measurements to locate the appropriate contact lenses.
+
+KEY FEATURES:
+- Filterable supplier list (4 suppliers available)
+- Lens category filtering (2 categories)
+- Manufacturer filtering (8 manufacturers including Alcon, Bausch & Lomb, Cooper Vision, Gas Perm Supplier, Optical Connection Intl Corp, and Retail Private Label)
+- Base/diameter filtering (38 options)
+- Sphere power filtering (324 options)
+- Color filtering options
+- Search functionality for contact lenses
+- Detailed product specifications display (Style, Color, Base, Diameter, Sphere, Cylinder, Axis, Add values)
+- Pricing information (Lenses Per Box and Retail Price)
+- Pagination controls for browsing results
+- Results per page selector (showing 10 rows currently)
+
+COMMON USER TASKS:
+1. Search for specific contact lens brands or types
+2. Filter contact lenses by manufacturer or supplier
+3. Find lenses with specific power requirements (sphere, cylinder, axis)
+4. Compare pricing across different contact lens options
+5. View detailed specifications for contact lens products
+6. Browse available contact lens inventory by category
+7. Clear filters to view all available contact lenses
+
+STEP-BY-STEP: Search for specific contact lenses
+1. Enter search terms in the "Search for contact lenses" field
+2. Click the "Search" button to filter results
+3. Use additional filters on the left sidebar to narrow results by manufacturer, lens category, or specifications
+4. Review the results table showing product details and pricing
+5. Use pagination controls at the bottom to browse through multiple pages of results
+
+NAVIGATION:
+- How to get here: Main menu > Catalog > Contact Lens Lookup
+- Accessible from here: Other catalog sections, inventory management, order placement screens
+
+TIPS AND NOTES:
+- The screen shows 396 total contact lens entries in the catalog
+- Results display 10 entries per page by default but can be adjusted
+- All visible products show consistent specifications (8.5/8.5 base, 14.2/14.2 diameter, -9.00/+1.00 sphere range)
+- Some products show $58.00 retail price for 30 lenses per box, while others show $0.00
+- Filter categories show the number of available options in parentheses
+- Use the "Clear" button to reset search criteria and view all products

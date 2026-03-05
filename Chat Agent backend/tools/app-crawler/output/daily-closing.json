@@ -1,0 +1,213 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Common/TillDailyClosing",
+  "module": "Store Operations",
+  "screenName": "Daily Closing",
+  "path": "/Common/TillDailyClosing",
+  "screenshotFile": "daily-closing.png",
+  "pageTitle": "Daily Closing",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "txtActual",
+      "type": "text"
+    },
+    {
+      "label": "dailyClosingTable_length",
+      "type": "select-one"
+    },
+    {
+      "label": "please enter any additional daily closing notes",
+      "type": "textarea"
+    },
+    {
+      "label": "dailyClosingTransactionTable_length",
+      "type": "select-one"
+    },
+    {
+      "label": "txtBankDepositNumber",
+      "type": "text"
+    },
+    {
+      "label": "please enter any daily closing notes",
+      "type": "textarea"
+    },
+    {
+      "label": "please enter any additional daily closing notes",
+      "type": "textarea"
+    },
+    {
+      "label": "username of who is approving",
+      "type": "text"
+    },
+    {
+      "label": "password of who is approving",
+      "type": "password"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Print",
+    "Reopen",
+    "Cancel",
+    "Start Day Close",
+    "Clear Table",
+    "Continue",
+    "Add Payout",
+    "Save",
+    "Recount",
+    "Skip",
+    "Recount",
+    "Save",
+    "Cancel",
+    "Confirm",
+    "Cancel",
+    "Confirm",
+    "Done",
+    "Skip Daily Closing",
+    "Complete Daily Closing",
+    "Cancel",
+    "Continue to Daily Opening"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Daily Closing Till Management\n                \n                     Print\n                \n                    \n                         Reopen"
+    },
+    {
+      "level": "H4",
+      "text": "Cash Count"
+    },
+    {
+      "level": "H4",
+      "text": "Adjustments\n                        Add Payout"
+    },
+    {
+      "level": "H4",
+      "text": "Totals"
+    },
+    {
+      "level": "H4",
+      "text": "Cash Drawer Reconciliation"
+    },
+    {
+      "level": "H4",
+      "text": "Bank Deposit"
+    },
+    {
+      "level": "H4",
+      "text": "Notes (Optional)"
+    },
+    {
+      "level": "H4",
+      "text": "Variance Warning"
+    },
+    {
+      "level": "H4",
+      "text": "Approval"
+    },
+    {
+      "level": "H4",
+      "text": "Daily Closing"
+    },
+    {
+      "level": "H4",
+      "text": "Confirm Reopen"
+    },
+    {
+      "level": "H4",
+      "text": "Complete"
+    },
+    {
+      "level": "H4",
+      "text": "Daily Closing Warning"
+    },
+    {
+      "level": "H4",
+      "text": "Store Operations Warning"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "Denomination",
+      "# of Coins/Bills",
+      "Value"
+    ],
+    [
+      "Payout Type",
+      "Amount",
+      "Explanation",
+      "Action"
+    ],
+    [
+      "",
+      "ResourceId",
+      "Payment Type",
+      "Actual",
+      "Expected",
+      "Difference",
+      "Comments"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nDaily Closing Till Management\n*Posting Date\nToday's Date\n3/4/2026\nClosing by\nAdmin\n\nCurrently your office is in the middle of scheduled business hours. Are you sure you want to perform a Daily Closing?\n\nPlease ensure that all transactions for the current date are completed before proceeding as no transactions can be posted until the next business day.\n\nCancel Start Day Close\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:07:19.635Z"
+}

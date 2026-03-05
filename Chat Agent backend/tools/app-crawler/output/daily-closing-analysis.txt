@@ -1,0 +1,40 @@
+SCREEN NAME: Daily Closing Till Management
+MODULE: Store Operations
+URL PATTERN: /Common/TillDailyClosing
+
+PURPOSE:
+This screen manages the daily closing process for the practice's till and cash management system. It allows administrators to perform end-of-day financial reconciliation, ensuring all transactions are completed and properly recorded before closing the business day.
+
+KEY FEATURES:
+- Posting date selection with calendar picker
+- Today's date display for reference
+- Closing by administrator identification
+- Business hours validation warning
+- Transaction completion verification
+- Start Day Close and Cancel options
+- Real-time date and user tracking
+
+COMMON USER TASKS:
+1. Verify all daily transactions are completed before closing
+2. Set the posting date for the daily closing
+3. Confirm readiness to perform daily closing during business hours
+4. Execute the daily closing process
+5. Cancel the closing process if needed
+6. Review closing date and administrator information
+
+STEP-BY-STEP: Perform Daily Closing
+1. Verify the posting date is correct (3/4/2026 shown)
+2. Confirm today's date matches expectations
+3. Ensure all transactions for the current date are completed
+4. Read the business hours warning message
+5. Click "Start Day Close" to proceed or "Cancel" to abort
+
+NAVIGATION:
+- How to get here: Store Operations → Daily Closing Till Management
+- Accessible from here: Main navigation menu (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+
+TIPS AND NOTES:
+- System warns when attempting to close during scheduled business hours
+- No transactions can be posted until the next business day once closing is completed
+- Always ensure all current date transactions are finished before proceeding
+- The process tracks which administrator is performing the closing

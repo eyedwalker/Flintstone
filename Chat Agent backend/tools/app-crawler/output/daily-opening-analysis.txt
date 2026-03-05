@@ -1,0 +1,44 @@
+SCREEN NAME: Daily Opening Till Management
+MODULE: Store Operations
+URL PATTERN: /Common/DailyOpening
+
+PURPOSE:
+This screen allows staff to perform daily opening till counts by recording the quantity of each denomination of cash and bills in the register. It provides a systematic way to document starting cash amounts at the beginning of each business day for accurate financial tracking and reconciliation.
+
+KEY FEATURES:
+- Cash count table with denominations from $0.01 to $100.00
+- Number of coins/bills input fields for each denomination
+- Automatic value calculation for each denomination
+- Running total calculation
+- Posting date and today's date display
+- Employee tracking (opened by and approved by)
+- Attempts counter
+- Additional notes section (optional)
+- Approval workflow functionality
+
+COMMON USER TASKS:
+1. Enter the count of coins and bills for each denomination
+2. Review the automatically calculated total cash amount
+3. Add optional notes about the daily opening
+4. Submit the cash count for approval
+5. Clear the table to start over if needed
+6. Approve completed cash counts (for managers)
+7. View previous attempts or corrections
+
+STEP-BY-STEP: Enter Daily Opening Cash Count
+1. Navigate to Store Operations > Daily Opening
+2. Enter the quantity of each denomination in the "# of Coins/Bills" column
+3. Verify the calculated values and total are correct
+4. Add any relevant notes in the "Additional Notes" section
+5. Click "Count Cash" to submit for approval
+
+NAVIGATION:
+- How to get here: Store Operations menu > Daily Opening
+- Accessible from here: Other Store Operations functions, main navigation menu
+
+TIPS AND NOTES:
+- The system automatically calculates values based on quantity entered
+- All denominations show $0.00 until quantities are entered
+- The "Attempts" counter tracks how many times the count has been performed
+- Manager approval may be required before the daily opening can be completed
+- Use the "Clear Table" button to reset all entries if you need to start over

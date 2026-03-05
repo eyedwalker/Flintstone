@@ -1,0 +1,38 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Reporting/AnalyticsAndInsights",
+  "module": "Reporting",
+  "screenName": "Analytics & Insights",
+  "path": "/Reporting/AnalyticsAndInsights",
+  "screenshotFile": "analytics---insights.png",
+  "pageTitle": "",
+  "breadcrumb": "",
+  "formFields": [],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Reporting: Analytics & Insights"
+    }
+  ],
+  "tableHeaders": [],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nReporting: Analytics & Insights\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:07:08.110Z"
+}

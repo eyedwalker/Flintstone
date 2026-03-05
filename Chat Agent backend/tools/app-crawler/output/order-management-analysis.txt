@@ -1,0 +1,45 @@
+SCREEN NAME: Order Management
+MODULE: Orders
+URL PATTERN: /Management/OrderManagement
+
+PURPOSE:
+This screen allows users to manage and track invoiced orders for eyeglass and contact lens products. It provides comprehensive order tracking capabilities including status updates, delivery confirmations, and order modifications.
+
+KEY FEATURES:
+- Filter orders by type (Contact Lens, Eyeglass), promised date, late orders, supplier status, and order status
+- View detailed order information including order number, patient name, phone, order date, promised date, supplier status, order balance, and current status
+- Bulk order management with checkboxes for selecting multiple orders
+- Change order status dropdown for individual orders
+- Receive, Notify, and Deliver action buttons for order processing
+- Search functionality by order number or patient last name
+- Pagination controls showing 1 to 10 of 43 entries
+- Export to detailed report option
+- Online order tracking integration for patients
+- Order balance tracking ($0.00 shown for current orders)
+- Promised date sorting capabilities
+
+COMMON USER TASKS:
+1. Search for specific orders by patient name or order number
+2. Filter orders by status (In Process, Delivered, etc.) or supplier
+3. Update order status using the Change Order Status dropdown
+4. Mark orders as received, notify patients, or confirm delivery
+5. View order details including promised dates and current status
+6. Track late orders using the "Late By" filter
+7. Generate detailed reports of order management data
+
+STEP-BY-STEP: Update Order Status
+1. Locate the desired order in the table by scrolling or using search/filter options
+2. Click on the "Change Order Status" dropdown in the rightmost column for that order
+3. Select the new status from the dropdown menu (currently showing "Select")
+4. The system will update the order status accordingly
+
+NAVIGATION:
+- How to get here: Orders → Order Management from main navigation menu
+- Accessible from here: Detailed reports, Patient records (via patient names), Quick List, other order management functions
+
+TIPS AND NOTES:
+- All displayed orders show $0.00 balance and "In Process (Onsite)" status, indicating local processing
+- The "Let patients track orders online" feature helps reduce patient inquiry calls
+- Use the promised date filter to identify potentially late orders requiring attention
+- Phone numbers are consistently formatted as (123) 456-7890 for easy contact
+- Orders are primarily for eyeglass products as indicated by the "(Eyeglass)" designation

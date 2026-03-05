@@ -1,0 +1,39 @@
+SCREEN NAME: Dashboard
+MODULE: Reporting
+URL PATTERN: /Reporting/MyDashboardReports
+
+PURPOSE:
+This screen serves as the main reporting dashboard for the practice management system, providing a centralized location for accessing and viewing various practice reports and analytics. It appears to be the landing page within the Reporting module where users can view key performance indicators and navigate to specific reporting functions.
+
+KEY FEATURES:
+- Centralized reporting dashboard interface
+- Navigation access to all main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+- Quick List functionality for rapid access
+- Store Operations management access
+- EHR integration link
+- Admin user controls and logout functionality
+
+COMMON USER TASKS:
+1. View practice performance metrics and key indicators
+2. Navigate to specific reporting modules and functions
+3. Access quick lists for frequently used reports
+4. Monitor daily practice operations through dashboard widgets
+5. Export or print dashboard summaries
+6. Navigate to other practice management modules
+7. Access store operations for multi-location practices
+
+STEP-BY-STEP: View Dashboard Reports
+1. Navigate to the Reporting module from the main menu
+2. The Dashboard will load automatically as the default reporting view
+3. Review displayed metrics and performance indicators
+4. Use Quick List or navigation menu to access specific reports as needed
+
+NAVIGATION:
+- How to get here: Main menu > Reporting (Dashboard loads by default)
+- Accessible from here: All main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory), Quick List, Store Operations, Eyefinity EHR
+
+TIPS AND NOTES:
+- This appears to be the default landing page when accessing the Reporting module
+- The dashboard provides a high-level overview before drilling down into specific reports
+- Quick List functionality allows for rapid access to frequently used reporting features
+- Admin privileges (shown as "Admin in 999") may be required for certain reporting functions

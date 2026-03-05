@@ -1,0 +1,30 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Billing",
+  "module": "Claim Management",
+  "screenName": "Claim Management",
+  "path": "/Billing",
+  "screenshotFile": "claim-management.png",
+  "pageTitle": "Dashboard",
+  "breadcrumb": "",
+  "formFields": [],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Claim Search",
+    "Billing Claims",
+    "Process Payments",
+    "Billing Reports",
+    "More",
+    "menu",
+    "Quick List"
+  ],
+  "headings": [],
+  "tableHeaders": [],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nClaim Management\nClaim Search\nBilling Claims\nProcess Payments\nBilling Reports\nQuick List\nGo to:\nFront Office\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:06:04.457Z"
+}

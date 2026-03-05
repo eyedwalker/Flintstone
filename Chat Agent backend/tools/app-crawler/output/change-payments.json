@@ -1,0 +1,134 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Management/ChangePayments",
+  "module": "Store Operations",
+  "screenName": "Change Payments",
+  "path": "/Management/ChangePayments",
+  "screenshotFile": "change-payments.png",
+  "pageTitle": "Change Payments",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "payType_691982",
+      "type": "select-one"
+    },
+    {
+      "label": "Optional Comments",
+      "type": "textarea"
+    },
+    {
+      "label": "amount_691982",
+      "type": "text"
+    },
+    {
+      "label": "Optional Comments",
+      "type": "textarea"
+    },
+    {
+      "label": "payType_691981",
+      "type": "select-one"
+    },
+    {
+      "label": "Optional Comments",
+      "type": "textarea"
+    },
+    {
+      "label": "amount_691981",
+      "type": "text"
+    },
+    {
+      "label": "Optional Comments",
+      "type": "textarea"
+    },
+    {
+      "label": "changePaymentLog_length",
+      "type": "select-one"
+    },
+    {
+      "label": "Select month",
+      "type": "select-one"
+    },
+    {
+      "label": "Select year",
+      "type": "select-one"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Cash",
+    "Cash",
+    "Revert",
+    "Save",
+    "Cancel",
+    "OK",
+    "Close",
+    "Cancel",
+    "Void Transaction"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Change Payments"
+    },
+    {
+      "level": "H3",
+      "text": "Confirmation"
+    },
+    {
+      "level": "H3",
+      "text": "Log Details"
+    },
+    {
+      "level": "H3",
+      "text": "Void Transaction"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "Patient Name",
+      "Transaction Number(s)",
+      "Transaction Type",
+      "Order Number(s)",
+      "Payment Type",
+      "Amount",
+      "Actions"
+    ],
+    [
+      "Date",
+      "Payment Type",
+      "Amount",
+      "Associate",
+      "Comments"
+    ],
+    [
+      "Su",
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nChange Payments\nPayments can only be changed prior to Daily Closing. You can view, but not edit, transactions for closed days.\nPatient Name\tTransaction Number(s)\tTransaction Type\tOrder Number(s)\tPayment Type\tAmount\tActions\nDAVIS, BETTE\t1757749\tPayment\t\n1071080\n\t\nAmerican Express\nCareCredit\nCash\nCheck\nCredit Card\nDiscover\nGift Certificate/Card\nMail by Check\nMastercard\nOnline Payment\nTraveler's Check\nVisa\nCash\n\t\n\t  \nHOTFIX, POS\t1757747\tPayment\t\n1071079\n\t\nAmerican Express\nCareCredit\nCash\nCheck\nCredit Card\nDiscover\nGift Certificate/Card\nMail by Check\nMastercard\nOnline Payment\nTraveler's Check\nVisa\nCash\n\t\n\t  \nRevert\nSave\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:07:24.785Z"
+}

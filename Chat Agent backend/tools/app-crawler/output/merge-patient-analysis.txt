@@ -1,0 +1,39 @@
+SCREEN NAME: Merge Duplicate Patients
+MODULE: Patients
+URL PATTERN: /Patient/Merge
+
+PURPOSE:
+This screen allows practice staff to identify and merge duplicate patient records in the system. It provides search functionality to find potential duplicate patients and tools to consolidate their information into a single patient profile.
+
+KEY FEATURES:
+- Patient search form with multiple criteria (Last Name, First Name, Date of Birth, Phone, MRN)
+- Search results table displaying patient details including Last Name, First Name, Preferred Name, D.O.B., Age, Phone, MRN, Address, and Last Exam/Purchase
+- "Patients Selected" section for managing selected patient profiles to merge
+- Clear All functionality to reset selected patients
+- Instructions to guide users through the merge process
+
+COMMON USER TASKS:
+1. Search for duplicate patient records using various criteria
+2. Select multiple patient profiles that represent the same person
+3. Review patient information to confirm duplicates before merging
+4. Clear selected patients if incorrect profiles were chosen
+5. Proceed with merging duplicate patient records
+6. Verify patient information matches across duplicate records
+
+STEP-BY-STEP: Search and Select Duplicate Patients
+1. Enter search criteria in the form fields (Last Name, First Name, Date of Birth, Phone, or MRN)
+2. Click the "Search" button to find matching patients
+3. Review the search results in the table below
+4. Select the patient profiles that represent duplicate records
+5. Verify the selected patients appear in the "Patients Selected" section
+6. Proceed to merge the selected duplicate patient profiles
+
+NAVIGATION:
+- How to get here: Patients module > Merge Duplicate Patients
+- Accessible from here: Patient profiles, main Patients screen
+
+TIPS AND NOTES:
+- The system requires you to select patients to be merged before proceeding
+- Use multiple search criteria to narrow down results and find exact duplicates
+- Carefully review patient information to ensure you're selecting true duplicates
+- The merge process cannot be easily undone, so verify selections carefully

@@ -1,0 +1,36 @@
+SCREEN NAME: Resource Schedule
+MODULE: Appointments
+URL PATTERN: /Appointments/ResourceSchedule
+
+PURPOSE:
+The Resource Schedule screen is designed to display and manage appointment scheduling resources within the practice. However, this screen is currently showing an access denied error with a temporary override option for users who lack the necessary permissions to view the scheduling interface.
+
+KEY FEATURES:
+- Access control with permission validation
+- Temporary override functionality for authorized users
+- Login credential verification system
+- Integration with main appointment management system
+- Security warning messages for unauthorized access attempts
+
+COMMON USER TASKS:
+1. Request temporary access override from authorized personnel
+2. Enter supervisor credentials to gain temporary access
+3. Navigate back to accessible appointment functions
+4. Contact system administrator for proper permission assignment
+5. Use alternative appointment scheduling methods if access is denied
+
+STEP-BY-STEP: Request Temporary Access Override
+1. Click on the Login Name field and enter authorized user credentials
+2. Click on the Password field and enter the corresponding password
+3. Click the "Override" button to attempt temporary access
+4. If successful, proceed with resource scheduling tasks
+
+NAVIGATION:
+- How to get here: Main Menu > Appointments > Resource Schedule
+- Accessible from here: Return to Appointments main menu, access other appointment-related functions if permissions allow
+
+TIPS AND NOTES:
+- This screen requires specific user permissions to access resource scheduling functionality
+- Temporary override should only be used with proper authorization from supervisors or administrators
+- Users experiencing consistent access issues should contact their system administrator for permission updates
+- The override feature is a security measure to maintain proper access control while allowing authorized temporary access

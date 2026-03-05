@@ -1,0 +1,23 @@
+{
+  "baseUrl": "https://pm-st-2.eyefinity.com",
+  "auth": {
+    "loginUrl": "/login/",
+    "officeId": "999",
+    "username": "Admin",
+    "passwordEnv": "ENCOMPASS_PASSWORD"
+  },
+  "routes": [
+    { "path": "/", "module": "Front Office", "name": "Home Dashboard", "requiresPatient": false },
+    { "path": "/Patients", "module": "Patient Management", "name": "Patient Search", "requiresPatient": false },
+    { "path": "/Appointments", "module": "Scheduling", "name": "Appointment Calendar", "requiresPatient": false },
+    { "path": "/Orders", "module": "Orders", "name": "Order Management", "requiresPatient": false },
+    { "path": "/Catalog", "module": "Catalog", "name": "Product Catalog", "requiresPatient": false },
+    { "path": "/ClaimManagement", "module": "Billing", "name": "Claim Management", "requiresPatient": false },
+    { "path": "/Inventory", "module": "Inventory", "name": "Product Inventory", "requiresPatient": false },
+    { "path": "/Reporting", "module": "Reporting", "name": "Reporting", "requiresPatient": false }
+  ],
+  "discoveryMode": true,
+  "maxDiscoveredPerPage": 8,
+  "screenshotDir": "./screenshots",
+  "outputDir": "./output"
+}

@@ -1,0 +1,100 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/ProductCatalog/ContactLensLookup",
+  "module": "Catalog",
+  "screenName": "Contact Lenses",
+  "path": "/ProductCatalog/ContactLensLookup",
+  "screenshotFile": "contact-lenses.png",
+  "pageTitle": "Contact Lens Lookup",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Manufacturer",
+      "type": "radio"
+    },
+    {
+      "label": "Search for contact lenses",
+      "type": "text"
+    },
+    {
+      "label": "lookup_searchResults_length",
+      "type": "select-one"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Apply Filters",
+    "Clear Selected filters",
+    "Search",
+    "Clear",
+    "Add Filters",
+    "Hide Filters"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Browse Contact Lenses"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "",
+      "Style",
+      "Color",
+      "Base",
+      "Diameter",
+      "Measurements (Min / Max)",
+      "Sphere",
+      "Cylinder",
+      "Axis",
+      "Add",
+      "Lenses Per Box",
+      "Retail Price"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nBrowse Contact Lenses\nSupplier (4)\n+\nLens Category (2)\n+\nManufacturer (8)\n−\nAlcon Laboratories Inc\nBausch & Lomb\nCooper Vision\nGas Perm Supplier\nOptical Connection Intl Corp\nRetail Private Label\nVistakon\nX-Cel Contacts\nBrand/Style\nBase/Diameter (38)\n+\nSphere (324)\n+\nColor\nSearch  Clear\n\tStyle\tColor\tBase\tDiameter\tSphere\tCylinder\tAxis\tAdd\tLenses Per Box\tRetail Price\n\t1-Day Acuvue Define 30pk\tNatural Shimmer\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t30\t$58.00\n\t1-Day Acuvue Define 30pk\tNatural Shine\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t30\t$58.00\n\t1-Day Acuvue Define 30pk\tNatural Sparkle\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t30\t$58.00\n\t1-Day Acuvue Define 30pk\tAccent\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t30\t$58.00\n\t1-Day Acuvue Define 30pk\tVivid\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t30\t$58.00\n\t1-Day Acuvue Define Dx 5pk\tNatural Shimmer\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t1\t$0.00\n\t1-Day Acuvue Define Dx 5pk\tNatural Shine\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t1\t$0.00\n\t1-Day Acuvue Define Dx 5pk\tNatural Sparkle\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t1\t$0.00\n\t1-Day Acuvue Define Dx 5pk\tVivid\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t1\t$0.00\n\t1-Day Acuvue Define Dx 5pk\tAccent\t8.5 / 8.5\t14.2 / 14.2\t-9.00 / +1.00\t0 / 0\t0 / 0\t0 / +0\t1\t$0.00\nShowing 1 to 10 of 396 entries\nShow \n5\n10\n20\n50\n Rows\nFirst\nPrevious\n1\n2\n3\n4\n5\n…\n40\nNext\nLast\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:05:42.132Z"
+}

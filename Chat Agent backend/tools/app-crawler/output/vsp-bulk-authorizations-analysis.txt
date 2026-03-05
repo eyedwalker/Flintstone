@@ -1,0 +1,42 @@
+SCREEN NAME: VSP Bulk Authorizations
+MODULE: Patients
+URL PATTERN: /Patient/VSPAuthorizations
+
+PURPOSE:
+This screen allows users to submit bulk authorization requests to VSP for multiple patients on a selected date. It streamlines the process of obtaining VSP eligibility and authorization for various vision services including exams, frames, lenses, contact lenses, and vision therapy sessions.
+
+KEY FEATURES:
+- Date selector for choosing authorization date (Thursday, 3/5/2026 shown)
+- Navigation arrows to move between dates
+- Filter option for "Patients with No Active Insurance Authorizations"
+- Table displaying Patient, Insurance, and various service authorization checkboxes
+- Service type columns: All, Exam, Frame, Lens, Contact Lens, CL Exam, Vision Therapy Eval, Vision Therapy Session
+- Authorization column for results
+- Submit button to process selected authorizations
+- Message display when no VSP eligibility is found
+
+COMMON USER TASKS:
+1. Select a specific date to check VSP eligibilities
+2. Filter patients with no active insurance authorizations
+3. Review available VSP eligible patients for the selected date
+4. Select specific services (exams, frames, lenses, etc.) for authorization
+5. Submit bulk authorization requests to VSP
+6. Navigate between different dates to check eligibilities
+7. Review authorization results and status
+
+STEP-BY-STEP: Submit VSP Bulk Authorizations
+1. Select the desired date using the date picker or navigation arrows
+2. Check "Patients with No Active Insurance Authorizations" if needed to filter results
+3. Review the list of eligible patients (if any are found for the selected date)
+4. Check the appropriate service boxes (All, Exam, Frame, Lens, etc.) for each patient
+5. Click the Submit button to send authorization requests to VSP
+
+NAVIGATION:
+- How to get here: Patients module → VSP Bulk Authorizations
+- Accessible from here: Other patient management screens, EHR system, reporting functions
+
+TIPS AND NOTES:
+- The message "No VSP Eligibility found for this day" indicates no eligible patients for the selected date
+- Users can select individual services or use "All" to select all available services for a patient
+- The system requires an active VSP connection to process authorizations
+- Date navigation allows efficient checking of eligibilities across multiple days

@@ -45,6 +45,12 @@ export async function createVectorStore(
       dataType: 'float32',
       dimension: EMBEDDING_DIMENSION,
       distanceMetric: 'cosine',
+      metadataConfiguration: {
+        nonFilterableMetadataKeys: [
+          'AMAZON_BEDROCK_TEXT',
+          'AMAZON_BEDROCK_METADATA',
+        ],
+      },
     }));
   } catch (e: any) {
     const code = e?.name ?? e?.Code ?? '';

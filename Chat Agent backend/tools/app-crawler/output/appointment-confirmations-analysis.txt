@@ -1,0 +1,41 @@
+SCREEN NAME: Appointment Confirmations
+MODULE: Appointments
+URL PATTERN: /Appointments/AppointmentConfirmations
+
+PURPOSE:
+This screen allows practice staff to view and manage appointment confirmations for a selected date. It displays a table of patients with confirmed appointments and provides options to print various forms and documents needed for patient visits.
+
+KEY FEATURES:
+- Date selector to view confirmations for specific dates
+- Appointment confirmations table with patient details (Patient, Age, Phone, Appt. Time, Service, Resource, Status, Staff Initials, Notes, Insurance)
+- Minor Consent Form printing functionality
+- Print Welcome Forms option
+- Print Confirmations capability
+- Navigation arrows to move between dates
+- Empty state message when no confirmations are set for the selected location
+
+COMMON USER TASKS:
+1. Select a specific date to view appointment confirmations
+2. Review patient appointment details for the day
+3. Print welcome forms for incoming patients
+4. Print minor consent forms for underage patients
+5. Print confirmation documents
+6. Navigate between different dates to check confirmations
+7. Review patient information including insurance and contact details
+
+STEP-BY-STEP: View appointment confirmations for a specific date
+1. Navigate to the Appointment Confirmations screen
+2. Use the date field to select the desired date (currently showing Thursday, 3/5/2026)
+3. Click the calendar icon or use the navigation arrows to change dates
+4. Review the appointment confirmation table for patient details
+5. Use the print options (Minor Consent Form, Print Welcome Forms, Print Confirmations) as needed
+
+NAVIGATION:
+- How to get here: Main menu > Appointments > Appointment Confirmations
+- Accessible from here: All main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting), Quick List, Eyefinity EHR
+
+TIPS AND NOTES:
+- The screen displays "No appointment confirmations set for this location" when there are no confirmed appointments for the selected date
+- Multiple print options are available for different types of patient forms and documents
+- The date can be changed using either the date picker or navigation arrows
+- Staff initials can be tracked for each appointment confirmation

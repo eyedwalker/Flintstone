@@ -1,0 +1,42 @@
+SCREEN NAME: Claim Management
+MODULE: Claim Management
+URL PATTERN: /Billing
+
+PURPOSE:
+This screen serves as the main hub for managing insurance claims within the practice. It provides comprehensive search functionality to locate specific claims and access to all billing-related operations including claim processing, payment management, and billing reports.
+
+KEY FEATURES:
+- Failed Claims alert notification with View option
+- Patient search fields (Last Name, First Name)
+- Insurance information fields (Insured ID/SSN, Authorization Number)
+- Claim identification fields (Claim Number, Order Number)
+- Service date range selection (From/To with calendar pickers)
+- Filter options (Claim Status, Carrier, Plan, Office dropdowns)
+- Additional Search Criteria expandable section
+- Search and Clear action buttons
+- Quick access tabs: Claim Search, Billing Claims, Process Payments, Billing Reports
+
+COMMON USER TASKS:
+1. Search for specific patient claims using name or ID
+2. Filter claims by status, carrier, or date range
+3. Review and address failed claims
+4. Navigate to billing claims for detailed claim management
+5. Access payment processing functions
+6. Generate billing reports
+7. Clear search criteria and start new searches
+
+STEP-BY-STEP: Search for Patient Claims
+1. Enter patient's last name in "Patient Last Name" field
+2. Optionally add first name or other identifying information
+3. Select appropriate filters (Claim Status, Carrier, etc.) if needed
+4. Click "Search" button to retrieve matching claims
+
+NAVIGATION:
+- How to get here: Main menu → Billing → Claim Management
+- Accessible from here: Claim Search, Billing Claims, Process Payments, Billing Reports, Front Office
+
+TIPS AND NOTES:
+- Red alert banner indicates failed claims that require immediate attention
+- Use "Additional Search Criteria" for more specific filtering options
+- Calendar icons next to Service Date fields provide date picker functionality
+- All dropdown filters help narrow search results for large claim volumes

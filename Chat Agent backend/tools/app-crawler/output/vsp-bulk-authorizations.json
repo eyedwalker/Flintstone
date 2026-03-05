@@ -1,0 +1,89 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Patient/VSPAuthorizations",
+  "module": "Patients",
+  "screenName": "VSP Bulk Authorizations",
+  "path": "/Patient/VSPAuthorizations",
+  "screenshotFile": "vsp-bulk-authorizations.png",
+  "pageTitle": "VSP Bulk Authorizations",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "Patients with No Active Insurance Authorizations",
+      "type": "checkbox"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Cancel",
+    "OK",
+    "Ok",
+    "Ok",
+    "Submit"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "VSP Bulk Authorizations"
+    },
+    {
+      "level": "H4",
+      "text": "Confirmation"
+    },
+    {
+      "level": "H3",
+      "text": "Eligibility Information"
+    },
+    {
+      "level": "H3",
+      "text": "Eligibility Information"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "",
+      "Patient",
+      "Insurance",
+      "All",
+      "Exam",
+      "Frame",
+      "Lens",
+      "Contact\nLens",
+      "CL Exam",
+      "Vision\nTherapy\nEval",
+      "Vision\nTherapy\nSession",
+      "Authorization",
+      ""
+    ],
+    [
+      "Su",
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nVSP Bulk Authorizations\n\n\n\n\n\nSelect from the available eligibilities then submit to authorize.\n\n\nPatients with No Active Insurance Authorizations\n\tPatient\tInsurance\t All\t Exam\t Frame\t Lens\t Contact Lens\t CL Exam\t Vision Therapy Eval\t Vision Therapy Session\tAuthorization\t\nNo VSP Eligibility found for this day.\n\n\nSubmit\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:04:44.415Z"
+}

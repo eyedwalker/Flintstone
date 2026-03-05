@@ -1,0 +1,44 @@
+SCREEN NAME: Change Payments
+MODULE: Store Operations
+URL PATTERN: /Management/ChangePayments
+
+PURPOSE:
+This screen allows users to modify payment transactions that were previously processed in the system. It provides the ability to edit payment details such as payment type and amount for transactions that occurred before the daily closing process.
+
+KEY FEATURES:
+- Date selector for filtering payment transactions
+- Table view showing patient name, transaction details, order numbers, and payment amounts
+- Editable payment type dropdown menus (Cash options visible)
+- Editable payment amount fields
+- Transaction and order number reference columns
+- Action buttons for each payment row (view, print, void functions)
+- Revert button to undo changes
+- Save button to commit modifications
+- Warning message about payment modification restrictions
+
+COMMON USER TASKS:
+1. Change payment method from one type to another (e.g., cash to credit card)
+2. Correct payment amounts that were entered incorrectly
+3. View payment transaction details for verification
+4. Print payment receipts or documentation
+5. Void incorrect payment transactions
+6. Revert unsaved changes before finalizing
+7. Filter payments by specific date to locate transactions
+
+STEP-BY-STEP: Change Payment Type
+1. Select the desired date using the date picker field
+2. Locate the payment transaction in the table
+3. Click on the Payment Type dropdown for the transaction you want to modify
+4. Select the new payment type from the dropdown options
+5. Verify the payment amount is correct or modify if needed
+6. Click the "Save" button to commit the changes
+
+NAVIGATION:
+- How to get here: Store Operations menu → Change Payments
+- Accessible from here: Other Store Operations functions, Patient records, Order details, Reporting module
+
+TIPS AND NOTES:
+- Payments can only be changed prior to Daily Closing - transactions for closed days can be viewed but not edited
+- The system maintains transaction numbers and order references for audit trail purposes
+- Use the Revert button to cancel any unsaved changes before clicking Save
+- Each payment row includes action buttons for additional transaction management options

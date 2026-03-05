@@ -1,0 +1,47 @@
+SCREEN NAME: Appointment Calendar
+MODULE: Appointments
+URL PATTERN: /Appointments/Calendar
+
+PURPOSE:
+The Appointment Calendar provides a visual scheduling interface for managing patient appointments across multiple providers and resources. It displays appointment slots in a day view format, allowing staff to view, schedule, and manage appointments for the selected date and office location.
+
+KEY FEATURES:
+- Day view calendar display with time slots and provider columns
+- Resource/provider column headers showing staff names
+- Appointment blocks showing scheduled appointments and service templates
+- Date navigation controls (Today button, date picker)
+- View options (Day view dropdown, Show Inactive Resources toggle)
+- Office selection dropdown for multi-location practices
+- Find Open button for locating available appointment slots
+- Legend and Move buttons for calendar management
+- Time slots displayed in 30-minute increments
+- Color-coded appointment blocks and availability indicators
+
+COMMON USER TASKS:
+1. View daily appointment schedule for specific providers
+2. Schedule new patient appointments by clicking on open time slots
+3. Navigate between different dates to view schedules
+4. Find available appointment openings using Find Open feature
+5. Move or reschedule existing appointments
+6. Switch between different office locations
+7. Toggle visibility of inactive resources/providers
+
+STEP-BY-STEP: Schedule a new appointment
+1. Select the desired office from the Office dropdown if multiple locations
+2. Navigate to the appropriate date using date controls or Today button
+3. Locate the desired provider column and time slot
+4. Click on an available (light blue) time slot
+5. Enter patient and appointment details in the appointment form
+6. Save the appointment to confirm scheduling
+
+NAVIGATION:
+- How to get here: Main menu > Appointments > Calendar (default view)
+- Accessible from here: Patient records, appointment details, resource management, appointment history
+
+TIPS AND NOTES:
+- Light blue areas indicate available appointment slots
+- Gray/darker areas show blocked time or unavailable slots
+- Service template blocks appear with dotted borders
+- Use Show Inactive Resources toggle to display all providers including inactive ones
+- The red line indicates the current time when viewing today's schedule
+- Different appointment types may display in different colors for easy identification

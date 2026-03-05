@@ -1,0 +1,54 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/#",
+  "module": "Help",
+  "screenName": "How To…",
+  "path": "#",
+  "screenshotFile": "how-to-.png",
+  "pageTitle": "Eyefinity Practice Management",
+  "breadcrumb": "",
+  "formFields": [],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List"
+  ],
+  "headings": [
+    {
+      "level": "H4",
+      "text": "VSP Premier Edge Message Center"
+    },
+    {
+      "level": "H4",
+      "text": "Message Center"
+    },
+    {
+      "level": "H3",
+      "text": "Training Progress"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "",
+      "Patients",
+      "Appointments",
+      "Orders",
+      "Claims"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nMessage Center\n\nSearch / Add Patient\n\nAppointment Calendar\n\nAppointment Confirmations\n\nOrder Management\n\nProduct Inventory\n\nMy Reports\n\nProvider Hub Dashboard\n\nClaim Management\n\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:08:04.033Z"
+}

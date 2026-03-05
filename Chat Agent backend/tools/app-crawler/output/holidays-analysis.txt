@@ -1,0 +1,39 @@
+SCREEN NAME: Holidays
+MODULE: Appointments
+URL PATTERN: /Appointments/Holidays
+
+PURPOSE:
+This screen allows practice administrators to manage holidays for their eye care practice. It provides functionality to view, add, and delete holidays that will affect appointment scheduling and practice operations.
+
+KEY FEATURES:
+- View list of all holidays with dates and names
+- Add new holidays using the "+ Holiday" button
+- Delete existing holidays using trash can icons
+- Table format displaying Date and Holiday columns
+- Pagination controls for navigating multiple holiday entries
+- Show/Hide entries selector (20 entries shown by default)
+- Sortable columns for better organization
+
+COMMON USER TASKS:
+1. Add a new holiday to the practice calendar
+2. View all existing holidays scheduled for the practice
+3. Delete outdated or incorrect holiday entries
+4. Review holiday schedule before appointment scheduling
+5. Navigate through multiple pages of holiday entries
+6. Sort holidays by date or name
+
+STEP-BY-STEP: Add a New Holiday
+1. Click the blue "+ Holiday" button in the top right
+2. Enter the holiday date in mm/dd/yyyy format
+3. Enter the holiday name
+4. Save the new holiday entry
+
+NAVIGATION:
+- How to get here: Main Menu → Appointments → Holidays
+- Accessible from here: Other Appointments module screens, Main navigation menu modules
+
+TIPS AND NOTES:
+- Holidays entered here will affect appointment availability and scheduling
+- The system shows 26 total entries with pagination at the bottom
+- Use the trash can icon to delete holidays that are no longer needed
+- Proper holiday management helps prevent scheduling conflicts on practice closure days

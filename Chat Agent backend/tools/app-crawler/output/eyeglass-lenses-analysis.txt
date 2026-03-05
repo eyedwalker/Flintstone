@@ -1,0 +1,39 @@
+SCREEN NAME: Eyeglass Lens Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/EyeglassLensLookup
+
+PURPOSE:
+This screen allows users to browse and search through available eyeglass lens products in the catalog. Users can filter lenses by various criteria and view detailed specifications including type, material, coatings, and prescription parameters.
+
+KEY FEATURES:
+- Filter panel with lens type options (Bifocal, Progressive, Single Vision, Trifocal)
+- Additional filter categories for Material, Style, Color, and Coating
+- Search functionality for eyeglass lenses
+- Detailed product table showing Item #, Type, Style, Material, Color, Coating, Sphere, Cylinder, Add, and Seg Ht
+- Pagination controls for browsing multiple pages of results
+- Results counter showing current entries displayed
+- Configurable number of rows per page
+
+COMMON USER TASKS:
+1. Search for specific lens types or products
+2. Filter lenses by material, style, or coating options
+3. Browse lens specifications and availability
+4. Compare different lens options for patient orders
+5. View detailed lens parameters for prescription matching
+6. Navigate through multiple pages of lens inventory
+
+STEP-BY-STEP: Search for Progressive Lenses
+1. In the Lens Type filter panel, check "Progressive"
+2. Click "Apply Filters" or use the search function
+3. Review the filtered results in the product table
+4. Use pagination controls to browse additional progressive lens options
+
+NAVIGATION:
+- How to get here: Catalog → Browse from main navigation menu
+- Accessible from here: Related catalog sections, patient orders, inventory management
+
+TIPS AND NOTES:
+- The filter panel allows multiple selections to narrow down lens options effectively
+- Prescription parameters (Sphere, Cylinder, Add) help match lenses to patient prescriptions
+- Use the Clear button to reset search filters and view all available lenses
+- Results show 10 entries per page by default but can be adjusted using the dropdown

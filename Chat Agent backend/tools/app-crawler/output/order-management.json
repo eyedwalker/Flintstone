@@ -1,0 +1,186 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Management/OrderManagement",
+  "module": "Orders",
+  "screenName": "Order Management",
+  "path": "/Management/OrderManagement",
+  "screenshotFile": "order-management.png",
+  "pageTitle": "Order Management",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "No. of days",
+      "type": "number"
+    },
+    {
+      "label": "Supplier Status",
+      "type": "select-multiple"
+    },
+    {
+      "label": "Order Status",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Order # or Patient Last Name",
+      "type": "text"
+    },
+    {
+      "label": "Order #",
+      "type": "number"
+    },
+    {
+      "label": "ordersTable_length",
+      "type": "select-one"
+    },
+    {
+      "label": "Order Notes",
+      "type": "textarea"
+    },
+    {
+      "label": "Retransmit Reason",
+      "type": "select-one"
+    },
+    {
+      "label": "*Retransmit Note",
+      "type": "textarea"
+    },
+    {
+      "label": "*Delay Note",
+      "type": "textarea"
+    },
+    {
+      "label": "Select month",
+      "type": "select-one"
+    },
+    {
+      "label": "Select year",
+      "type": "select-one"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Exit Barcode Scan",
+    "Select One Or More",
+    "Select All",
+    "Deselect All",
+    "In Process",
+    "+ Add",
+    "Receive",
+    "Notify",
+    "Deliver",
+    "Release to Lab",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "10",
+    "Cancel",
+    "OK",
+    "Close",
+    "Save",
+    "Close",
+    "Exit Barcode Scan",
+    "Cancel",
+    "Deliver",
+    "Go To Payment",
+    "Select",
+    "Print Form",
+    "Retransmit and Print Form",
+    "Retransmit",
+    "Continue",
+    "Delay",
+    "Continue"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Order Management: Invoiced Orders"
+    },
+    {
+      "level": "H4",
+      "text": "Confirmation"
+    },
+    {
+      "level": "H3",
+      "text": "Order Status History"
+    },
+    {
+      "level": "H3",
+      "text": "Supplier Status"
+    },
+    {
+      "level": "H4",
+      "text": "Lab Status Information"
+    },
+    {
+      "level": "H4",
+      "text": "Stock Order Information"
+    },
+    {
+      "level": "H4",
+      "text": "Confirm Delivery for Order #"
+    },
+    {
+      "level": "H4",
+      "text": "Retransmit"
+    },
+    {
+      "level": "H4",
+      "text": "Delay for Order #"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "",
+      "Order Number",
+      "Patient Name",
+      "Phone",
+      "OrderDate",
+      "PromisedDate",
+      "Supplier Status",
+      "Order Balance",
+      "Order Status",
+      "Change Order  Status"
+    ],
+    [
+      "Su",
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nOrder Management: Invoiced Orders\n\t\nSee Detailed Report\nFilter By\nOrder Type\nContact Lens\nEyeglass\n*From Promised Date\nLate By\nSupplier Status \nSelect\nCANCELATION WARNING - Please Contact MF\nSPECIAL ORDER - Response Needed\nProduct is on Backorder from the vendor\nCANCELATION by store request or from an OM communi\nAwaiting Store Response\nAwaiting Frame from Store\nMake- Job has been Escalated to Customer Service\nMake- Error Potential Delay\nNo Supplier Status history for this order.\nAuto ABB Order ITM_ONHOLD\nSelect One Or More\nOrder Status \nCanceled/Voided\nDelayed\nDelivered\nIn Process\nLab On Hold\nMerchandise Drop\nNotified\nReady\nReceived\nReinstate Drop\nRemade\nReturned\nIn Process\nOR\nReceive Notify Deliver\n\tOrder Number\tPatient Name\tPhone\tOrder\nDate\tPromised\nDate\tSupplier Status\tOrder Balance\tOrder Status\tChange Order\nStatus \n\t1070447\n(Eyeglass)\tZB Ba , Fra Undefined\t(123) 456-7890 (c)\t2/9/2026\t2/21/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070466\n(Eyeglass)\tFlatley , Jude\t(123) 456-7890 (c)\t2/9/2026\t2/21/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070638\n(Eyeglass)\tGrimes , Astrid\t(123) 456-7890 (c)\t2/13/2026\t2/25/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070639\n(Eyeglass)\tWindler , Guillermo\t(123) 456-7890 (c)\t2/13/2026\t2/25/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070643\n(Eyeglass)\tKB Eua , Amaa FB\t(123) 456-7890 (c)\t2/13/2026\t2/25/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070673\n(Eyeglass)\tSimonis , Magnus\t(123) 456-7890 (c)\t2/13/2026\t2/25/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070676\n(Eyeglass)\tWiza , Taurean\t(123) 456-7890 (c)\t2/13/2026\t2/25/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070683\n(Eyeglass)\tPB Ba , Fra CB\t(123) 456-7890 (c)\t2/16/2026\t2/28/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070684\n(Eyeglass)\tNB Amaa , Eua YB\t(123) 456-7890 (c)\t2/16/2026\t2/28/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\n\n\t1070685\n(Eyeglass)\tTest , Beth\t(123) 451-2323 (c)\t2/16/2026\t2/28/2026\t\n\t$0.00\t\nIn Process\n(Onsite)\n\t\nSelect\nReceive\nNotify\nDeliver\nDelay\nSelect\nShowing 1 to 10 of 43 entries\nShow \n10\n20\n50\n100\nAll\n10\n Rows\nFirst\nPrevious\n1\n2\n3\n4\n5\nNext\nLast\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:05:23.192Z"
+}

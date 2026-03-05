@@ -1,0 +1,41 @@
+SCREEN NAME: Message Center Dashboard
+MODULE: Help
+URL PATTERN: #
+
+PURPOSE:
+The Message Center Dashboard serves as the central hub for managing various practice operations and communications within Eyefinity Practice Management. This screen provides quick access to key modules and functions through an organized tile-based interface that streamlines daily workflow tasks.
+
+KEY FEATURES:
+- Search / Add Patient functionality
+- Appointment Calendar access
+- Appointment Confirmations management
+- Order Management tools
+- Product Inventory tracking
+- My Reports access
+- Claim Management functions
+- VSP Premier Edge Provider Hub Dashboard integration
+- Quick access tiles for all major practice functions
+
+COMMON USER TASKS:
+1. Search for existing patients or add new patient records
+2. View and manage appointment calendar
+3. Process appointment confirmations
+4. Handle order management tasks
+5. Check product inventory levels
+6. Access practice reports
+7. Manage insurance claims and billing
+
+STEP-BY-STEP: Search for a Patient
+1. Click on the "Search / Add Patient" tile
+2. Enter patient information in the search fields
+3. Select the appropriate patient from search results
+
+NAVIGATION:
+- How to get here: Main dashboard after login, accessible through Help menu
+- Accessible from here: All major practice modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+
+TIPS AND NOTES:
+- The Message Center appears to be the main landing page after login
+- VSP Premier Edge integration provides additional tools for VSP network providers
+- Quick List functionality is available for frequently accessed items
+- All major practice management functions are accessible from this central hub

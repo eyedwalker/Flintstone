@@ -1,0 +1,40 @@
+SCREEN NAME: Credit Card Processing
+MODULE: Store Operations
+URL PATTERN: /Common/CreditCardProcessingPOS
+
+PURPOSE:
+This screen provides access to credit card processing functionality for point-of-sale transactions within the eye care practice. It appears to require special authorization or temporary override access to use the credit card processing features.
+
+KEY FEATURES:
+- Credit card processing interface
+- Access control with temporary override capability
+- Login authentication for secure payment processing
+- Integration with Store Operations module
+- Administrative override functionality
+
+COMMON USER TASKS:
+1. Process credit card payments for patient purchases
+2. Handle point-of-sale transactions for eyewear and accessories
+3. Request temporary override access when needed
+4. Authenticate credentials for secure payment processing
+5. Manage retail payment transactions
+6. Process refunds or payment adjustments
+7. Access payment processing reports
+
+STEP-BY-STEP: Process a credit card payment
+1. Navigate to Store Operations > Credit Card Processing
+2. If prompted with access denied, request temporary override
+3. Enter login credentials when required
+4. Click Override to gain access to payment processing
+5. Process the customer's credit card transaction
+6. Complete the payment and print receipt
+
+NAVIGATION:
+- How to get here: Store Operations menu > Credit Card Processing or direct URL access
+- Accessible from here: Store Operations dashboard, payment reports, transaction history
+
+TIPS AND NOTES:
+- This screen requires special permissions and may need administrative override
+- Secure authentication is required before accessing payment processing functions
+- The temporary override feature allows authorized users to bypass normal access restrictions
+- Credit card processing functionality is restricted to protect sensitive payment data

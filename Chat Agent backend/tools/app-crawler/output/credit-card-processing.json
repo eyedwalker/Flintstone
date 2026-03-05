@@ -1,0 +1,53 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Common/CreditCardProcessingPOS",
+  "module": "Store Operations",
+  "screenName": "Credit Card Processing",
+  "path": "/Common/CreditCardProcessingPOS",
+  "screenshotFile": "credit-card-processing.png",
+  "pageTitle": "Credit Card Processing",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "loginName",
+      "type": "text"
+    },
+    {
+      "label": "password",
+      "type": "password"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Cancel",
+    "Override"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Credit Card Processing"
+    },
+    {
+      "level": "H4",
+      "text": "Access Denied ― Temporary Override"
+    }
+  ],
+  "tableHeaders": [],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nCredit Card Processing\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:07:58.283Z"
+}

@@ -1,0 +1,85 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/ProductCatalog/InsurancePlanLookup",
+  "module": "Catalog",
+  "screenName": "Insurance Plans",
+  "path": "/ProductCatalog/InsurancePlanLookup",
+  "screenshotFile": "insurance-plans.png",
+  "pageTitle": "Insurance Plan Lookup",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "Carrier Name",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Plan Name",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Plan ID",
+      "type": "text"
+    },
+    {
+      "label": "Keywords",
+      "type": "text"
+    },
+    {
+      "label": "lookup_searchResults_length",
+      "type": "select-one"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Select",
+    "Select",
+    "Search Plans",
+    "Clear Selected filters",
+    "Search",
+    "Clear",
+    "Add Filters",
+    "Hide Filters"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Insurance Plan Lookup"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "",
+      "Plan Name",
+      "Plan",
+      "Carrier Name",
+      "Plan Type",
+      "Website",
+      "Phone #"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nInsurance Plan Lookup\nCarrier Name\nSelect\nAAA\nACCESS HEALTHCARE NETWORK (AHN)\nAetna\nALWAYS VISION\nAMERITAS DENTAL & VISION\nANTHEM\nARGUS\nAVESIS\nBCBS OF CO\nBCBS OF MINNESOTA\nBIZER MEDICAL EXAMS\nBLOCK VISION\nBlue Shield EVC\nBRIDGE TO SUCCESS\nCareFirst MD/DC\nCDPHP\nCHEROKEE INSURANCE COMPANY\nCHIEF FISCAL SERVICE\nCIGNA\nCigna Medical\nCOLORADO ACCESS CHILD HEALTH P\nCOMMUNITY EYE CARE\nCULINARY WORKERS HEALTH PLAN\nDavis VIP\nDAVIS VISION\nEBMS\nENVOLVE\nEVC FUNDED NO SPECIAL REQUIREM\nEVC SAFETY\nEXCELLUS BCBS\nEYEMED\nEYEQUEST\nEYETOPIA\nFIRST CHOICE HEALTH\nGROUP PENSION ADMINISTRATORS,\nHARVARD PILGRIM\nHEALTH CLAIMS ORGANIZATION\nHOME OFFICE VIP PLAN\nHORIZON NJ HEALTH\nHUMANA\nICARE HEALTH SOLUTIONS\nJUST SAY YES (JSY)\nLOCAL 863 EXAM ONLY\nMARCH VISION CARE\nMEDICAID (STATE PROGRAMS)\nMEDICAL EYE SERVICES\nMEDICAL MUTUAL OF OHIO\nMEDICARE (STATE PROGRAMS)\nMEDICARE REPLACEMENT PLANS\nMERITAIN HEALTH\nMETLIFE\nMODA HEALTH PLANS\nMVC MULTIPLE PAIR PROMOTION\nMVP HEALTH PLAN\nNVA\nOPERATING ENGINEERS LOCAL 139\nOPTICARE OF UTAH\nOTHERS INSURED\nPACE CNY\nPACIFIC SOURCE\nPaul Insurance\nPHYSICIAN EYECARE PLAN\nPLAN DID NOT CONVERT\nPREMERA BCBS MICROSOFT\nPREMIER EYE CARE\nPROVIDENCE HEALTH PLAN\nQUALITY PLAN DC VISION PLAN\nREGENCE\nROCKY MOUNTAIN HMO\nSAFETY ACCOUNT\nSAMARITAN CHOICE PLANS\nSELECTHEALTH\nSOLSTICE\nSOUTH POINT BENEFIT\nSPECTERA\nSUPERIOR VISION\nSVS VISION\nThe Health Plan\nTRICARE\nTRI-CARE INC LOCAL 1478\nTriWest VA Program\nTRUVISION\nUNITED HEALTHCARE INC\nVA COMMUNITY CARE NETWORK\nVISION BENEFITS OF AMERICA\nVISION SERVICE PLAN (VSP)\nVSP NON RTE\nZENITH ADMINISTRATORS\nzzChrisTest\nSelect\nPlan Name\nSelect\n9416testing\nAAA 40PCT DISCOUNT\nAAA OF KENTUCKY\nAARP DISCOUNT PLAN\nAETNA BETTER HEALTH 100\nAETNA PPO US HEALTHCARE\nAetna Vision Plan\nALWAYS VISION MISC STNDRD\nAMERIGRP NJ CAD4 CAD6\nAMERITAS LIFE INSURANCE\nANTHEM BCBS BADGERCARE PLUS\nANTHEM BCBS OF CO\nANTHEM MEDICAID 20 UNDER\nANTHEM MEDICAID 21 OVER\nANTHEM MEDICAL\nAPI-TEST DAVIS AFFINITY\nAPI-TEST EOON MISC STNDRD\nAPI-TEST EYEMED DISCOUNT PLAN\nAPI-TEST EYEMED EXAM ONLY\nAPI-TEST PREMIER MCARE MERIDIAN 450D\nARGUS CAREPLUS ALLOWANCE\nARGUS DR HLTHCARE ALLOWANCE\nARGUS FREEDOM 125\nARGUS FREEDOM HEALTH\nARGUS FREEDOM HLTH 15\nARGUS FREEDOM OPTIMUM 100\nARGUS FREEDOM OPTIMUM 150\nARGUS FREEDOM OPTIMUM 300\nARGUS FREEDOM OPTIMUM 400\nARGUS OPTIMUM DIAMOND 100\nARGUS OPTIMUM DIAMOND 125\nARGUS OPTIMUM GOLD 125 HMO\nARGUS OPTIMUM HEALTH 150\nAVESIS 050150BZ-L7\nAVESIS 130130AYL3\nAVESIS 130130CZ\nAVESIS 150150CY\nAVESIS 150150FZ\nAVESIS 150150RYL3\nAVESIS 175150BZ2L7\nAVESIS 901, 904, 907\nAVESIS 902, 905, 908\nAVESIS 9102\nAVESIS 911, 914, 917\nAVESIS 9112\nAVESIS 920, 924, 927\nAVESIS 9214P JUDSON ISD\nAVESIS 9240NEL2\nAVESIS 930, 933, 936\nAVESIS 933-L7\nAVESIS 9614 CITY OF AUSTIN\nAVESIS 962\nAVESIS 963 & 965\nAVESIS 971 SW RESEARCH\nAVESIS AETNA BETTER HEALTH OV21\nAVESIS AETNA BETTER H",
+  "capturedAt": "2026-03-04T19:05:51.881Z"
+}

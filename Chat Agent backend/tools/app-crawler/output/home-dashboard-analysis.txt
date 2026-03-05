@@ -1,0 +1,44 @@
+SCREEN NAME: Home Dashboard
+MODULE: Front Office
+URL PATTERN: /
+
+PURPOSE:
+The Home Dashboard serves as the main landing page and central hub for Eyefinity Practice Management users. It provides quick access to all major practice management functions and displays important notifications through the Message Center.
+
+KEY FEATURES:
+- Message Center for practice communications and notifications
+- Quick access tiles for core functions (Search/Add Patient, Appointment Calendar, Order Management, etc.)
+- Top navigation bar with main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+- Product Inventory management access
+- My Reports section
+- Appointment Confirmations functionality
+- Claim Management tools
+- VSP Premier Edge Provider Hub Dashboard integration
+- Quick List menu for rapid navigation
+- User account management (Admin login, logout options)
+- Store Operations access
+- EHR integration link
+
+COMMON USER TASKS:
+1. Navigate to patient records via Search/Add Patient
+2. Access the appointment calendar to view/schedule appointments
+3. Review messages and notifications in Message Center
+4. Check product inventory levels
+5. Process insurance claims through Claim Management
+6. Generate and view practice reports
+7. Confirm upcoming patient appointments
+
+STEP-BY-STEP: Navigate to Patient Records
+1. Click on the "Search/Add Patient" tile from the dashboard
+2. Enter patient information in the search field or select "Add" to create new patient
+3. Select the desired patient from search results to access their record
+
+NAVIGATION:
+- How to get here: This is the default landing page after login
+- Accessible from here: All major practice management modules, patient records, appointment scheduling, inventory management, claims processing, reporting functions
+
+TIPS AND NOTES:
+- The Message Center displays important practice communications and should be checked regularly
+- Quick access tiles provide the fastest way to reach commonly used functions
+- The top navigation remains consistent across all modules for easy navigation
+- VSP Premier Edge integration provides additional tools for VSP network providers

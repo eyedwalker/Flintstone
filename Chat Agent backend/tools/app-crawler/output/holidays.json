@@ -1,0 +1,71 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Appointments/Holidays",
+  "module": "Appointments",
+  "screenName": "Holidays",
+  "path": "/Appointments/Holidays",
+  "screenshotFile": "holidays.png",
+  "pageTitle": "Holidays",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "holidaysTable_length",
+      "type": "select-one"
+    },
+    {
+      "label": "Holiday Name",
+      "type": "text"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "Holiday",
+    "20",
+    "Close",
+    "Save",
+    "Cancel",
+    "Delete"
+  ],
+  "headings": [
+    {
+      "level": "H2",
+      "text": "Appointments: Holidays"
+    },
+    {
+      "level": "H4",
+      "text": "Add Holiday"
+    },
+    {
+      "level": "H4",
+      "text": "Delete Holiday"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "Date",
+      "Holiday",
+      ""
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nAppointments: Holidays\nHoliday\nDate\tHoliday\t\n4/9/2021\tGiovanni\t\n5/26/2021\tTyrell\t\n6/25/2021\tJaeden\t\n7/1/2021\tJulien\t\n7/6/2021\tBrendan\t\n7/15/2021\tFrieda\t\n8/8/2021\tDeondre\t\n8/11/2021\tGermaine\t\n8/14/2021\tVince\t\n8/20/2021\tRoslyn\t\n9/10/2021\tEverette\t\n9/21/2021\tCreola\t\n9/26/2021\tAmber\t\n10/2/2021\tHilda\t\n11/4/2021\tFrederick\t\n11/23/2021\tLinnie\t\n11/25/2021\tEmmet\t\n12/8/2021\tDamon\t\n12/10/2021\tJake\t\n12/14/2021\tJared\t\nShowing 1 to 20 of 26 entries\nShow \n10\n20\n50\n100\nAll\n20\n Rows\nFirst\nPrevious\n1\n2\nNext\nLast\nEyefinity Live\n© 2026 Eyefinity, Inc. All rights reserved.\nEyefinity is a registered trademark of Eyefinity, Inc.\nVersion: 10.53.3.8",
+  "capturedAt": "2026-03-04T19:05:15.070Z"
+}

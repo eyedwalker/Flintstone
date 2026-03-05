@@ -1,0 +1,46 @@
+SCREEN NAME: Insurance Plan Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/InsurancePlanLookup
+
+PURPOSE:
+This screen allows users to search and view insurance plans accepted by the practice. It provides a comprehensive lookup tool to find specific insurance carriers, plan names, and associated details including contact information and plan types.
+
+KEY FEATURES:
+- Carrier Name dropdown filter
+- Plan Name dropdown filter
+- Plan ID search field
+- Keywords search functionality
+- Search and Clear buttons
+- Results table showing Plan Name, Carrier Name, Plan Type, Website, and Phone Number
+- Expandable rows for additional plan details
+- Pagination controls (showing 1-10 of 944 entries)
+- Customizable results per page display (10 rows default)
+- Direct links to insurance provider websites
+- Plan type indicators (Benefit, Discount)
+
+COMMON USER TASKS:
+1. Search for specific insurance plans by carrier name
+2. Look up plan details and contact information
+3. Verify insurance plan acceptance and benefits
+4. Access insurance provider websites for additional information
+5. Browse through multiple pages of insurance plan results
+6. Filter plans by specific criteria using multiple search fields
+
+STEP-BY-STEP: Search for Insurance Plan
+1. Select carrier name from the "Carrier Name" dropdown or leave as "Select" for all carriers
+2. Enter keywords in the search field or use Plan Name/Plan ID filters
+3. Click "Search" button to execute the search
+4. Review results in the table below
+5. Click on expandable arrows to view additional plan details
+6. Use pagination controls to navigate through multiple result pages
+
+NAVIGATION:
+- How to get here: Main Menu → Catalog → Insurance Plan Lookup
+- Accessible from here: Patient records (for insurance verification), Claims Management, other Catalog functions
+
+TIPS AND NOTES:
+- The system contains 944 insurance plan entries total
+- Website links are clickable and open insurance provider portals
+- Plan types include "Benefit" and "Discount" categories
+- Use the Clear button to reset all search filters
+- Results can be customized to show different numbers of entries per page using the "Show" dropdown

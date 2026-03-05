@@ -1,0 +1,42 @@
+SCREEN NAME: Frame Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/FrameLookup
+
+PURPOSE:
+This screen allows users to browse and search through the available eyeglass frame inventory. Users can filter frames by various criteria such as collection, style, color, size, and other attributes to help patients select appropriate frames for their prescriptions.
+
+KEY FEATURES:
+- Collection browser with 313 available collections including brands like Airlock, Alberto Romani, Altair Men, Anne Klein
+- Advanced filtering options by Style, Color, and Edge Type
+- Multiple filter categories: On Hand (1), Retail Price (6), Category/Type (3), Age Range (1), Gender (5), Item Status (4), Size (5), Shape (7), Color Family (10)
+- Search functionality for frames with clear option
+- Results table with columns for Item #, UPC #, Collection, Style, Color, Size, Retail, On Hand, and Allow Zero Price
+- Apply Filters and Clear Selected filters buttons
+- Quick search by collection name
+
+COMMON USER TASKS:
+1. Search for specific frame collections or styles for patient selection
+2. Filter frames by availability (On Hand) to show only in-stock items
+3. Browse frames by price range to match patient budget
+4. Filter by gender and age range for appropriate frame selection
+5. Check inventory levels for specific frames
+6. Compare frame specifications across different collections
+7. Clear filters to reset search parameters
+
+STEP-BY-STEP: Search for frames by collection
+1. In the left sidebar, locate the "Collection (313)" section
+2. Either scroll through the list or use the "Search by Collection" field to find a specific brand
+3. Check the box next to desired collections (e.g., Airlock, Anne Klein)
+4. Click "Apply Filters" to display matching frames
+5. Review results in the main table showing item details, pricing, and availability
+
+NAVIGATION:
+- How to get here: Catalog module → Frame Lookup or use direct URL /ProductCatalog/FrameLookup
+- Accessible from here: Quick List, other Catalog functions, main navigation menu options
+
+TIPS AND NOTES:
+- The system shows 313 total collections available for browsing
+- Filter numbers in parentheses indicate how many options are available in each category
+- "On Hand (1)" suggests limited current inventory filters available
+- Use "Allow Zero Price" column to identify frames that may have special pricing arrangements
+- Clear filters frequently to ensure you're seeing the full available inventory

@@ -126,10 +126,28 @@ export async function handleWidgetChat(
 
     // Prepend context data if provided
     if (b.context && Object.keys(b.context).length > 0) {
-      const contextStr = Object.entries(b.context)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('\n');
-      finalMessage = `[Context from user's page:\n${contextStr}]\n\n${finalMessage}`;
+      const pageKeys = ['getUrl', 'pageTitle', 'breadcrumb', 'getPageTitle', 'getBreadcrumb'];
+      const pageEntries = Object.entries(b.context).filter(([k]) => pageKeys.includes(k));
+      const otherEntries = Object.entries(b.context).filter(([k]) => !pageKeys.includes(k));
+
+      const sections: string[] = [];
+      if (pageEntries.length > 0) {
+        sections.push('User is currently on this page:');
+        for (const [k, v] of pageEntries) {
+          const label = k === 'getUrl' ? 'URL' : k === 'getPageTitle' || k === 'pageTitle' ? 'Page Title' : k === 'getBreadcrumb' || k === 'breadcrumb' ? 'Breadcrumb' : k;
+          sections.push(`${label}: ${v}`);
+        }
+        sections.push('');
+        sections.push('Use this context to tailor your response to what the user is likely doing.');
+      }
+      if (otherEntries.length > 0) {
+        if (sections.length > 0) sections.push('');
+        sections.push('Additional context:');
+        for (const [k, v] of otherEntries) {
+          sections.push(`${k}: ${v}`);
+        }
+      }
+      finalMessage = `[${sections.join('\n')}]\n\n${finalMessage}`;
     }
 
     const sessionId = b.sessionId ?? uuidv4();

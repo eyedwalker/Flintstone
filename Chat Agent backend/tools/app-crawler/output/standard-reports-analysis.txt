@@ -1,0 +1,43 @@
+SCREEN NAME: Standard Reports
+MODULE: Reporting
+URL PATTERN: /Reporting/MyReports
+
+PURPOSE:
+This screen serves as the main hub for accessing all standard reporting categories within the Eyefinity practice management system. It provides organized access to pre-built reports across different operational areas of an eye care practice.
+
+KEY FEATURES:
+- Accounting Reports section for financial reporting
+- Appointments Reports for scheduling analytics
+- Marketing Reports for promotional campaign tracking
+- Patient Reports for patient data analysis
+- Sales Reports for revenue and transaction tracking
+- Inventory Reports for stock management analysis
+- Dispensary Reports for optical dispensing metrics
+- Revenue understanding promotional banner
+- Organized categorization of report types
+- Quick List access panel
+
+COMMON USER TASKS:
+1. Access accounting reports for financial analysis
+2. Generate patient reports for demographics and visit history
+3. View sales reports to track revenue performance
+4. Run inventory reports to monitor stock levels
+5. Create appointment reports for scheduling efficiency
+6. Generate dispensary reports for optical operations
+7. Access marketing reports to evaluate campaign effectiveness
+
+STEP-BY-STEP: Access Patient Reports
+1. Navigate to Reporting > Standard Reports
+2. Click on "Patient Reports" from the available categories
+3. Select the specific patient report type needed
+4. Configure report parameters and run the report
+
+NAVIGATION:
+- How to get here: Main menu > Reporting > Standard Reports
+- Accessible from here: Individual report categories (Accounting, Appointments, Marketing, Patient, Sales, Inventory, Dispensary Reports), Quick List panel
+
+TIPS AND NOTES:
+- Reports are organized by functional area to help users quickly find relevant reporting tools
+- The "Understand your actual revenue!" banner suggests revenue cycle management features are available
+- Each report category contains multiple specialized reports for that operational area
+- Standard reports are pre-configured templates that can typically be customized with date ranges and filters

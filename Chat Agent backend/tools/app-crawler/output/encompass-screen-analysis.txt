@@ -1,0 +1,1086 @@
+ENCOMPASS / EYEFINITY SCREEN ANALYSIS
+============================================================
+Generated: 2026-03-04T19:13:46.777Z
+Source: AI analysis of https://pm-st-2.eyefinity.com
+
+============================================================
+
+SCREEN NAME: Home Dashboard
+MODULE: Front Office
+URL PATTERN: /
+
+PURPOSE:
+The Home Dashboard serves as the main landing page and central hub for Eyefinity Practice Management users. It provides quick access to all major practice management functions and displays important notifications through the Message Center.
+
+KEY FEATURES:
+- Message Center for practice communications and notifications
+- Quick access tiles for core functions (Search/Add Patient, Appointment Calendar, Order Management, etc.)
+- Top navigation bar with main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+- Product Inventory management access
+- My Reports section
+- Appointment Confirmations functionality
+- Claim Management tools
+- VSP Premier Edge Provider Hub Dashboard integration
+- Quick List menu for rapid navigation
+- User account management (Admin login, logout options)
+- Store Operations access
+- EHR integration link
+
+COMMON USER TASKS:
+1. Navigate to patient records via Search/Add Patient
+2. Access the appointment calendar to view/schedule appointments
+3. Review messages and notifications in Message Center
+4. Check product inventory levels
+5. Process insurance claims through Claim Management
+6. Generate and view practice reports
+7. Confirm upcoming patient appointments
+
+STEP-BY-STEP: Navigate to Patient Records
+1. Click on the "Search/Add Patient" tile from the dashboard
+2. Enter patient information in the search field or select "Add" to create new patient
+3. Select the desired patient from search results to access their record
+
+NAVIGATION:
+- How to get here: This is the default landing page after login
+- Accessible from here: All major practice management modules, patient records, appointment scheduling, inventory management, claims processing, reporting functions
+
+TIPS AND NOTES:
+- The Message Center displays important practice communications and should be checked regularly
+- Quick access tiles provide the fastest way to reach commonly used functions
+- The top navigation remains consistent across all modules for easy navigation
+- VSP Premier Edge integration provides additional tools for VSP network providers
+
+============================================================
+
+SCREEN NAME: Search / Add Patient
+MODULE: Patients
+URL PATTERN: /Patient/Search
+
+PURPOSE:
+This screen serves as the main patient management interface where users can search for existing patients in the system or add new patients to the practice. It provides comprehensive search functionality using various patient identifiers and demographics to quickly locate patient records.
+
+KEY FEATURES:
+- Patient search form with multiple search criteria (name, DOB, phone, ZIP, MRN)
+- Add new patient functionality with "+ Patient" button
+- Show Responsible Party and Show Inactive patient options
+- Patient search results table displaying key patient information
+- Eligibility insurance verification integration
+- Quick access to patient data through 24/7 data access promotion
+- Search results showing Last Name, First Name, Preferred Name, DOB, Age, Phone, MRN, Address, and Last Exam Purchase date
+
+COMMON USER TASKS:
+1. Search for existing patients using name, phone number, or medical record number
+2. Add new patients to the practice management system
+3. View patient search results and select appropriate patient record
+4. Access patient eligibility and insurance information
+5. Toggle between showing active and inactive patients
+6. Search for responsible parties associated with patient accounts
+7. Navigate to patient records from search results
+
+STEP-BY-STEP: Search for Existing Patient
+1. Enter patient information in any of the search fields (Last Name, First Name, DOB, Phone, ZIP Code, or MRN)
+2. Check "Show Inactive" if searching for inactive patient records
+3. Click the "Search" button to execute the search
+4. Review search results in the table below
+5. Click on desired patient record to access their full patient profile
+
+NAVIGATION:
+- How to get here: Main menu > Patients (first option in navigation bar)
+- Accessible from here: Patient profiles, Appointments module, Quick List, EHR system, other practice management modules
+
+TIPS AND NOTES:
+- The search function works with partial information - you don't need to fill all fields
+- Use the "Show Responsible Party" option when searching for guarantors or parents of minor patients
+- MRN (Medical Record Number) provides the most precise search results
+- The "+ Patient" button initiates the new patient registration workflow
+- Phone numbers should be entered in the format shown: (   )   -
+- Date of birth should be entered in mm/dd/yyyy format
+
+============================================================
+
+SCREEN NAME: Merge Duplicate Patients
+MODULE: Patients
+URL PATTERN: /Patient/Merge
+
+PURPOSE:
+This screen allows practice staff to identify and merge duplicate patient records in the system. It provides search functionality to find potential duplicate patients and tools to consolidate their information into a single patient profile.
+
+KEY FEATURES:
+- Patient search form with multiple criteria (Last Name, First Name, Date of Birth, Phone, MRN)
+- Search results table displaying patient details including Last Name, First Name, Preferred Name, D.O.B., Age, Phone, MRN, Address, and Last Exam/Purchase
+- "Patients Selected" section for managing selected patient profiles to merge
+- Clear All functionality to reset selected patients
+- Instructions to guide users through the merge process
+
+COMMON USER TASKS:
+1. Search for duplicate patient records using various criteria
+2. Select multiple patient profiles that represent the same person
+3. Review patient information to confirm duplicates before merging
+4. Clear selected patients if incorrect profiles were chosen
+5. Proceed with merging duplicate patient records
+6. Verify patient information matches across duplicate records
+
+STEP-BY-STEP: Search and Select Duplicate Patients
+1. Enter search criteria in the form fields (Last Name, First Name, Date of Birth, Phone, or MRN)
+2. Click the "Search" button to find matching patients
+3. Review the search results in the table below
+4. Select the patient profiles that represent duplicate records
+5. Verify the selected patients appear in the "Patients Selected" section
+6. Proceed to merge the selected duplicate patient profiles
+
+NAVIGATION:
+- How to get here: Patients module > Merge Duplicate Patients
+- Accessible from here: Patient profiles, main Patients screen
+
+TIPS AND NOTES:
+- The system requires you to select patients to be merged before proceeding
+- Use multiple search criteria to narrow down results and find exact duplicates
+- Carefully review patient information to ensure you're selecting true duplicates
+- The merge process cannot be easily undone, so verify selections carefully
+
+============================================================
+
+SCREEN NAME: VSP Bulk Authorizations
+MODULE: Patients
+URL PATTERN: /Patient/VSPAuthorizations
+
+PURPOSE:
+This screen allows users to submit bulk authorization requests to VSP for multiple patients on a selected date. It streamlines the process of obtaining VSP eligibility and authorization for various vision services including exams, frames, lenses, contact lenses, and vision therapy sessions.
+
+KEY FEATURES:
+- Date selector for choosing authorization date (Thursday, 3/5/2026 shown)
+- Navigation arrows to move between dates
+- Filter option for "Patients with No Active Insurance Authorizations"
+- Table displaying Patient, Insurance, and various service authorization checkboxes
+- Service type columns: All, Exam, Frame, Lens, Contact Lens, CL Exam, Vision Therapy Eval, Vision Therapy Session
+- Authorization column for results
+- Submit button to process selected authorizations
+- Message display when no VSP eligibility is found
+
+COMMON USER TASKS:
+1. Select a specific date to check VSP eligibilities
+2. Filter patients with no active insurance authorizations
+3. Review available VSP eligible patients for the selected date
+4. Select specific services (exams, frames, lenses, etc.) for authorization
+5. Submit bulk authorization requests to VSP
+6. Navigate between different dates to check eligibilities
+7. Review authorization results and status
+
+STEP-BY-STEP: Submit VSP Bulk Authorizations
+1. Select the desired date using the date picker or navigation arrows
+2. Check "Patients with No Active Insurance Authorizations" if needed to filter results
+3. Review the list of eligible patients (if any are found for the selected date)
+4. Check the appropriate service boxes (All, Exam, Frame, Lens, etc.) for each patient
+5. Click the Submit button to send authorization requests to VSP
+
+NAVIGATION:
+- How to get here: Patients module → VSP Bulk Authorizations
+- Accessible from here: Other patient management screens, EHR system, reporting functions
+
+TIPS AND NOTES:
+- The message "No VSP Eligibility found for this day" indicates no eligible patients for the selected date
+- Users can select individual services or use "All" to select all available services for a patient
+- The system requires an active VSP connection to process authorizations
+- Date navigation allows efficient checking of eligibilities across multiple days
+
+============================================================
+
+SCREEN NAME: Appointment Calendar
+MODULE: Appointments
+URL PATTERN: /Appointments/Calendar
+
+PURPOSE:
+The Appointment Calendar provides a visual scheduling interface for managing patient appointments across multiple providers and resources. It displays appointment slots in a day view format, allowing staff to view, schedule, and manage appointments for the selected date and office location.
+
+KEY FEATURES:
+- Day view calendar display with time slots and provider columns
+- Resource/provider column headers showing staff names
+- Appointment blocks showing scheduled appointments and service templates
+- Date navigation controls (Today button, date picker)
+- View options (Day view dropdown, Show Inactive Resources toggle)
+- Office selection dropdown for multi-location practices
+- Find Open button for locating available appointment slots
+- Legend and Move buttons for calendar management
+- Time slots displayed in 30-minute increments
+- Color-coded appointment blocks and availability indicators
+
+COMMON USER TASKS:
+1. View daily appointment schedule for specific providers
+2. Schedule new patient appointments by clicking on open time slots
+3. Navigate between different dates to view schedules
+4. Find available appointment openings using Find Open feature
+5. Move or reschedule existing appointments
+6. Switch between different office locations
+7. Toggle visibility of inactive resources/providers
+
+STEP-BY-STEP: Schedule a new appointment
+1. Select the desired office from the Office dropdown if multiple locations
+2. Navigate to the appropriate date using date controls or Today button
+3. Locate the desired provider column and time slot
+4. Click on an available (light blue) time slot
+5. Enter patient and appointment details in the appointment form
+6. Save the appointment to confirm scheduling
+
+NAVIGATION:
+- How to get here: Main menu > Appointments > Calendar (default view)
+- Accessible from here: Patient records, appointment details, resource management, appointment history
+
+TIPS AND NOTES:
+- Light blue areas indicate available appointment slots
+- Gray/darker areas show blocked time or unavailable slots
+- Service template blocks appear with dotted borders
+- Use Show Inactive Resources toggle to display all providers including inactive ones
+- The red line indicates the current time when viewing today's schedule
+- Different appointment types may display in different colors for easy identification
+
+============================================================
+
+SCREEN NAME: Appointment Confirmations
+MODULE: Appointments
+URL PATTERN: /Appointments/AppointmentConfirmations
+
+PURPOSE:
+This screen allows practice staff to view and manage appointment confirmations for a selected date. It displays a table of patients with confirmed appointments and provides options to print various forms and documents needed for patient visits.
+
+KEY FEATURES:
+- Date selector to view confirmations for specific dates
+- Appointment confirmations table with patient details (Patient, Age, Phone, Appt. Time, Service, Resource, Status, Staff Initials, Notes, Insurance)
+- Minor Consent Form printing functionality
+- Print Welcome Forms option
+- Print Confirmations capability
+- Navigation arrows to move between dates
+- Empty state message when no confirmations are set for the selected location
+
+COMMON USER TASKS:
+1. Select a specific date to view appointment confirmations
+2. Review patient appointment details for the day
+3. Print welcome forms for incoming patients
+4. Print minor consent forms for underage patients
+5. Print confirmation documents
+6. Navigate between different dates to check confirmations
+7. Review patient information including insurance and contact details
+
+STEP-BY-STEP: View appointment confirmations for a specific date
+1. Navigate to the Appointment Confirmations screen
+2. Use the date field to select the desired date (currently showing Thursday, 3/5/2026)
+3. Click the calendar icon or use the navigation arrows to change dates
+4. Review the appointment confirmation table for patient details
+5. Use the print options (Minor Consent Form, Print Welcome Forms, Print Confirmations) as needed
+
+NAVIGATION:
+- How to get here: Main menu > Appointments > Appointment Confirmations
+- Accessible from here: All main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting), Quick List, Eyefinity EHR
+
+TIPS AND NOTES:
+- The screen displays "No appointment confirmations set for this location" when there are no confirmed appointments for the selected date
+- Multiple print options are available for different types of patient forms and documents
+- The date can be changed using either the date picker or navigation arrows
+- Staff initials can be tracked for each appointment confirmation
+
+============================================================
+
+SCREEN NAME: Resource Schedule
+MODULE: Appointments
+URL PATTERN: /Appointments/ResourceSchedule
+
+PURPOSE:
+The Resource Schedule screen is designed to display and manage appointment scheduling resources within the practice. However, this screen is currently showing an access denied error with a temporary override option for users who lack the necessary permissions to view the scheduling interface.
+
+KEY FEATURES:
+- Access control with permission validation
+- Temporary override functionality for authorized users
+- Login credential verification system
+- Integration with main appointment management system
+- Security warning messages for unauthorized access attempts
+
+COMMON USER TASKS:
+1. Request temporary access override from authorized personnel
+2. Enter supervisor credentials to gain temporary access
+3. Navigate back to accessible appointment functions
+4. Contact system administrator for proper permission assignment
+5. Use alternative appointment scheduling methods if access is denied
+
+STEP-BY-STEP: Request Temporary Access Override
+1. Click on the Login Name field and enter authorized user credentials
+2. Click on the Password field and enter the corresponding password
+3. Click the "Override" button to attempt temporary access
+4. If successful, proceed with resource scheduling tasks
+
+NAVIGATION:
+- How to get here: Main Menu > Appointments > Resource Schedule
+- Accessible from here: Return to Appointments main menu, access other appointment-related functions if permissions allow
+
+TIPS AND NOTES:
+- This screen requires specific user permissions to access resource scheduling functionality
+- Temporary override should only be used with proper authorization from supervisors or administrators
+- Users experiencing consistent access issues should contact their system administrator for permission updates
+- The override feature is a security measure to maintain proper access control while allowing authorized temporary access
+
+============================================================
+
+SCREEN NAME: Holidays
+MODULE: Appointments
+URL PATTERN: /Appointments/Holidays
+
+PURPOSE:
+This screen allows practice administrators to manage holidays for their eye care practice. It provides functionality to view, add, and delete holidays that will affect appointment scheduling and practice operations.
+
+KEY FEATURES:
+- View list of all holidays with dates and names
+- Add new holidays using the "+ Holiday" button
+- Delete existing holidays using trash can icons
+- Table format displaying Date and Holiday columns
+- Pagination controls for navigating multiple holiday entries
+- Show/Hide entries selector (20 entries shown by default)
+- Sortable columns for better organization
+
+COMMON USER TASKS:
+1. Add a new holiday to the practice calendar
+2. View all existing holidays scheduled for the practice
+3. Delete outdated or incorrect holiday entries
+4. Review holiday schedule before appointment scheduling
+5. Navigate through multiple pages of holiday entries
+6. Sort holidays by date or name
+
+STEP-BY-STEP: Add a New Holiday
+1. Click the blue "+ Holiday" button in the top right
+2. Enter the holiday date in mm/dd/yyyy format
+3. Enter the holiday name
+4. Save the new holiday entry
+
+NAVIGATION:
+- How to get here: Main Menu → Appointments → Holidays
+- Accessible from here: Other Appointments module screens, Main navigation menu modules
+
+TIPS AND NOTES:
+- Holidays entered here will affect appointment availability and scheduling
+- The system shows 26 total entries with pagination at the bottom
+- Use the trash can icon to delete holidays that are no longer needed
+- Proper holiday management helps prevent scheduling conflicts on practice closure days
+
+============================================================
+
+SCREEN NAME: Order Management
+MODULE: Orders
+URL PATTERN: /Management/OrderManagement
+
+PURPOSE:
+This screen allows users to manage and track invoiced orders for eyeglass and contact lens products. It provides comprehensive order tracking capabilities including status updates, delivery confirmations, and order modifications.
+
+KEY FEATURES:
+- Filter orders by type (Contact Lens, Eyeglass), promised date, late orders, supplier status, and order status
+- View detailed order information including order number, patient name, phone, order date, promised date, supplier status, order balance, and current status
+- Bulk order management with checkboxes for selecting multiple orders
+- Change order status dropdown for individual orders
+- Receive, Notify, and Deliver action buttons for order processing
+- Search functionality by order number or patient last name
+- Pagination controls showing 1 to 10 of 43 entries
+- Export to detailed report option
+- Online order tracking integration for patients
+- Order balance tracking ($0.00 shown for current orders)
+- Promised date sorting capabilities
+
+COMMON USER TASKS:
+1. Search for specific orders by patient name or order number
+2. Filter orders by status (In Process, Delivered, etc.) or supplier
+3. Update order status using the Change Order Status dropdown
+4. Mark orders as received, notify patients, or confirm delivery
+5. View order details including promised dates and current status
+6. Track late orders using the "Late By" filter
+7. Generate detailed reports of order management data
+
+STEP-BY-STEP: Update Order Status
+1. Locate the desired order in the table by scrolling or using search/filter options
+2. Click on the "Change Order Status" dropdown in the rightmost column for that order
+3. Select the new status from the dropdown menu (currently showing "Select")
+4. The system will update the order status accordingly
+
+NAVIGATION:
+- How to get here: Orders → Order Management from main navigation menu
+- Accessible from here: Detailed reports, Patient records (via patient names), Quick List, other order management functions
+
+TIPS AND NOTES:
+- All displayed orders show $0.00 balance and "In Process (Onsite)" status, indicating local processing
+- The "Let patients track orders online" feature helps reduce patient inquiry calls
+- Use the promised date filter to identify potentially late orders requiring attention
+- Phone numbers are consistently formatted as (123) 456-7890 for easy contact
+- Orders are primarily for eyeglass products as indicated by the "(Eyeglass)" designation
+
+============================================================
+
+SCREEN NAME: Frame Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/FrameLookup
+
+PURPOSE:
+This screen allows users to browse and search through the available eyeglass frame inventory. Users can filter frames by various criteria such as collection, style, color, size, and other attributes to help patients select appropriate frames for their prescriptions.
+
+KEY FEATURES:
+- Collection browser with 313 available collections including brands like Airlock, Alberto Romani, Altair Men, Anne Klein
+- Advanced filtering options by Style, Color, and Edge Type
+- Multiple filter categories: On Hand (1), Retail Price (6), Category/Type (3), Age Range (1), Gender (5), Item Status (4), Size (5), Shape (7), Color Family (10)
+- Search functionality for frames with clear option
+- Results table with columns for Item #, UPC #, Collection, Style, Color, Size, Retail, On Hand, and Allow Zero Price
+- Apply Filters and Clear Selected filters buttons
+- Quick search by collection name
+
+COMMON USER TASKS:
+1. Search for specific frame collections or styles for patient selection
+2. Filter frames by availability (On Hand) to show only in-stock items
+3. Browse frames by price range to match patient budget
+4. Filter by gender and age range for appropriate frame selection
+5. Check inventory levels for specific frames
+6. Compare frame specifications across different collections
+7. Clear filters to reset search parameters
+
+STEP-BY-STEP: Search for frames by collection
+1. In the left sidebar, locate the "Collection (313)" section
+2. Either scroll through the list or use the "Search by Collection" field to find a specific brand
+3. Check the box next to desired collections (e.g., Airlock, Anne Klein)
+4. Click "Apply Filters" to display matching frames
+5. Review results in the main table showing item details, pricing, and availability
+
+NAVIGATION:
+- How to get here: Catalog module → Frame Lookup or use direct URL /ProductCatalog/FrameLookup
+- Accessible from here: Quick List, other Catalog functions, main navigation menu options
+
+TIPS AND NOTES:
+- The system shows 313 total collections available for browsing
+- Filter numbers in parentheses indicate how many options are available in each category
+- "On Hand (1)" suggests limited current inventory filters available
+- Use "Allow Zero Price" column to identify frames that may have special pricing arrangements
+- Clear filters frequently to ensure you're seeing the full available inventory
+
+============================================================
+
+SCREEN NAME: Eyeglass Lens Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/EyeglassLensLookup
+
+PURPOSE:
+This screen allows users to browse and search through available eyeglass lens products in the catalog. Users can filter lenses by various criteria and view detailed specifications including type, material, coatings, and prescription parameters.
+
+KEY FEATURES:
+- Filter panel with lens type options (Bifocal, Progressive, Single Vision, Trifocal)
+- Additional filter categories for Material, Style, Color, and Coating
+- Search functionality for eyeglass lenses
+- Detailed product table showing Item #, Type, Style, Material, Color, Coating, Sphere, Cylinder, Add, and Seg Ht
+- Pagination controls for browsing multiple pages of results
+- Results counter showing current entries displayed
+- Configurable number of rows per page
+
+COMMON USER TASKS:
+1. Search for specific lens types or products
+2. Filter lenses by material, style, or coating options
+3. Browse lens specifications and availability
+4. Compare different lens options for patient orders
+5. View detailed lens parameters for prescription matching
+6. Navigate through multiple pages of lens inventory
+
+STEP-BY-STEP: Search for Progressive Lenses
+1. In the Lens Type filter panel, check "Progressive"
+2. Click "Apply Filters" or use the search function
+3. Review the filtered results in the product table
+4. Use pagination controls to browse additional progressive lens options
+
+NAVIGATION:
+- How to get here: Catalog → Browse from main navigation menu
+- Accessible from here: Related catalog sections, patient orders, inventory management
+
+TIPS AND NOTES:
+- The filter panel allows multiple selections to narrow down lens options effectively
+- Prescription parameters (Sphere, Cylinder, Add) help match lenses to patient prescriptions
+- Use the Clear button to reset search filters and view all available lenses
+- Results show 10 entries per page by default but can be adjusted using the dropdown
+
+============================================================
+
+SCREEN NAME: Contact Lens Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/ContactLensLookup
+
+PURPOSE:
+This screen allows users to browse and search the contact lens catalog to find specific contact lens products for ordering or patient fitting. Users can filter by various criteria including manufacturer, lens category, base/diameter, and sphere measurements to locate the appropriate contact lenses.
+
+KEY FEATURES:
+- Filterable supplier list (4 suppliers available)
+- Lens category filtering (2 categories)
+- Manufacturer filtering (8 manufacturers including Alcon, Bausch & Lomb, Cooper Vision, Gas Perm Supplier, Optical Connection Intl Corp, and Retail Private Label)
+- Base/diameter filtering (38 options)
+- Sphere power filtering (324 options)
+- Color filtering options
+- Search functionality for contact lenses
+- Detailed product specifications display (Style, Color, Base, Diameter, Sphere, Cylinder, Axis, Add values)
+- Pricing information (Lenses Per Box and Retail Price)
+- Pagination controls for browsing results
+- Results per page selector (showing 10 rows currently)
+
+COMMON USER TASKS:
+1. Search for specific contact lens brands or types
+2. Filter contact lenses by manufacturer or supplier
+3. Find lenses with specific power requirements (sphere, cylinder, axis)
+4. Compare pricing across different contact lens options
+5. View detailed specifications for contact lens products
+6. Browse available contact lens inventory by category
+7. Clear filters to view all available contact lenses
+
+STEP-BY-STEP: Search for specific contact lenses
+1. Enter search terms in the "Search for contact lenses" field
+2. Click the "Search" button to filter results
+3. Use additional filters on the left sidebar to narrow results by manufacturer, lens category, or specifications
+4. Review the results table showing product details and pricing
+5. Use pagination controls at the bottom to browse through multiple pages of results
+
+NAVIGATION:
+- How to get here: Main menu > Catalog > Contact Lens Lookup
+- Accessible from here: Other catalog sections, inventory management, order placement screens
+
+TIPS AND NOTES:
+- The screen shows 396 total contact lens entries in the catalog
+- Results display 10 entries per page by default but can be adjusted
+- All visible products show consistent specifications (8.5/8.5 base, 14.2/14.2 diameter, -9.00/+1.00 sphere range)
+- Some products show $58.00 retail price for 30 lenses per box, while others show $0.00
+- Filter categories show the number of available options in parentheses
+- Use the "Clear" button to reset search criteria and view all products
+
+============================================================
+
+SCREEN NAME: Accessory Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/AccessoryLookup
+
+PURPOSE:
+This screen allows users to search and browse available accessories in the practice's catalog. It provides a comprehensive lookup tool for finding specific accessory items with detailed product information including item numbers, UPC codes, names, and pricing.
+
+KEY FEATURES:
+- Search functionality for accessories with text input field
+- Filterable results table with sortable columns
+- Item details including Item #, UPC #, Item Name, Retail price, and Zero Price allowance
+- Pagination controls for navigating through multiple pages of results
+- Results per page selection (showing 10 rows option)
+- Clear search functionality
+- Add Filters option for refined searching
+- Real-time display of total entries (showing 1 to 10 of 866 entries)
+
+COMMON USER TASKS:
+1. Search for specific accessories by name or item number
+2. Browse available accessory inventory
+3. View pricing information for accessories
+4. Filter results to find specific types of accessories
+5. Navigate through multiple pages of accessory listings
+6. Clear search results to start a new lookup
+7. Review item details including UPC codes and retail prices
+
+STEP-BY-STEP: Search for specific accessories
+1. Enter search terms in the "Search for accessories" field
+2. Click the "Search" button to execute the search
+3. Review results in the table below
+4. Use pagination controls to view additional results if needed
+5. Click "Clear" to reset search and start over
+
+NAVIGATION:
+- How to get here: Main Menu → Catalog → Accessory Lookup
+- Accessible from here: Other Catalog modules, Inventory management, Order creation screens
+
+TIPS AND NOTES:
+- The screen shows 866 total accessory entries in the system
+- All displayed accessories show $0.00 retail price and "false" for Allow Zero Price
+- Results are paginated with page navigation at the bottom
+- Use the dropdown to adjust how many rows display per page
+- Search function appears to work across multiple fields including item names and numbers
+
+============================================================
+
+SCREEN NAME: Insurance Plan Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/InsurancePlanLookup
+
+PURPOSE:
+This screen allows users to search and view insurance plans accepted by the practice. It provides a comprehensive lookup tool to find specific insurance carriers, plan names, and associated details including contact information and plan types.
+
+KEY FEATURES:
+- Carrier Name dropdown filter
+- Plan Name dropdown filter
+- Plan ID search field
+- Keywords search functionality
+- Search and Clear buttons
+- Results table showing Plan Name, Carrier Name, Plan Type, Website, and Phone Number
+- Expandable rows for additional plan details
+- Pagination controls (showing 1-10 of 944 entries)
+- Customizable results per page display (10 rows default)
+- Direct links to insurance provider websites
+- Plan type indicators (Benefit, Discount)
+
+COMMON USER TASKS:
+1. Search for specific insurance plans by carrier name
+2. Look up plan details and contact information
+3. Verify insurance plan acceptance and benefits
+4. Access insurance provider websites for additional information
+5. Browse through multiple pages of insurance plan results
+6. Filter plans by specific criteria using multiple search fields
+
+STEP-BY-STEP: Search for Insurance Plan
+1. Select carrier name from the "Carrier Name" dropdown or leave as "Select" for all carriers
+2. Enter keywords in the search field or use Plan Name/Plan ID filters
+3. Click "Search" button to execute the search
+4. Review results in the table below
+5. Click on expandable arrows to view additional plan details
+6. Use pagination controls to navigate through multiple result pages
+
+NAVIGATION:
+- How to get here: Main Menu → Catalog → Insurance Plan Lookup
+- Accessible from here: Patient records (for insurance verification), Claims Management, other Catalog functions
+
+TIPS AND NOTES:
+- The system contains 944 insurance plan entries total
+- Website links are clickable and open insurance provider portals
+- Plan types include "Benefit" and "Discount" categories
+- Use the Clear button to reset all search filters
+- Results can be customized to show different numbers of entries per page using the "Show" dropdown
+
+============================================================
+
+SCREEN NAME: Claim Management
+MODULE: Claim Management
+URL PATTERN: /Billing
+
+PURPOSE:
+This screen serves as the main hub for managing insurance claims within the practice. It provides comprehensive search functionality to locate specific claims and access to all billing-related operations including claim processing, payment management, and billing reports.
+
+KEY FEATURES:
+- Failed Claims alert notification with View option
+- Patient search fields (Last Name, First Name)
+- Insurance information fields (Insured ID/SSN, Authorization Number)
+- Claim identification fields (Claim Number, Order Number)
+- Service date range selection (From/To with calendar pickers)
+- Filter options (Claim Status, Carrier, Plan, Office dropdowns)
+- Additional Search Criteria expandable section
+- Search and Clear action buttons
+- Quick access tabs: Claim Search, Billing Claims, Process Payments, Billing Reports
+
+COMMON USER TASKS:
+1. Search for specific patient claims using name or ID
+2. Filter claims by status, carrier, or date range
+3. Review and address failed claims
+4. Navigate to billing claims for detailed claim management
+5. Access payment processing functions
+6. Generate billing reports
+7. Clear search criteria and start new searches
+
+STEP-BY-STEP: Search for Patient Claims
+1. Enter patient's last name in "Patient Last Name" field
+2. Optionally add first name or other identifying information
+3. Select appropriate filters (Claim Status, Carrier, etc.) if needed
+4. Click "Search" button to retrieve matching claims
+
+NAVIGATION:
+- How to get here: Main menu → Billing → Claim Management
+- Accessible from here: Claim Search, Billing Claims, Process Payments, Billing Reports, Front Office
+
+TIPS AND NOTES:
+- Red alert banner indicates failed claims that require immediate attention
+- Use "Additional Search Criteria" for more specific filtering options
+- Calendar icons next to Service Date fields provide date picker functionality
+- All dropdown filters help narrow search results for large claim volumes
+
+============================================================
+
+SCREEN NAME: Product Inventory
+MODULE: Inventory
+URL PATTERN: /Product/Inventory
+
+PURPOSE:
+This screen allows users to manage and view stock orders for inventory items in the practice. It provides a comprehensive overview of all inventory-related orders including stock replenishment, transfers, and vendor orders with detailed tracking and status information.
+
+KEY FEATURES:
+- Stock order management with filtering by item type, stock order type, and supplier order info
+- Comprehensive order tracking with order numbers, dates, and status updates
+- Multiple inventory tabs (Stock, Lookup, Adjustments, Physical, Location, Reports, Labels, Transfer, Receipt, Vendor Order, Vendor Receipt, Vendor Return)
+- Detailed order information including resource, patient, item type, DC status, supplier, and shipping method
+- Order actions including Open and Print functionality
+- Pagination controls for browsing through multiple orders
+- Date filtering and stock order number search capabilities
+- Create new stock orders with "+ Stock Order" button
+
+COMMON USER TASKS:
+1. View and track existing stock orders and their current status
+2. Create new stock orders for inventory replenishment
+3. Filter and search for specific orders by type, date, or order number
+4. Open order details to view or modify order information
+5. Print stock order documentation
+6. Navigate between different inventory management functions using the tab system
+7. Monitor shipping status and supplier information for pending orders
+
+STEP-BY-STEP: View Stock Order Details
+1. Locate the desired stock order in the list using filters or pagination
+2. Click the "Open" link in the Actions column for that order
+3. Review the order details in the expanded view
+
+NAVIGATION:
+- How to get here: Main Menu → Inventory → Stock tab (default view)
+- Accessible from here: Other inventory tabs (Lookup, Adjustments, Physical, Location, Reports, Labels, Transfer, Receipt, Vendor Order, Vendor Receipt, Vendor Return)
+
+TIPS AND NOTES:
+- The screen shows 116 total items across 20 pages, indicating substantial inventory activity
+- All visible orders are for "Frames" from "DC - Distribution Center" with "Replenish (Auto)" stock order type
+- Orders are shipped via "Ground" method and show "Sent" status, indicating they're in transit
+- Use the date picker and filters to narrow down large lists of orders for easier management
+- The T Employee resource appears to be the default ordering entity for automatic replenishment orders
+
+============================================================
+
+SCREEN NAME: Dashboard
+MODULE: Reporting
+URL PATTERN: /Reporting/MyDashboardReports
+
+PURPOSE:
+This screen serves as the main reporting dashboard for the practice management system, providing a centralized location for accessing and viewing various practice reports and analytics. It appears to be the landing page within the Reporting module where users can view key performance indicators and navigate to specific reporting functions.
+
+KEY FEATURES:
+- Centralized reporting dashboard interface
+- Navigation access to all main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+- Quick List functionality for rapid access
+- Store Operations management access
+- EHR integration link
+- Admin user controls and logout functionality
+
+COMMON USER TASKS:
+1. View practice performance metrics and key indicators
+2. Navigate to specific reporting modules and functions
+3. Access quick lists for frequently used reports
+4. Monitor daily practice operations through dashboard widgets
+5. Export or print dashboard summaries
+6. Navigate to other practice management modules
+7. Access store operations for multi-location practices
+
+STEP-BY-STEP: View Dashboard Reports
+1. Navigate to the Reporting module from the main menu
+2. The Dashboard will load automatically as the default reporting view
+3. Review displayed metrics and performance indicators
+4. Use Quick List or navigation menu to access specific reports as needed
+
+NAVIGATION:
+- How to get here: Main menu > Reporting (Dashboard loads by default)
+- Accessible from here: All main modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory), Quick List, Store Operations, Eyefinity EHR
+
+TIPS AND NOTES:
+- This appears to be the default landing page when accessing the Reporting module
+- The dashboard provides a high-level overview before drilling down into specific reports
+- Quick List functionality allows for rapid access to frequently used reporting features
+- Admin privileges (shown as "Admin in 999") may be required for certain reporting functions
+
+============================================================
+
+SCREEN NAME: Standard Reports
+MODULE: Reporting
+URL PATTERN: /Reporting/MyReports
+
+PURPOSE:
+This screen serves as the main hub for accessing all standard reporting categories within the Eyefinity practice management system. It provides organized access to pre-built reports across different operational areas of an eye care practice.
+
+KEY FEATURES:
+- Accounting Reports section for financial reporting
+- Appointments Reports for scheduling analytics
+- Marketing Reports for promotional campaign tracking
+- Patient Reports for patient data analysis
+- Sales Reports for revenue and transaction tracking
+- Inventory Reports for stock management analysis
+- Dispensary Reports for optical dispensing metrics
+- Revenue understanding promotional banner
+- Organized categorization of report types
+- Quick List access panel
+
+COMMON USER TASKS:
+1. Access accounting reports for financial analysis
+2. Generate patient reports for demographics and visit history
+3. View sales reports to track revenue performance
+4. Run inventory reports to monitor stock levels
+5. Create appointment reports for scheduling efficiency
+6. Generate dispensary reports for optical operations
+7. Access marketing reports to evaluate campaign effectiveness
+
+STEP-BY-STEP: Access Patient Reports
+1. Navigate to Reporting > Standard Reports
+2. Click on "Patient Reports" from the available categories
+3. Select the specific patient report type needed
+4. Configure report parameters and run the report
+
+NAVIGATION:
+- How to get here: Main menu > Reporting > Standard Reports
+- Accessible from here: Individual report categories (Accounting, Appointments, Marketing, Patient, Sales, Inventory, Dispensary Reports), Quick List panel
+
+TIPS AND NOTES:
+- Reports are organized by functional area to help users quickly find relevant reporting tools
+- The "Understand your actual revenue!" banner suggests revenue cycle management features are available
+- Each report category contains multiple specialized reports for that operational area
+- Standard reports are pre-configured templates that can typically be customized with date ranges and filters
+
+============================================================
+
+SCREEN NAME: Analytics & Insights
+MODULE: Reporting
+URL PATTERN: /Reporting/AnalyticsAndInsights
+
+PURPOSE:
+This screen serves as the main dashboard for Eyefinity's enhanced reporting and analytics features. It provides users with access to various data visualization tools and reporting dashboards to analyze practice performance and make data-driven decisions.
+
+KEY FEATURES:
+- Welcome introduction to new Eyefinity Dashboards
+- Left navigation menu with reporting categories (Appointments, Billing, Patient Demographics, Patient Marketing, Net Collections, Sales By Provider & Staff, Sales Revenue, Pilot)
+- Complete view of all practice data
+- CSV data export functionality
+- New report types and enhanced dashboard features
+- Streamlined data visualization experience
+- Dashboard preview graphics showing charts and analytics
+
+COMMON USER TASKS:
+1. Access specific reporting dashboards from the left navigation menu
+2. View practice performance data through various analytics categories
+3. Export data sets in CSV format for external analysis
+4. Navigate between different reporting modules (Appointments, Billing, Demographics, etc.)
+5. Analyze sales revenue and provider performance metrics
+6. Review patient marketing and demographic insights
+7. Monitor net collections and billing data
+
+STEP-BY-STEP: Access Appointments Dashboard
+1. Click on "Appointments" in the left navigation menu
+2. Review the appointments analytics and data visualizations
+3. Use available filters or date ranges as needed
+4. Export data if required using CSV download option
+
+NAVIGATION:
+- How to get here: Main menu > Reporting > Analytics & Insights (or click "Reporting" tab then select this option)
+- Accessible from here: All reporting dashboard categories listed in left menu, main practice management modules via top navigation
+
+TIPS AND NOTES:
+- This is a new enhanced feature set - users should explore the improved dashboard capabilities
+- Data can be downloaded in CSV format for further analysis in external tools
+- Each category in the left menu provides specialized analytics for that area of practice management
+- The "Net Collections" category shows as "New" indicating it may be a recently added feature
+
+============================================================
+
+SCREEN NAME: Daily Opening Till Management
+MODULE: Store Operations
+URL PATTERN: /Common/DailyOpening
+
+PURPOSE:
+This screen allows staff to perform daily opening till counts by recording the quantity of each denomination of cash and bills in the register. It provides a systematic way to document starting cash amounts at the beginning of each business day for accurate financial tracking and reconciliation.
+
+KEY FEATURES:
+- Cash count table with denominations from $0.01 to $100.00
+- Number of coins/bills input fields for each denomination
+- Automatic value calculation for each denomination
+- Running total calculation
+- Posting date and today's date display
+- Employee tracking (opened by and approved by)
+- Attempts counter
+- Additional notes section (optional)
+- Approval workflow functionality
+
+COMMON USER TASKS:
+1. Enter the count of coins and bills for each denomination
+2. Review the automatically calculated total cash amount
+3. Add optional notes about the daily opening
+4. Submit the cash count for approval
+5. Clear the table to start over if needed
+6. Approve completed cash counts (for managers)
+7. View previous attempts or corrections
+
+STEP-BY-STEP: Enter Daily Opening Cash Count
+1. Navigate to Store Operations > Daily Opening
+2. Enter the quantity of each denomination in the "# of Coins/Bills" column
+3. Verify the calculated values and total are correct
+4. Add any relevant notes in the "Additional Notes" section
+5. Click "Count Cash" to submit for approval
+
+NAVIGATION:
+- How to get here: Store Operations menu > Daily Opening
+- Accessible from here: Other Store Operations functions, main navigation menu
+
+TIPS AND NOTES:
+- The system automatically calculates values based on quantity entered
+- All denominations show $0.00 until quantities are entered
+- The "Attempts" counter tracks how many times the count has been performed
+- Manager approval may be required before the daily opening can be completed
+- Use the "Clear Table" button to reset all entries if you need to start over
+
+============================================================
+
+SCREEN NAME: Daily Closing Till Management
+MODULE: Store Operations
+URL PATTERN: /Common/TillDailyClosing
+
+PURPOSE:
+This screen manages the daily closing process for the practice's till and cash management system. It allows administrators to perform end-of-day financial reconciliation, ensuring all transactions are completed and properly recorded before closing the business day.
+
+KEY FEATURES:
+- Posting date selection with calendar picker
+- Today's date display for reference
+- Closing by administrator identification
+- Business hours validation warning
+- Transaction completion verification
+- Start Day Close and Cancel options
+- Real-time date and user tracking
+
+COMMON USER TASKS:
+1. Verify all daily transactions are completed before closing
+2. Set the posting date for the daily closing
+3. Confirm readiness to perform daily closing during business hours
+4. Execute the daily closing process
+5. Cancel the closing process if needed
+6. Review closing date and administrator information
+
+STEP-BY-STEP: Perform Daily Closing
+1. Verify the posting date is correct (3/4/2026 shown)
+2. Confirm today's date matches expectations
+3. Ensure all transactions for the current date are completed
+4. Read the business hours warning message
+5. Click "Start Day Close" to proceed or "Cancel" to abort
+
+NAVIGATION:
+- How to get here: Store Operations → Daily Closing Till Management
+- Accessible from here: Main navigation menu (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+
+TIPS AND NOTES:
+- System warns when attempting to close during scheduled business hours
+- No transactions can be posted until the next business day once closing is completed
+- Always ensure all current date transactions are finished before proceeding
+- The process tracks which administrator is performing the closing
+
+============================================================
+
+SCREEN NAME: Change Payments
+MODULE: Store Operations
+URL PATTERN: /Management/ChangePayments
+
+PURPOSE:
+This screen allows users to modify payment transactions that were previously processed in the system. It provides the ability to edit payment details such as payment type and amount for transactions that occurred before the daily closing process.
+
+KEY FEATURES:
+- Date selector for filtering payment transactions
+- Table view showing patient name, transaction details, order numbers, and payment amounts
+- Editable payment type dropdown menus (Cash options visible)
+- Editable payment amount fields
+- Transaction and order number reference columns
+- Action buttons for each payment row (view, print, void functions)
+- Revert button to undo changes
+- Save button to commit modifications
+- Warning message about payment modification restrictions
+
+COMMON USER TASKS:
+1. Change payment method from one type to another (e.g., cash to credit card)
+2. Correct payment amounts that were entered incorrectly
+3. View payment transaction details for verification
+4. Print payment receipts or documentation
+5. Void incorrect payment transactions
+6. Revert unsaved changes before finalizing
+7. Filter payments by specific date to locate transactions
+
+STEP-BY-STEP: Change Payment Type
+1. Select the desired date using the date picker field
+2. Locate the payment transaction in the table
+3. Click on the Payment Type dropdown for the transaction you want to modify
+4. Select the new payment type from the dropdown options
+5. Verify the payment amount is correct or modify if needed
+6. Click the "Save" button to commit the changes
+
+NAVIGATION:
+- How to get here: Store Operations menu → Change Payments
+- Accessible from here: Other Store Operations functions, Patient records, Order details, Reporting module
+
+TIPS AND NOTES:
+- Payments can only be changed prior to Daily Closing - transactions for closed days can be viewed but not edited
+- The system maintains transaction numbers and order references for audit trail purposes
+- Use the Revert button to cancel any unsaved changes before clicking Save
+- Each payment row includes action buttons for additional transaction management options
+
+============================================================
+
+SCREEN NAME: Credit Card Processing
+MODULE: Store Operations
+URL PATTERN: /Common/CreditCardProcessingPOS
+
+PURPOSE:
+This screen provides access to credit card processing functionality for point-of-sale transactions within the eye care practice. It appears to require special authorization or temporary override access to use the credit card processing features.
+
+KEY FEATURES:
+- Credit card processing interface
+- Access control with temporary override capability
+- Login authentication for secure payment processing
+- Integration with Store Operations module
+- Administrative override functionality
+
+COMMON USER TASKS:
+1. Process credit card payments for patient purchases
+2. Handle point-of-sale transactions for eyewear and accessories
+3. Request temporary override access when needed
+4. Authenticate credentials for secure payment processing
+5. Manage retail payment transactions
+6. Process refunds or payment adjustments
+7. Access payment processing reports
+
+STEP-BY-STEP: Process a credit card payment
+1. Navigate to Store Operations > Credit Card Processing
+2. If prompted with access denied, request temporary override
+3. Enter login credentials when required
+4. Click Override to gain access to payment processing
+5. Process the customer's credit card transaction
+6. Complete the payment and print receipt
+
+NAVIGATION:
+- How to get here: Store Operations menu > Credit Card Processing or direct URL access
+- Accessible from here: Store Operations dashboard, payment reports, transaction history
+
+TIPS AND NOTES:
+- This screen requires special permissions and may need administrative override
+- Secure authentication is required before accessing payment processing functions
+- The temporary override feature allows authorized users to bypass normal access restrictions
+- Credit card processing functionality is restricted to protect sensitive payment data
+
+============================================================
+
+SCREEN NAME: Message Center Dashboard
+MODULE: Help
+URL PATTERN: #
+
+PURPOSE:
+The Message Center Dashboard serves as the central hub for managing various practice operations and communications within Eyefinity Practice Management. This screen provides quick access to key modules and functions through an organized tile-based interface that streamlines daily workflow tasks.
+
+KEY FEATURES:
+- Search / Add Patient functionality
+- Appointment Calendar access
+- Appointment Confirmations management
+- Order Management tools
+- Product Inventory tracking
+- My Reports access
+- Claim Management functions
+- VSP Premier Edge Provider Hub Dashboard integration
+- Quick access tiles for all major practice functions
+
+COMMON USER TASKS:
+1. Search for existing patients or add new patient records
+2. View and manage appointment calendar
+3. Process appointment confirmations
+4. Handle order management tasks
+5. Check product inventory levels
+6. Access practice reports
+7. Manage insurance claims and billing
+
+STEP-BY-STEP: Search for a Patient
+1. Click on the "Search / Add Patient" tile
+2. Enter patient information in the search fields
+3. Select the appropriate patient from search results
+
+NAVIGATION:
+- How to get here: Main dashboard after login, accessible through Help menu
+- Accessible from here: All major practice modules (Patients, Appointments, Orders, Catalog, Claim Management, Inventory, Reporting)
+
+TIPS AND NOTES:
+- The Message Center appears to be the main landing page after login
+- VSP Premier Edge integration provides additional tools for VSP network providers
+- Quick List functionality is available for frequently accessed items
+- All major practice management functions are accessible from this central hub
+
+============================================================
+

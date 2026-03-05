@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { IEscalationConfig, ITestConnectionResult } from '../models/escalation.model';
+import { IEscalationConfig, ITestConnectionResult, ICustomFieldMapping } from '../models/escalation.model';
 import { IAccessorResult } from '../models/tenant.model';
 import { ApiService } from '../../app/core/services/api.service';
 
@@ -13,13 +13,22 @@ export class EscalationManager {
 
   async saveConfig(assistantId: string, config: {
     enabled: boolean;
+    authMode?: string;
     salesforceInstanceUrl: string;
     salesforceConsumerKey: string;
     salesforceUsername: string;
     privateKey?: string;
+    // Password flow
+    salesforceLoginUrl?: string;
+    salesforceClientId?: string;
+    salesforceClientSecret?: string;
+    salesforcePassword?: string;
+    salesforceSecurityToken?: string;
     triggerMode: string;
     autoTriggers: { keywords: string[]; sentimentThreshold?: number; maxTurns?: number };
     caseDefaults: { priority: string; origin: string; status: string; recordTypeId?: string };
+    customFieldMapping?: ICustomFieldMapping;
+    aiAnalysisEnabled?: boolean;
   }): Promise<IAccessorResult<IEscalationConfig>> {
     return this.api.put<IEscalationConfig>(`/escalation/config/${assistantId}`, config);
   }

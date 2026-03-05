@@ -1,0 +1,43 @@
+SCREEN NAME: Accessory Lookup
+MODULE: Catalog
+URL PATTERN: /ProductCatalog/AccessoryLookup
+
+PURPOSE:
+This screen allows users to search and browse available accessories in the practice's catalog. It provides a comprehensive lookup tool for finding specific accessory items with detailed product information including item numbers, UPC codes, names, and pricing.
+
+KEY FEATURES:
+- Search functionality for accessories with text input field
+- Filterable results table with sortable columns
+- Item details including Item #, UPC #, Item Name, Retail price, and Zero Price allowance
+- Pagination controls for navigating through multiple pages of results
+- Results per page selection (showing 10 rows option)
+- Clear search functionality
+- Add Filters option for refined searching
+- Real-time display of total entries (showing 1 to 10 of 866 entries)
+
+COMMON USER TASKS:
+1. Search for specific accessories by name or item number
+2. Browse available accessory inventory
+3. View pricing information for accessories
+4. Filter results to find specific types of accessories
+5. Navigate through multiple pages of accessory listings
+6. Clear search results to start a new lookup
+7. Review item details including UPC codes and retail prices
+
+STEP-BY-STEP: Search for specific accessories
+1. Enter search terms in the "Search for accessories" field
+2. Click the "Search" button to execute the search
+3. Review results in the table below
+4. Use pagination controls to view additional results if needed
+5. Click "Clear" to reset search and start over
+
+NAVIGATION:
+- How to get here: Main Menu → Catalog → Accessory Lookup
+- Accessible from here: Other Catalog modules, Inventory management, Order creation screens
+
+TIPS AND NOTES:
+- The screen shows 866 total accessory entries in the system
+- All displayed accessories show $0.00 retail price and "false" for Allow Zero Price
+- Results are paginated with page navigation at the bottom
+- Use the dropdown to adjust how many rows display per page
+- Search function appears to work across multiple fields including item names and numbers

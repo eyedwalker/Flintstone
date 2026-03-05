@@ -26,28 +26,69 @@
         <mat-card-title>Salesforce Connection</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <mat-form-field appearance="outline" class="full-width">
+        <!-- Auth Mode Toggle -->
+        <mat-radio-group [(ngModel)]="authMode" class="auth-mode-group">
+          <mat-radio-button value="password">Username &amp; Password</mat-radio-button>
+          <mat-radio-button value="jwt">JWT Bearer (Private Key)</mat-radio-button>
+        </mat-radio-group>
+
+        <!-- Common fields -->
+        <mat-form-field *ngIf="authMode === 'password'" appearance="outline" class="full-width">
+          <mat-label>Login URL</mat-label>
+          <input matInput [(ngModel)]="salesforceLoginUrl" placeholder="https://login.salesforce.com">
+        </mat-form-field>
+        <mat-form-field *ngIf="authMode === 'jwt'" appearance="outline" class="full-width">
           <mat-label>Instance URL</mat-label>
           <input matInput [(ngModel)]="salesforceInstanceUrl" placeholder="https://yourorg.my.salesforce.com">
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Consumer Key (Connected App)</mat-label>
-          <input matInput [(ngModel)]="salesforceConsumerKey">
         </mat-form-field>
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Username</mat-label>
           <input matInput [(ngModel)]="salesforceUsername" placeholder="admin@yourorg.com">
         </mat-form-field>
-        <div class="file-upload-row">
-          <button mat-stroked-button (click)="keyFileInput.click()">
-            <mat-icon>vpn_key</mat-icon>
-            {{ privateKeyFile ? privateKeyFile.name : 'Upload Private Key (.pem)' }}
-          </button>
-          <input #keyFileInput type="file" hidden accept=".pem,.key" (change)="onKeyFileSelected($event)">
-          <span class="key-status" *ngIf="config?.hasPrivateKey && !privateKeyFile">
-            <mat-icon>check_circle</mat-icon> Key stored
+
+        <!-- Password flow fields -->
+        <ng-container *ngIf="authMode === 'password'">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Client ID (Consumer Key)</mat-label>
+            <input matInput [(ngModel)]="salesforceClientId" placeholder="Connected App consumer key">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Client Secret</mat-label>
+            <input matInput [(ngModel)]="salesforceClientSecret" type="password"
+                   [placeholder]="config?.hasPasswordCredentials ? '(stored securely)' : 'Connected App client secret'">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Password</mat-label>
+            <input matInput [(ngModel)]="salesforcePassword" type="password"
+                   [placeholder]="config?.hasPasswordCredentials ? '(stored securely)' : 'Salesforce password'">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Security Token</mat-label>
+            <input matInput [(ngModel)]="salesforceSecurityToken" type="password"
+                   [placeholder]="config?.hasPasswordCredentials ? '(stored securely)' : 'Salesforce security token'">
+          </mat-form-field>
+          <span class="key-status" *ngIf="config?.hasPasswordCredentials">
+            <mat-icon>check_circle</mat-icon> Credentials stored securely
           </span>
-        </div>
+        </ng-container>
+
+        <!-- JWT flow fields -->
+        <ng-container *ngIf="authMode === 'jwt'">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Consumer Key (Connected App)</mat-label>
+            <input matInput [(ngModel)]="salesforceConsumerKey" placeholder="Connected App consumer key">
+          </mat-form-field>
+          <div class="file-upload-row">
+            <button mat-stroked-button (click)="keyFileInput.click()">
+              <mat-icon>vpn_key</mat-icon>
+              {{ privateKeyFile ? privateKeyFile.name : 'Upload Private Key (.pem)' }}
+            </button>
+            <input #keyFileInput type="file" hidden accept=".pem,.key" (change)="onKeyFileSelected($event)">
+            <span class="key-status" *ngIf="config?.hasPrivateKey && !privateKeyFile">
+              <mat-icon>check_circle</mat-icon> Key stored
+            </span>
+          </div>
+        </ng-container>
 
         <div class="test-row">
           <button mat-raised-button (click)="testConnection()" [disabled]="!canTest || testing">
@@ -96,6 +137,63 @@
             <input matInput type="number" [(ngModel)]="maxTurns" min="1" max="100" placeholder="e.g. 10">
             <mat-hint>Auto-escalate after this many back-and-forth messages</mat-hint>
           </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- AI Case Analysis -->
+    <mat-card class="config-card">
+      <mat-card-header>
+        <mat-card-title>AI Case Analysis</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-slide-toggle [(ngModel)]="aiAnalysisEnabled">
+          Enable AI-powered case analysis
+        </mat-slide-toggle>
+        <p class="hint-text" *ngIf="aiAnalysisEnabled">
+          When enabled, Claude AI will analyze each chat transcript to auto-generate a descriptive case subject,
+          suggest priority based on urgency, categorize the issue, and provide a summary for support agents.
+        </p>
+        <p class="hint-text" *ngIf="!aiAnalysisEnabled">
+          When disabled, cases use a generic subject line and the configured default priority.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Custom Field Mapping -->
+    <mat-card class="config-card">
+      <mat-card-header>
+        <mat-card-title>Custom Field Mapping</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-slide-toggle [(ngModel)]="customFieldsEnabled">
+          Enable custom Salesforce field mapping
+        </mat-slide-toggle>
+        <p class="hint-text">
+          Maps browser diagnostics and session data to custom fields on the Salesforce Case object.
+          Use "Test Connection" above to detect which fields exist in your org.
+        </p>
+
+        <div *ngIf="customFieldsEnabled" class="custom-fields-list">
+          <div *ngIf="availableCustomFields.length > 0">
+            <h4>Available Fields (detected from your org)</h4>
+            <mat-checkbox *ngFor="let f of availableCustomFields"
+                          [checked]="isFieldSelected(f)"
+                          (change)="toggleCustomField(f)"
+                          class="field-checkbox">
+              {{ f }}
+            </mat-checkbox>
+          </div>
+          <div *ngIf="availableCustomFields.length === 0">
+            <h4>Mappable Fields</h4>
+            <p class="hint-text">Click "Test Connection" to detect which of these exist in your Salesforce org.</p>
+            <mat-checkbox *ngFor="let f of mappableFields"
+                          [checked]="isFieldSelected(f)"
+                          (change)="toggleCustomField(f)"
+                          class="field-checkbox">
+              {{ f }}
+            </mat-checkbox>
+          </div>
         </div>
       </mat-card-content>
     </mat-card>

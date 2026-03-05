@@ -5,6 +5,7 @@ import * as hipaaS3 from '../services/hipaa-s3';
 import { ok, created, noContent, badRequest, forbidden, notFound, serverError, unauthorized } from '../response';
 import { IRequestContext, requireRole, parseBody } from '../auth';
 import { findAssistantByApiKey } from './widget-chat';
+import { analyzeTranscript } from '../services/case-analyzer';
 
 const ESCALATION_TABLE = process.env['ESCALATION_CONFIG_TABLE'] ?? '';
 const ASSISTANTS_TABLE = process.env['ASSISTANTS_TABLE'] ?? '';
@@ -14,10 +15,16 @@ export interface IEscalationConfig {
   assistantId: string;
   tenantId: string;
   enabled: boolean;
+  authMode: 'jwt' | 'password';
+  // JWT flow fields
   salesforceInstanceUrl: string;
   salesforceConsumerKey: string;
   salesforceUsername: string;
   ssmPrivateKeyParam: string;
+  // Password flow fields
+  salesforceLoginUrl?: string;
+  salesforceClientId?: string;
+  ssmPasswordCredentialsParam?: string;
   triggerMode: 'manual' | 'auto' | 'both';
   autoTriggers: {
     keywords: string[];
@@ -30,8 +37,38 @@ export interface IEscalationConfig {
     status: string;
     recordTypeId?: string;
   };
+  customFieldMapping?: {
+    enabled: boolean;
+    fields: string[];
+  };
+  aiAnalysisEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Get Salesforce access token using the configured auth mode (JWT or password).
+ */
+async function getSalesforceToken(config: IEscalationConfig): Promise<{ accessToken: string; instanceUrl: string }> {
+  if (config.authMode === 'password') {
+    if (!config.ssmPasswordCredentialsParam) throw new Error('Password credentials not configured');
+    return salesforce.getAccessTokenPasswordFlow(
+      {
+        loginUrl: config.salesforceLoginUrl || config.salesforceInstanceUrl,
+        clientId: config.salesforceClientId || config.salesforceConsumerKey,
+        ssmCredentialsParam: config.ssmPasswordCredentialsParam,
+      },
+      config.salesforceUsername,
+    );
+  }
+  // Default: JWT flow
+  if (!config.ssmPrivateKeyParam) throw new Error('Private key not configured');
+  return salesforce.getAccessToken({
+    instanceUrl: config.salesforceInstanceUrl,
+    consumerKey: config.salesforceConsumerKey,
+    username: config.salesforceUsername,
+    ssmPrivateKeyParam: config.ssmPrivateKeyParam,
+  });
 }
 
 /**
@@ -57,8 +94,14 @@ export async function handleEscalation(
       const config = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId });
       if (!config) return ok(null);
       if (config.tenantId !== tenantId) return forbidden();
-      // Never return the SSM param name directly — just indicate whether key is stored
-      return ok({ ...config, hasPrivateKey: !!config.ssmPrivateKeyParam, ssmPrivateKeyParam: undefined });
+      // Never return SSM param names — just indicate whether credentials are stored
+      return ok({
+        ...config,
+        hasPrivateKey: !!config.ssmPrivateKeyParam,
+        hasPasswordCredentials: !!config.ssmPasswordCredentialsParam,
+        ssmPrivateKeyParam: undefined,
+        ssmPasswordCredentialsParam: undefined,
+      });
     }
 
     // PUT /escalation/config/:assistantId
@@ -66,42 +109,73 @@ export async function handleEscalation(
       if (!requireRole(ctx, 'admin')) return forbidden('Admin role required');
       const b = parseBody<{
         enabled: boolean;
+        authMode?: 'jwt' | 'password';
         salesforceInstanceUrl: string;
         salesforceConsumerKey: string;
         salesforceUsername: string;
         privateKey?: string;
+        // Password flow fields
+        salesforceLoginUrl?: string;
+        salesforceClientId?: string;
+        salesforceClientSecret?: string;
+        salesforcePassword?: string;
+        salesforceSecurityToken?: string;
         triggerMode: 'manual' | 'auto' | 'both';
         autoTriggers: { keywords: string[]; sentimentThreshold?: number; maxTurns?: number };
         caseDefaults: { priority: string; origin: string; status: string; recordTypeId?: string };
+        customFieldMapping?: { enabled: boolean; fields: string[] };
+        aiAnalysisEnabled?: boolean;
       }>(JSON.stringify(body));
       if (!b) return badRequest('Invalid body');
 
-      const ssmParamName = `/chat-agent/dev/salesforce/${assistantId}/private-key`;
+      const existing = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId });
+      const now = new Date().toISOString();
+      const authMode = b.authMode ?? existing?.authMode ?? 'jwt';
 
-      // Store private key in SSM if provided
+      // Store JWT private key in SSM if provided
+      const ssmKeyParam = `/chat-agent/dev/salesforce/${assistantId}/private-key`;
       if (b.privateKey) {
-        await salesforce.storePrivateKey(ssmParamName, b.privateKey);
+        await salesforce.storePrivateKey(ssmKeyParam, b.privateKey);
       }
 
-      const now = new Date().toISOString();
-      const existing = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId });
+      // Store password credentials in SSM if provided
+      const ssmCredsParam = `/chat-agent/dev/salesforce/${assistantId}/password-creds`;
+      if (b.salesforcePassword) {
+        await salesforce.storePasswordCredentials(ssmCredsParam, {
+          clientSecret: b.salesforceClientSecret ?? '',
+          password: b.salesforcePassword,
+          securityToken: b.salesforceSecurityToken ?? '',
+        });
+      }
 
       const config: IEscalationConfig = {
         assistantId,
         tenantId,
         enabled: b.enabled,
+        authMode,
         salesforceInstanceUrl: b.salesforceInstanceUrl,
         salesforceConsumerKey: b.salesforceConsumerKey,
         salesforceUsername: b.salesforceUsername,
-        ssmPrivateKeyParam: b.privateKey ? ssmParamName : (existing?.ssmPrivateKeyParam ?? ''),
+        ssmPrivateKeyParam: b.privateKey ? ssmKeyParam : (existing?.ssmPrivateKeyParam ?? ''),
+        salesforceLoginUrl: b.salesforceLoginUrl ?? existing?.salesforceLoginUrl,
+        salesforceClientId: b.salesforceClientId ?? existing?.salesforceClientId,
+        ssmPasswordCredentialsParam: b.salesforcePassword ? ssmCredsParam : (existing?.ssmPasswordCredentialsParam ?? ''),
         triggerMode: b.triggerMode,
         autoTriggers: b.autoTriggers ?? { keywords: [] },
         caseDefaults: b.caseDefaults ?? { priority: 'Medium', origin: 'Chat', status: 'New' },
+        customFieldMapping: b.customFieldMapping ?? existing?.customFieldMapping,
+        aiAnalysisEnabled: b.aiAnalysisEnabled ?? existing?.aiAnalysisEnabled ?? false,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       };
       await ddb.putItem(ESCALATION_TABLE, config as unknown as Record<string, unknown>);
-      return ok({ ...config, hasPrivateKey: !!config.ssmPrivateKeyParam, ssmPrivateKeyParam: undefined });
+      return ok({
+        ...config,
+        hasPrivateKey: !!config.ssmPrivateKeyParam,
+        hasPasswordCredentials: !!config.ssmPasswordCredentialsParam,
+        ssmPrivateKeyParam: undefined,
+        ssmPasswordCredentialsParam: undefined,
+      });
     }
 
     // DELETE /escalation/config/:assistantId
@@ -124,16 +198,14 @@ export async function handleEscalation(
       const config = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId });
       if (!config) return notFound('No escalation config found');
       if (config.tenantId !== tenantId) return forbidden();
-      if (!config.ssmPrivateKeyParam) return badRequest('No private key configured');
-
       try {
-        const token = await salesforce.getAccessToken({
-          instanceUrl: config.salesforceInstanceUrl,
-          consumerKey: config.salesforceConsumerKey,
-          username: config.salesforceUsername,
-          ssmPrivateKeyParam: config.ssmPrivateKeyParam,
-        });
-        return ok({ success: true, instanceUrl: token.instanceUrl });
+        const token = await getSalesforceToken(config);
+        // Also detect available custom fields
+        let customFields: string[] = [];
+        try {
+          customFields = await salesforce.getCaseFieldMetadata(token.accessToken, token.instanceUrl);
+        } catch { /* non-critical */ }
+        return ok({ success: true, instanceUrl: token.instanceUrl, customFields });
       } catch (e) {
         return ok({ success: false, error: String(e) });
       }
@@ -165,6 +237,30 @@ export async function handleWidgetEscalation(
       userInfo?: { name?: string; email?: string; phone?: string };
       reason?: string;
       attachmentIds?: string[];
+      diagnostics?: {
+        userAgent?: string;
+        platform?: string;
+        language?: string;
+        screenResolution?: string;
+        viewport?: string;
+        cookiesEnabled?: boolean;
+        onlineStatus?: boolean;
+        timestamp?: string;
+        // Encompass / Eyefinity host app fields
+        hostApp?: string;
+        hostAppVersion?: string;
+        encompassUser?: string;
+        encompassUserId?: string;
+        officeNumber?: string;
+        companyId?: string;
+        officeId?: string;
+        ehrEnabled?: string;
+        trainingMode?: string;
+        currentRoute?: string;
+        currentPath?: string;
+        loginName?: string;
+        practiceLocationId?: string;
+      };
     }>(JSON.stringify(body));
     if (!b?.chatHistory?.length) return badRequest('chatHistory is required');
 
@@ -177,67 +273,220 @@ export async function handleWidgetEscalation(
     // Load escalation config
     const config = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId: assistant.id });
     if (!config?.enabled) return badRequest('Escalation is not enabled for this assistant');
-    if (!config.ssmPrivateKeyParam) return badRequest('Salesforce not configured');
+    if (!config.ssmPrivateKeyParam && !config.ssmPasswordCredentialsParam) return badRequest('Salesforce not configured');
 
-    // Get Salesforce access token
-    const token = await salesforce.getAccessToken({
-      instanceUrl: config.salesforceInstanceUrl,
-      consumerKey: config.salesforceConsumerKey,
-      username: config.salesforceUsername,
-      ssmPrivateKeyParam: config.ssmPrivateKeyParam,
-    });
+    // Get Salesforce access token (JWT or password flow)
+    const token = await getSalesforceToken(config);
 
-    // Format chat transcript
+    // ── AI-powered case analysis (if enabled) ─────────────────────
+
+    let aiSubject = '';
+    let aiPriority = '';
+    let aiSummary = '';
+    let aiCategory = '';
+
+    if (config.aiAnalysisEnabled) {
+      try {
+        const analysis = await analyzeTranscript(b.chatHistory, assistant.name);
+        aiSubject = analysis.subject;
+        aiPriority = analysis.priority;
+        aiSummary = analysis.summary;
+        aiCategory = analysis.category;
+      } catch (err) {
+        console.warn('AI analysis failed, using defaults:', err);
+      }
+    }
+
+    // ── Build structured case description ──────────────────────────
+
+    const now = new Date().toISOString();
+    const diag = b.diagnostics ?? {};
+    const ctx = b.context ?? {};
+
+    // Format chat transcript with timestamps
     const transcript = b.chatHistory
-      .map(m => `[${m.role}${m.timestamp ? ` ${m.timestamp}` : ''}]: ${m.content}`)
+      .map(m => {
+        const ts = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const role = m.role === 'user' ? 'User' : 'Assistant';
+        return `[${role}${ts ? ' ' + ts : ''}]: ${m.content}`;
+      })
       .join('\n');
 
-    // Format context data
-    const contextStr = b.context
-      ? Object.entries(b.context).map(([k, v]) => `${k}: ${v}`).join('\n')
-      : '';
-
-    const userInfoStr = b.userInfo
-      ? Object.entries(b.userInfo).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n')
-      : '';
-
     // Generate presigned download URLs for attachments (15-min expiry)
-    let attachmentSection = '';
+    const attachmentLines: string[] = [];
     if (b.attachmentIds?.length && ATTACHMENTS_TABLE) {
-      const attachmentUrls: string[] = [];
       for (const attId of b.attachmentIds) {
         const att = await ddb.getItem<{ id: string; s3Key: string; fileName: string; status: string }>(
           ATTACHMENTS_TABLE, { id: attId },
         );
         if (att?.status === 'confirmed' && att.s3Key) {
           const url = await hipaaS3.getHipaaDownloadUrl(att.s3Key, 900);
-          attachmentUrls.push(`${att.fileName}: ${url}`);
+          attachmentLines.push(`\u2022 ${att.fileName}: ${url}`);
         }
-      }
-      if (attachmentUrls.length > 0) {
-        attachmentSection = `\n--- Attachments (links expire in 15 min) ---\n${attachmentUrls.join('\n')}`;
       }
     }
 
-    const description = [
-      `=== Chat Escalation ===`,
-      `Assistant: ${assistant.name}`,
-      `Session: ${b.sessionId ?? 'N/A'}`,
+    // Build structured description (borrowed from SupportCaseManager pattern)
+    const sections: string[] = [
+      `\u2550\u2550\u2550 CHAT ESCALATION \u2550\u2550\u2550`,
+      `Assistant: ${assistant.name}  |  Session: ${b.sessionId ?? 'N/A'}  |  ${now}`,
       b.reason ? `Reason: ${b.reason}` : '',
-      userInfoStr ? `\n--- User Info ---\n${userInfoStr}` : '',
-      contextStr ? `\n--- Page Context ---\n${contextStr}` : '',
-      `\n--- Chat Transcript ---\n${transcript}`,
-      attachmentSection,
-    ].filter(Boolean).join('\n');
+      aiCategory ? `Category: ${aiCategory}` : '',
+    ];
+
+    // AI-generated summary (if available)
+    if (aiSummary) {
+      sections.push('', '--- CONVERSATION SUMMARY ---', aiSummary);
+    }
+
+    // User info section
+    if (b.userInfo?.name || b.userInfo?.email || b.userInfo?.phone) {
+      sections.push('', '--- USER INFORMATION ---');
+      if (b.userInfo.name) sections.push(`\u2022 Name: ${b.userInfo.name}`);
+      if (b.userInfo.email) sections.push(`\u2022 Email: ${b.userInfo.email}`);
+      if (b.userInfo.phone) sections.push(`\u2022 Phone: ${b.userInfo.phone}`);
+    }
+
+    // Page context section
+    if (ctx.getUrl || ctx.pageTitle || ctx.breadcrumb || ctx.getPageTitle || ctx.getBreadcrumb) {
+      sections.push('', '--- PAGE CONTEXT ---');
+      if (ctx.getUrl) sections.push(`\u2022 URL: ${ctx.getUrl}`);
+      if (ctx.pageTitle || ctx.getPageTitle) sections.push(`\u2022 Page Title: ${ctx.pageTitle || ctx.getPageTitle}`);
+      if (ctx.breadcrumb || ctx.getBreadcrumb) sections.push(`\u2022 Breadcrumb: ${ctx.breadcrumb || ctx.getBreadcrumb}`);
+    }
+
+    // Environment section (from browser diagnostics)
+    if (diag.userAgent || diag.screenResolution || diag.platform) {
+      sections.push('', '--- ENVIRONMENT ---');
+      if (diag.userAgent) sections.push(`\u2022 Browser: ${diag.userAgent}`);
+      if (diag.platform) sections.push(`\u2022 Platform: ${diag.platform}`);
+      if (diag.screenResolution) sections.push(`\u2022 Screen: ${diag.screenResolution}`);
+      if (diag.viewport) sections.push(`\u2022 Viewport: ${diag.viewport}`);
+      if (diag.language) sections.push(`\u2022 Language: ${diag.language}`);
+      if (diag.onlineStatus !== undefined) sections.push(`\u2022 Online: ${diag.onlineStatus}`);
+    }
+
+    // Encompass / Eyefinity host app section
+    if (diag.hostApp) {
+      sections.push('', '--- HOST APPLICATION ---');
+      sections.push(`• App: ${diag.hostApp} v${diag.hostAppVersion || 'unknown'}`);
+      if (diag.encompassUser) sections.push(`• User: ${diag.encompassUser} (ID: ${diag.encompassUserId || 'N/A'})`);
+      if (diag.officeNumber) sections.push(`• Office #: ${diag.officeNumber}`);
+      if (diag.companyId) sections.push(`• Company: ${diag.companyId}`);
+      if (diag.officeId) sections.push(`• Office ID: ${diag.officeId}`);
+      if (diag.loginName) sections.push(`• Login: ${diag.loginName}`);
+      if (diag.practiceLocationId) sections.push(`• Practice Location: ${diag.practiceLocationId}`);
+      if (diag.ehrEnabled) sections.push(`• EHR Enabled: ${diag.ehrEnabled}`);
+      if (diag.trainingMode) sections.push(`• Training Mode: ${diag.trainingMode}`);
+      if (diag.currentRoute || diag.currentPath) sections.push(`• Current Route: ${diag.currentRoute || diag.currentPath}`);
+    }
+
+    // Other custom context (excluding page keys and host app keys already shown)
+    const pageKeys = new Set(['getUrl', 'pageTitle', 'breadcrumb', 'getPageTitle', 'getBreadcrumb',
+      'hostApp', 'appVersion', 'userId', 'userName', 'officeNumber', 'companyId', 'officeId',
+      'ehrEnabled', 'trainingMode', 'isPremier', 'appBasePath', 'kpiView', 'loginName',
+      'practiceLocationId', 'currentRoute', 'currentPath']);
+    const otherCtx = Object.entries(ctx).filter(([k]) => !pageKeys.has(k));
+    if (otherCtx.length > 0) {
+      sections.push('', '--- ADDITIONAL CONTEXT ---');
+      for (const [k, v] of otherCtx) sections.push(`\u2022 ${k}: ${v}`);
+    }
+
+    // Chat transcript
+    sections.push('', `--- CHAT TRANSCRIPT (${b.chatHistory.length} messages) ---`, transcript);
+
+    // Attachments
+    if (attachmentLines.length > 0) {
+      sections.push('', '--- ATTACHMENTS (links expire in 15 min) ---', ...attachmentLines);
+    }
+
+    const description = sections.filter(s => s !== undefined).join('\n');
+
+    // ── Create Salesforce Case ──────────────────────────────────
+
+    // Use AI-generated subject if available, otherwise generic
+    const caseSubject = aiSubject || `Chat Escalation: ${assistant.name}${b.reason ? ` - ${b.reason}` : ''}`;
+
+    // Use higher of AI-suggested priority vs config default
+    const priorityRank: Record<string, number> = { Low: 1, Medium: 2, High: 3, Critical: 4 };
+    const configPriority = config.caseDefaults.priority || 'Medium';
+    const effectivePriority = aiPriority && (priorityRank[aiPriority] ?? 0) > (priorityRank[configPriority] ?? 0)
+      ? aiPriority : configPriority;
+
+    // ── Build custom field mapping ────────────────────────────────
+
+    const customFields: Record<string, unknown> = {};
+    if (config.customFieldMapping?.enabled && config.customFieldMapping.fields.length > 0) {
+      const allowed = new Set(config.customFieldMapping.fields);
+      const fieldMap: Record<string, unknown> = {
+        // Standard browser diagnostics
+        Browser_Info__c: diag.userAgent ? `${diag.userAgent}` : undefined,
+        User_Agent__c: diag.userAgent,
+        Page_Url__c: ctx.getUrl || ctx.url,
+        Screen_Resolution__c: diag.screenResolution,
+        Session_Id__c: b.sessionId,
+        Environment_Type__c: diag.platform || 'Web',
+        Operating_System__c: diag.platform,
+        // Encompass / Eyefinity host app fields
+        Host_App__c: diag.hostApp,
+        Host_App_Version__c: diag.hostAppVersion,
+        Encompass_User__c: diag.encompassUser,
+        Encompass_User_Id__c: diag.encompassUserId,
+        Office_Number__c: diag.officeNumber,
+        Company_Id__c: diag.companyId,
+        Office_Id__c: diag.officeId,
+        EHR_Enabled__c: diag.ehrEnabled,
+        Training_Mode__c: diag.trainingMode,
+        Login_Name__c: diag.loginName,
+        Practice_Location_Id__c: diag.practiceLocationId,
+        Current_Route__c: diag.currentRoute || diag.currentPath,
+      };
+      for (const [field, value] of Object.entries(fieldMap)) {
+        if (value !== undefined && allowed.has(field)) {
+          customFields[field] = typeof value === 'string' ? value.substring(0, 255) : value;
+        }
+      }
+    }
 
     const caseResult = await salesforce.createCase(token.accessToken, token.instanceUrl, {
-      Subject: `Chat Escalation: ${assistant.name}${b.reason ? ` - ${b.reason}` : ''}`,
-      Description: description,
-      Priority: config.caseDefaults.priority || 'Medium',
+      Subject: caseSubject.substring(0, 255),
+      Description: description.substring(0, 32000), // SF Description limit
+      Priority: effectivePriority,
       Origin: config.caseDefaults.origin || 'Chat',
       Status: config.caseDefaults.status || 'New',
       ...(config.caseDefaults.recordTypeId ? { RecordTypeId: config.caseDefaults.recordTypeId } : {}),
+      ...(b.userInfo?.name ? { SuppliedName: b.userInfo.name } : {}),
+      ...(b.userInfo?.email ? { SuppliedEmail: b.userInfo.email } : {}),
+      ...(b.userInfo?.phone ? { SuppliedPhone: b.userInfo.phone } : {}),
+      ...customFields,
     });
+
+    // ── Attach transcript + diagnostics as files on the Case ────
+
+    try {
+      // Attach full transcript as .txt
+      const transcriptBase64 = Buffer.from(description).toString('base64');
+      await salesforce.addAttachment(token.accessToken, token.instanceUrl, {
+        Name: `chat-transcript-${b.sessionId ?? 'unknown'}.txt`,
+        Body: transcriptBase64,
+        ContentType: 'text/plain',
+        ParentId: caseResult.id,
+      });
+
+      // Attach diagnostics as .json
+      if (Object.keys(diag).length > 0) {
+        const diagJson = JSON.stringify({ ...diag, context: ctx, sessionId: b.sessionId }, null, 2);
+        const diagBase64 = Buffer.from(diagJson).toString('base64');
+        await salesforce.addAttachment(token.accessToken, token.instanceUrl, {
+          Name: `diagnostics-${b.sessionId ?? 'unknown'}.json`,
+          Body: diagBase64,
+          ContentType: 'application/json',
+          ParentId: caseResult.id,
+        });
+      }
+    } catch (attachErr) {
+      console.warn('Non-critical: failed to attach files to case', attachErr);
+    }
 
     return ok({
       success: true,

@@ -1,0 +1,1269 @@
+{
+  "url": "https://pm-st-2.eyefinity.com/Appointments/Calendar",
+  "module": "Appointments",
+  "screenName": "Appointment Calendar",
+  "path": "/Appointments/Calendar",
+  "screenshotFile": "appointment-calendar.png",
+  "pageTitle": "Appointment Calendar",
+  "breadcrumb": "",
+  "formFields": [
+    {
+      "label": "Resource",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Office",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Resource",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Office",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Document Type",
+      "type": "select-one"
+    },
+    {
+      "label": "Document Name",
+      "type": "text"
+    },
+    {
+      "label": "Comments",
+      "type": "textarea"
+    },
+    {
+      "label": "uploadFileName",
+      "type": "textarea"
+    },
+    {
+      "label": "Select Source",
+      "type": "select-one"
+    },
+    {
+      "label": "BMP",
+      "type": "radio"
+    },
+    {
+      "label": "JPEG",
+      "type": "radio"
+    },
+    {
+      "label": "TIFF",
+      "type": "radio"
+    },
+    {
+      "label": "PNG",
+      "type": "radio"
+    },
+    {
+      "label": "PDF",
+      "type": "radio"
+    },
+    {
+      "label": "Multi-Page TIFF",
+      "type": "checkbox"
+    },
+    {
+      "label": "Multi-Page PDF",
+      "type": "checkbox"
+    },
+    {
+      "label": "Document Type",
+      "type": "select-one"
+    },
+    {
+      "label": "Document Name",
+      "type": "text"
+    },
+    {
+      "label": "Comments",
+      "type": "textarea"
+    },
+    {
+      "label": "Office",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "Resource",
+      "type": "select-one"
+    },
+    {
+      "label": "Appointment In",
+      "type": "select-one"
+    },
+    {
+      "label": "appointIn",
+      "type": "radio"
+    },
+    {
+      "label": "appointIn",
+      "type": "radio"
+    },
+    {
+      "label": "chkMonday",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkWednesday",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkFriday",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkTuesday",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkThursday",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkSaturday",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkSunday",
+      "type": "checkbox"
+    },
+    {
+      "label": "Duration",
+      "type": "select-one"
+    },
+    {
+      "label": "Starting Month",
+      "type": "select-one"
+    },
+    {
+      "label": "chkMorning",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkAfternoon",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkEvening",
+      "type": "checkbox"
+    },
+    {
+      "label": "appointmentsTable_length",
+      "type": "select-one"
+    },
+    {
+      "label": "insurance",
+      "type": "select-one"
+    },
+    {
+      "label": "medicalinsurance",
+      "type": "select-one"
+    },
+    {
+      "label": "telehealthOfficeVendor",
+      "type": "select-one"
+    },
+    {
+      "label": "preAppointment",
+      "type": "checkbox"
+    },
+    {
+      "label": "appointmentTime",
+      "type": "text"
+    },
+    {
+      "label": "appointmentDuration",
+      "type": "select-one"
+    },
+    {
+      "label": "confirmationStatus",
+      "type": "radio"
+    },
+    {
+      "label": "confirmationStatus",
+      "type": "radio"
+    },
+    {
+      "label": "confirmationStatus",
+      "type": "radio"
+    },
+    {
+      "label": "confirmationStatus",
+      "type": "radio"
+    },
+    {
+      "label": "appointmentStatus",
+      "type": "radio"
+    },
+    {
+      "label": "appointmentStatus",
+      "type": "radio"
+    },
+    {
+      "label": "appointmentStatus",
+      "type": "radio"
+    },
+    {
+      "label": "appointmentStatus",
+      "type": "radio"
+    },
+    {
+      "label": "appointmentStatus",
+      "type": "radio"
+    },
+    {
+      "label": "Enter appointment note...",
+      "type": "textarea"
+    },
+    {
+      "label": "urgentNote",
+      "type": "checkbox"
+    },
+    {
+      "label": "followupNote",
+      "type": "checkbox"
+    },
+    {
+      "label": "chkCheckAllActive",
+      "type": "checkbox"
+    },
+    {
+      "label": "Active",
+      "type": "checkbox"
+    },
+    {
+      "label": "exceptionType",
+      "type": "radio"
+    },
+    {
+      "label": "exceptionType",
+      "type": "radio"
+    },
+    {
+      "label": "starTime",
+      "type": "text"
+    },
+    {
+      "label": "duration",
+      "type": "radio"
+    },
+    {
+      "label": "duration",
+      "type": "radio"
+    },
+    {
+      "label": "durationTxt",
+      "type": "text"
+    },
+    {
+      "label": "Enter exception reason",
+      "type": "text"
+    },
+    {
+      "label": "exceptionRecurrence",
+      "type": "select-one"
+    },
+    {
+      "label": "dailySelection",
+      "type": "radio"
+    },
+    {
+      "label": "dailySelection",
+      "type": "radio"
+    },
+    {
+      "label": "Recur Every",
+      "type": "text"
+    },
+    {
+      "label": "Week(s) on",
+      "type": "select-multiple"
+    },
+    {
+      "label": "monthlyRecurModeType",
+      "type": "radio"
+    },
+    {
+      "label": "of Every Month(s)",
+      "type": "text"
+    },
+    {
+      "label": "monthlyRecurModeType",
+      "type": "radio"
+    },
+    {
+      "label": "complexPredicateType",
+      "type": "select-one"
+    },
+    {
+      "label": "complexItemType",
+      "type": "select-one"
+    },
+    {
+      "label": "of Every Month(s)",
+      "type": "text"
+    },
+    {
+      "label": "exceptionRangeOfRecurrence",
+      "type": "select-one"
+    },
+    {
+      "label": "occurrenceTxt",
+      "type": "text"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "*Carrier Name",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "*Plan Name",
+      "type": "select-one"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "*Address 1",
+      "type": "text"
+    },
+    {
+      "label": "Address 2",
+      "type": "text"
+    },
+    {
+      "label": "ZIP",
+      "type": "text"
+    },
+    {
+      "label": "City",
+      "type": "text"
+    },
+    {
+      "label": "State",
+      "type": "text"
+    },
+    {
+      "label": "Contact Name",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "Ext.",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "Keywords",
+      "type": "text"
+    },
+    {
+      "label": "Plan Name",
+      "type": "text"
+    },
+    {
+      "label": "Carrier Name",
+      "type": "text"
+    },
+    {
+      "label": "Plan ID",
+      "type": "text"
+    },
+    {
+      "label": "*Address 1",
+      "type": "text"
+    },
+    {
+      "label": "Address 2",
+      "type": "text"
+    },
+    {
+      "label": "ZIP",
+      "type": "text"
+    },
+    {
+      "label": "City",
+      "type": "text"
+    },
+    {
+      "label": "State",
+      "type": "text"
+    },
+    {
+      "label": "*Contact/Plan Name",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "Ext.",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "* Insured ID (1a)",
+      "type": "text"
+    },
+    {
+      "label": "useSsn",
+      "type": "checkbox"
+    },
+    {
+      "label": "last4Ssn",
+      "type": "text"
+    },
+    {
+      "label": "*Relationship to Subscriber",
+      "type": "select-one"
+    },
+    {
+      "label": "copyPatientAddressAndPhone",
+      "type": "checkbox"
+    },
+    {
+      "label": "fullId",
+      "type": "text"
+    },
+    {
+      "label": "First Name",
+      "type": "text"
+    },
+    {
+      "label": "Last Name",
+      "type": "text"
+    },
+    {
+      "label": "*Address 1 (7)",
+      "type": "text"
+    },
+    {
+      "label": "Address 2 (7)",
+      "type": "text"
+    },
+    {
+      "label": "ZIP",
+      "type": "text"
+    },
+    {
+      "label": "City",
+      "type": "text"
+    },
+    {
+      "label": "State",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "*Birth Sex (11a)",
+      "type": "radio"
+    },
+    {
+      "label": "gender",
+      "type": "radio"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "*Employer (11b)",
+      "type": "text"
+    },
+    {
+      "label": "*Group Number (11)",
+      "type": "text"
+    },
+    {
+      "label": "*Group Name (11c)",
+      "type": "text"
+    },
+    {
+      "label": "*Last Name",
+      "type": "text"
+    },
+    {
+      "label": "*First Name",
+      "type": "text"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "Zip Code",
+      "type": "text"
+    },
+    {
+      "label": "*Subscriber ID",
+      "type": "text"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "*Relationship to Subscriber",
+      "type": "select-one"
+    },
+    {
+      "label": "copyPatientAddressAndPhonePartialEym",
+      "type": "checkbox"
+    },
+    {
+      "label": "insuredIdPartial",
+      "type": "text"
+    },
+    {
+      "label": "useSsnPartial",
+      "type": "checkbox"
+    },
+    {
+      "label": "policyGroupPartial",
+      "type": "text"
+    },
+    {
+      "label": "First Name",
+      "type": "text"
+    },
+    {
+      "label": "Last Name",
+      "type": "text"
+    },
+    {
+      "label": "subscriberAddress1Partial",
+      "type": "text"
+    },
+    {
+      "label": "subscriberAddress2Partial",
+      "type": "text"
+    },
+    {
+      "label": "ZIP",
+      "type": "text"
+    },
+    {
+      "label": "City",
+      "type": "text"
+    },
+    {
+      "label": "State",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "genderPartial",
+      "type": "radio"
+    },
+    {
+      "label": "genderPartial",
+      "type": "radio"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "subscriberEmployerPartial",
+      "type": "text"
+    },
+    {
+      "label": "*SSN (Last 4)",
+      "type": "text"
+    },
+    {
+      "label": "*Full ID",
+      "type": "text"
+    },
+    {
+      "label": "*Relationship toSubscriber",
+      "type": "select-one"
+    },
+    {
+      "label": "copyPatientAddressAndPhonePartial",
+      "type": "checkbox"
+    },
+    {
+      "label": "* Insured ID (1a)",
+      "type": "text"
+    },
+    {
+      "label": "useSsnPartial",
+      "type": "checkbox"
+    },
+    {
+      "label": "Policy Group (11)",
+      "type": "text"
+    },
+    {
+      "label": "First Name",
+      "type": "text"
+    },
+    {
+      "label": "Last Name",
+      "type": "text"
+    },
+    {
+      "label": "*Address 1 (7)",
+      "type": "text"
+    },
+    {
+      "label": "Address 2 (7)",
+      "type": "text"
+    },
+    {
+      "label": "ZIP",
+      "type": "text"
+    },
+    {
+      "label": "City",
+      "type": "text"
+    },
+    {
+      "label": "State",
+      "type": "text"
+    },
+    {
+      "label": "(     )     -     ",
+      "type": "text"
+    },
+    {
+      "label": "*Birth Sex (11a)",
+      "type": "radio"
+    },
+    {
+      "label": "genderPartial",
+      "type": "radio"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "Employer (11b)",
+      "type": "text"
+    },
+    {
+      "label": "*First Name",
+      "type": "text"
+    },
+    {
+      "label": "*Last Name",
+      "type": "text"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "*Last 4 SSN",
+      "type": "text"
+    },
+    {
+      "label": "Full ID",
+      "type": "text"
+    },
+    {
+      "label": "searchSsnPatient",
+      "type": "text"
+    },
+    {
+      "label": "Member ID",
+      "type": "text"
+    },
+    {
+      "label": "*Last Name",
+      "type": "text"
+    },
+    {
+      "label": "*First Name",
+      "type": "text"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "Last 4 SSN",
+      "type": "text"
+    },
+    {
+      "label": "*Subscriber ID",
+      "type": "text"
+    },
+    {
+      "label": "isUrgent",
+      "type": "checkbox"
+    },
+    {
+      "label": "isFollowUp",
+      "type": "checkbox"
+    },
+    {
+      "label": "Enter appointment note here...",
+      "type": "textarea"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "mm/dd/yyyy",
+      "type": "text"
+    },
+    {
+      "label": "Search",
+      "type": "search"
+    },
+    {
+      "label": "loginName",
+      "type": "text"
+    },
+    {
+      "label": "password",
+      "type": "password"
+    },
+    {
+      "label": "Select month",
+      "type": "select-one"
+    },
+    {
+      "label": "Select year",
+      "type": "select-one"
+    }
+  ],
+  "buttons": [
+    "appsApps",
+    "cloudEyefinity EHR",
+    "calendar_monthStore Operations",
+    "helpHelp",
+    "person_outline Admin in 999",
+    "power_settings_newLogout",
+    "apps",
+    "Patients",
+    "Appointments",
+    "Orders",
+    "Catalog",
+    "Claim Management",
+    "Inventory",
+    "Reporting",
+    "More",
+    "menu",
+    "Quick List",
+    "fullscreen",
+    "Today",
+    "Wed, Mar 4, 2026",
+    "Day",
+    "Week",
+    "Week - Team",
+    "Book",
+    "Day",
+    "Find Open",
+    "Legend",
+    "Filter",
+    "Move",
+    "Options",
+    "Employee, Test",
+    "999",
+    "Options",
+    "Employee, Test",
+    "999",
+    "Select",
+    "Select",
+    "Select",
+    "Save",
+    "Today",
+    "Agenda",
+    "Day",
+    "Week",
+    "WeekTeam",
+    "Cancel",
+    "Delete",
+    "Select",
+    "Cancel",
+    "Save",
+    "Select",
+    "Select",
+    "NearestNeighbor",
+    "Cancel",
+    "Save",
+    "999",
+    "All",
+    "15 min.",
+    "Select",
+    "Search",
+    "Cancel",
+    "Review Pending Exam",
+    "Cancel",
+    "Cancel",
+    "Update Selected Items",
+    "Close",
+    "Go Back",
+    "Continue and Price Order",
+    "Change Patient",
+    "Select",
+    "Select",
+    "Select",
+    "Select",
+    "Cancel",
+    "Save",
+    "Cancel",
+    "Use This Record",
+    "Close",
+    "Save",
+    "Cancel",
+    "Yes",
+    "Back to Appointment Detail",
+    "Cancel",
+    "Schedule appointment",
+    "Edit Exception Details",
+    "Create Exception",
+    "Select",
+    "Select One Or More",
+    "Select All",
+    "Deselect All",
+    "Select",
+    "Select",
+    "Select",
+    "Cancel",
+    "Save",
+    "OK",
+    "Select",
+    "Select",
+    "Select",
+    "Cancel",
+    "Save",
+    "Save And View Eligibility",
+    "Cancel",
+    "Cancel",
+    "Search",
+    "Clear",
+    "Close",
+    "Close",
+    "Back Date",
+    "Cancel",
+    "Save & Continue",
+    "No",
+    "Request",
+    "Cancel",
+    "Update Selected Dependents",
+    "Cancel",
+    "Delete",
+    "Cancel",
+    "Delete",
+    "No",
+    "Yes",
+    "Select",
+    "Cancel",
+    "Find EyeMed Insurance",
+    "No",
+    "Yes",
+    "Cancel",
+    "Find VSP Insurance",
+    "Select",
+    "Cancel",
+    "Find VSP Insurance",
+    "Cancel",
+    "Search",
+    "Search",
+    "Search",
+    "Clear",
+    "Search",
+    "Clear",
+    "Close",
+    "Yes",
+    "Return to Order",
+    "news",
+    "Return to Appointment",
+    "Cancel",
+    "Save",
+    "Dismiss",
+    "Select resource...",
+    "Select resource...",
+    "Cancel",
+    "Move Appointments to Selected DateMove Appointments",
+    "Cancel",
+    "Update Insurance",
+    "Cancel",
+    "Override",
+    "Cancel",
+    "Save",
+    "Cancel",
+    "Ok",
+    "Review Pending Exam",
+    "Cancel",
+    "Cancel",
+    "Update Selected Items",
+    "Close",
+    "Go Back",
+    "Continue and Price Order"
+  ],
+  "headings": [
+    {
+      "level": "H4",
+      "text": "No Patient Selected"
+    },
+    {
+      "level": "H4",
+      "text": "Patient Details"
+    },
+    {
+      "level": "H4",
+      "text": "Delete Document"
+    },
+    {
+      "level": "H4",
+      "text": "Upload Document"
+    },
+    {
+      "level": "H4",
+      "text": "Scan Document"
+    },
+    {
+      "level": "H5",
+      "text": "Pending Insurance"
+    },
+    {
+      "level": "H3",
+      "text": "Find Open Appointments"
+    },
+    {
+      "level": "H3",
+      "text": "Review Exam"
+    },
+    {
+      "level": "H3",
+      "text": "Review Changes"
+    },
+    {
+      "level": "H4",
+      "text": "Unable to Generate Statement"
+    },
+    {
+      "level": "H4",
+      "text": "Price Exam Order"
+    },
+    {
+      "level": "H3",
+      "text": "Add Appointment"
+    },
+    {
+      "level": "H5",
+      "text": "Appointment Details"
+    },
+    {
+      "level": "H5",
+      "text": "Confirmation Status"
+    },
+    {
+      "level": "H5",
+      "text": "Appointment Status"
+    },
+    {
+      "level": "H4",
+      "text": "Duplicate Record Found"
+    },
+    {
+      "level": "H3",
+      "text": "Resource Settings"
+    },
+    {
+      "level": "H3",
+      "text": "Delete Appointment"
+    },
+    {
+      "level": "H3",
+      "text": "Appointment History"
+    },
+    {
+      "level": "H3",
+      "text": "Appointment Validation"
+    },
+    {
+      "level": "H3",
+      "text": "Calendar Exceptions"
+    },
+    {
+      "level": "H4",
+      "text": "*Exception Type"
+    },
+    {
+      "level": "H4",
+      "text": "Reason"
+    },
+    {
+      "level": "H4",
+      "text": "No Data"
+    },
+    {
+      "level": "H3",
+      "text": "Add Insurance"
+    },
+    {
+      "level": "H3",
+      "text": "Carrier Information"
+    },
+    {
+      "level": "H3",
+      "text": "Carrier Information"
+    },
+    {
+      "level": "H3",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H4",
+      "text": "Check For VSP Insurance Validation"
+    },
+    {
+      "level": "H4",
+      "text": "Check For EyeMed Insurance Validation"
+    },
+    {
+      "level": "H4",
+      "text": "EyeMed Member Search"
+    },
+    {
+      "level": "H4",
+      "text": "EyeMed Member Search"
+    },
+    {
+      "level": "H4",
+      "text": "EyeMed - Eligibility"
+    },
+    {
+      "level": "H4",
+      "text": "Eligibility Back Date"
+    },
+    {
+      "level": "H3",
+      "text": "Apply Changes to Dependents?"
+    },
+    {
+      "level": "H3",
+      "text": "Pending Insurance"
+    },
+    {
+      "level": "H3",
+      "text": "Delete Insurance"
+    },
+    {
+      "level": "H4",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H4",
+      "text": "Checking for EyeMed Insurance"
+    },
+    {
+      "level": "H4",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H4",
+      "text": "Checking for VSP Insurance"
+    },
+    {
+      "level": "H4",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H4",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H4",
+      "text": "OR"
+    },
+    {
+      "level": "H4",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H4",
+      "text": "Search Results"
+    },
+    {
+      "level": "H3",
+      "text": "VSP Subscriber Search"
+    },
+    {
+      "level": "H5",
+      "text": "VSP Member Search Results"
+    },
+    {
+      "level": "H5",
+      "text": "Your Patient Demographic / Profile Record"
+    },
+    {
+      "level": "H4",
+      "text": "VSP Member Search"
+    },
+    {
+      "level": "H4",
+      "text": "Checking for Medical System Integration Insurance"
+    },
+    {
+      "level": "H4",
+      "text": "Subscriber Information"
+    },
+    {
+      "level": "H3",
+      "text": "Add Eligibility/Authorization"
+    },
+    {
+      "level": "H4",
+      "text": "Insurance Rules"
+    },
+    {
+      "level": "H4",
+      "text": "Appointment Note:"
+    },
+    {
+      "level": "H5",
+      "text": "No open appointments for this criteria"
+    },
+    {
+      "level": "H4",
+      "text": "Move Appointments"
+    },
+    {
+      "level": "H3",
+      "text": "Responsible Party Information"
+    },
+    {
+      "level": "H4",
+      "text": "Access Denied ― Temporary Override"
+    },
+    {
+      "level": "H4",
+      "text": "Change Responsible Party"
+    },
+    {
+      "level": "H4",
+      "text": "Responsible Party Information"
+    },
+    {
+      "level": "H3",
+      "text": "Review Exam"
+    },
+    {
+      "level": "H3",
+      "text": "Review Changes"
+    },
+    {
+      "level": "H4",
+      "text": "Unable to Generate Statement"
+    },
+    {
+      "level": "H4",
+      "text": "Price Exam Order"
+    }
+  ],
+  "tableHeaders": [
+    [
+      "Start Time",
+      "Resource"
+    ],
+    [
+      "",
+      "ResourceId",
+      "Resource"
+    ],
+    [
+      "Plan ID",
+      "Plan Name",
+      "Carrier"
+    ],
+    [
+      "Eligibilities for EyeMed",
+      "Exam",
+      "Frame",
+      "Lens",
+      "Contact Lens",
+      "Contact Lens Exam"
+    ],
+    [
+      "",
+      "Start Time",
+      "Patient",
+      "Appointment Type",
+      "Items to Review"
+    ],
+    [
+      "",
+      "Plan Name"
+    ],
+    [
+      "Su",
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa"
+    ]
+  ],
+  "visibleText": "cloud\nEyefinity EHR\ncalendar_month\nStore Operations\nhelp\nHelp\nperson_outline\nAdmin in 999\npower_settings_new\nLogout\nPatients\nAppointments\nOrders\nCatalog\nClaim Management\nInventory\nReporting\nQuick List\nfullscreen\nToday\nWed, Mar 4, 2026\nBook\nDay\nWeek\nWeek - Team\nDay\nFind Open\nLegend\nMove\nShow Inactive Resources\nOffice\n004\n1\n10\n100\n101\n1010\n1012\n1014\n1016\n1018\n102\n1020\n1022\n1024\n1026\n1028\n103\n1030\n1031\n1032\n1034\n1035\n1036\n1038\n1039\n104\n1040\n1041\n1042\n1043\n1044\n1045\n1046\n1047\n1048\n1049\n105\n1051\n1052\n1053\n1054\n1056\n1057\n1058\n1059\n106\n1060\n1061\n1062\n1063\n1064\n1065\n1066\n1067\n1069\n107\n1070\n1071\n1072\n1073\n1074\n1076\n1078\n108\n1080\n1082\n1083\n1084\n1086\n109\n1090\n1092\n1094\n110\n110784\n110786\n110787\n110788\n110789\n111\n113\n114\n115\n1152\n1154\n1156\n1158\n116\n1160\n1166\n117\n1170\n1174\n1176\n1178\n118\n1180\n1186\n1188\n119\n1192\n1194\n1196\n1198\n12\n120\n1201\n1202\n1203\n1204\n1205\n1206\n1209\n121\n1210\n1211\n1213\n1214\n1221\n123\n1231\n1232\n1233\n1237\n1239\n1241\n1250\n1252\n1254\n1256\n1258\n1260\n1262\n1264\n1266\n1268\n127\n1275\n1278\n128\n1281\n1286\n1287\n1288\n129\n1290\n1292\n1296\n1298\n13\n130\n131\n132\n133\n1331\n1332\n1333\n1335\n1338\n1339\n134\n1341\n1343\n1346\n135\n1355\n1356\n1357\n1358\n1359\n136\n1360\n1362\n1363\n1364\n1366\n1367\n1368\n137\n1372\n1374\n1376\n1377\n1378\n1379\n138\n1380\n1381\n1382\n1383\n1384\n1385\n1387\n1389\n139\n1391\n1392\n1393\n1394\n1397\n1398\n1399\n14\n140\n1400\n1407\n1409\n1410\n1411\n1412\n1413\n1414\n1415\n1416\n1417\n142\n1420\n1422\n1423\n1424\n1425\n1427\n1430\n145\n146\n148\n149\n15\n150\n152\n154\n155\n157\n159\n16\n161\n163\n166\n17\n170\n172\n173\n174\n175\n176\n178\n18\n180\n184\n19\n2\n20\n200\n201\n203\n21\n210\n212\n213\n214\n216\n217\n218\n219\n22\n220\n221\n224\n225\n226\n227\n228\n229\n23\n230\n233\n236\n239\n24\n240\n241\n243\n248\n249\n25\n250\n251\n253\n254\n256\n257\n258\n259\n26\n262\n265\n266\n267\n268\n269\n27\n270\n273\n274\n275\n276\n277\n278\n279\n28\n280\n281\n283\n286\n287\n288\n289\n29\n3\n303\n304\n305\n306\n307\n308\n309\n31\n310\n311\n313\n314\n315\n316\n317\n318\n319\n32\n320\n323\n325\n326\n327\n328\n329\n33\n330\n331\n332\n334\n335\n336\n337\n338\n339\n340\n341\n343\n344\n346\n347\n348\n349\n350\n351\n359\n36\n361\n363\n366\n367\n368\n369\n370\n374\n375\n377\n378\n379\n38\n380\n381\n382\n383\n384\n385\n386\n387\n389\n39\n393\n394\n395\n396\n397\n398\n399\n400\n402\n403\n404\n405\n406\n409\n410\n411\n412\n413\n415\n417\n418\n419\n42\n420\n421\n424\n426\n427\n428\n429\n43\n430\n431\n432\n433\n434\n435\n436\n437\n438\n439\n44\n440\n442\n443\n444\n445\n446\n448\n449\n450\n451\n452\n453\n455\n457\n458\n459\n46\n460\n461\n463\n464\n466\n467\n468\n469\n47\n470\n471\n472\n473\n474\n478\n479\n481\n482\n483\n484\n485\n486\n487\n488\n489\n49\n494\n496\n497\n498\n499\n4999\n5\n50\n500\n502\n503\n504\n505\n506\n507\n509\n51\n510\n513\n514\n516\n517\n518\n519\n52\n520\n521\n522\n523\n524\n525\n526\n527\n528\n53\n531\n532\n533\n534\n535\n540\n541\n542\n543\n544\n545\n546\n547\n549\n550\n551\n552\n553\n554\n555\n556\n557\n558\n559\n560\n561\n562\n563\n564\n565\n566\n567\n568\n57\n570\n571\n572\n573\n574\n576\n577\n578\n579\n58\n580\n581\n582\n583\n584\n585\n586\n587\n588\n589\n59\n592\n593\n594\n595\n596\n597\n599\n6\n60\n600\n603\n606\n609\n61\n613\n614\n615\n616\n617\n618\n619\n62\n620\n623\n625\n626\n627\n628\n63\n632\n634\n635\n636\n637\n638\n639\n641\n642\n643\n646\n648\n649\n65\n650\n651\n652\n653\n654\n655\n656\n657\n658\n659\n66\n660\n661\n662\n663\n664\n665\n667\n668\n669\n67\n670\n671\n672\n673\n674\n675\n676\n677\n67",
+  "capturedAt": "2026-03-04T19:04:55.372Z"
+}

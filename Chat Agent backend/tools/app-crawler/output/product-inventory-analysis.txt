@@ -1,0 +1,41 @@
+SCREEN NAME: Product Inventory
+MODULE: Inventory
+URL PATTERN: /Product/Inventory
+
+PURPOSE:
+This screen allows users to manage and view stock orders for inventory items in the practice. It provides a comprehensive overview of all inventory-related orders including stock replenishment, transfers, and vendor orders with detailed tracking and status information.
+
+KEY FEATURES:
+- Stock order management with filtering by item type, stock order type, and supplier order info
+- Comprehensive order tracking with order numbers, dates, and status updates
+- Multiple inventory tabs (Stock, Lookup, Adjustments, Physical, Location, Reports, Labels, Transfer, Receipt, Vendor Order, Vendor Receipt, Vendor Return)
+- Detailed order information including resource, patient, item type, DC status, supplier, and shipping method
+- Order actions including Open and Print functionality
+- Pagination controls for browsing through multiple orders
+- Date filtering and stock order number search capabilities
+- Create new stock orders with "+ Stock Order" button
+
+COMMON USER TASKS:
+1. View and track existing stock orders and their current status
+2. Create new stock orders for inventory replenishment
+3. Filter and search for specific orders by type, date, or order number
+4. Open order details to view or modify order information
+5. Print stock order documentation
+6. Navigate between different inventory management functions using the tab system
+7. Monitor shipping status and supplier information for pending orders
+
+STEP-BY-STEP: View Stock Order Details
+1. Locate the desired stock order in the list using filters or pagination
+2. Click the "Open" link in the Actions column for that order
+3. Review the order details in the expanded view
+
+NAVIGATION:
+- How to get here: Main Menu → Inventory → Stock tab (default view)
+- Accessible from here: Other inventory tabs (Lookup, Adjustments, Physical, Location, Reports, Labels, Transfer, Receipt, Vendor Order, Vendor Receipt, Vendor Return)
+
+TIPS AND NOTES:
+- The screen shows 116 total items across 20 pages, indicating substantial inventory activity
+- All visible orders are for "Frames" from "DC - Distribution Center" with "Replenish (Auto)" stock order type
+- Orders are shipped via "Ground" method and show "Sent" status, indicating they're in transit
+- Use the date picker and filters to narrow down large lists of orders for easier management
+- The T Employee resource appears to be the default ordering entity for automatic replenishment orders

@@ -1,0 +1,40 @@
+SCREEN NAME: Analytics & Insights
+MODULE: Reporting
+URL PATTERN: /Reporting/AnalyticsAndInsights
+
+PURPOSE:
+This screen serves as the main dashboard for Eyefinity's enhanced reporting and analytics features. It provides users with access to various data visualization tools and reporting dashboards to analyze practice performance and make data-driven decisions.
+
+KEY FEATURES:
+- Welcome introduction to new Eyefinity Dashboards
+- Left navigation menu with reporting categories (Appointments, Billing, Patient Demographics, Patient Marketing, Net Collections, Sales By Provider & Staff, Sales Revenue, Pilot)
+- Complete view of all practice data
+- CSV data export functionality
+- New report types and enhanced dashboard features
+- Streamlined data visualization experience
+- Dashboard preview graphics showing charts and analytics
+
+COMMON USER TASKS:
+1. Access specific reporting dashboards from the left navigation menu
+2. View practice performance data through various analytics categories
+3. Export data sets in CSV format for external analysis
+4. Navigate between different reporting modules (Appointments, Billing, Demographics, etc.)
+5. Analyze sales revenue and provider performance metrics
+6. Review patient marketing and demographic insights
+7. Monitor net collections and billing data
+
+STEP-BY-STEP: Access Appointments Dashboard
+1. Click on "Appointments" in the left navigation menu
+2. Review the appointments analytics and data visualizations
+3. Use available filters or date ranges as needed
+4. Export data if required using CSV download option
+
+NAVIGATION:
+- How to get here: Main menu > Reporting > Analytics & Insights (or click "Reporting" tab then select this option)
+- Accessible from here: All reporting dashboard categories listed in left menu, main practice management modules via top navigation
+
+TIPS AND NOTES:
+- This is a new enhanced feature set - users should explore the improved dashboard capabilities
+- Data can be downloaded in CSV format for further analysis in external tools
+- Each category in the left menu provides specialized analytics for that area of practice management
+- The "Net Collections" category shows as "New" indicating it may be a recently added feature
