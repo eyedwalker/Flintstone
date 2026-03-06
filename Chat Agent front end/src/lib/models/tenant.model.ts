@@ -48,6 +48,7 @@ export interface ITenant {
   usageCurrentMonth: IUsageCounters;
   limits: IPlanLimits;
   allowedDomains: string[];
+  demoAssistantId?: string;
   createdAt: string;
   updatedAt: string;
 }

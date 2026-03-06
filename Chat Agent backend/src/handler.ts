@@ -10,7 +10,7 @@ import { handleHierarchy } from './routes/hierarchy';
 import { handleKnowledgeBase } from './routes/knowledge-base';
 import { handleGuardrails } from './routes/guardrails';
 import { handleTenants } from './routes/tenants';
-import { handleMetrics } from './routes/metrics';
+import { handleMetrics, handleWidgetFeedback } from './routes/metrics';
 import { handleBilling } from './routes/billing';
 import { handleTeam } from './routes/team';
 import { handleKnowledgeBaseDefinitions } from './routes/knowledge-base-definitions';
@@ -90,6 +90,9 @@ export const handler = async (
   }
   if (rawPath === '/widget/case-status' && method === 'POST') {
     return handleWidgetCaseStatus(body, event.headers);
+  }
+  if (rawPath === '/widget/feedback' && method === 'POST') {
+    return handleWidgetFeedback(body, event.headers);
   }
   if (rawPath === '/widget/attachment-url' && method === 'POST') {
     return handleWidgetAttachmentUrl(body, event.headers);

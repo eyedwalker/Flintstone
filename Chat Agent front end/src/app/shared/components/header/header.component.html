@@ -24,6 +24,30 @@
       </button>
     </mat-menu>
 
+    <!-- Demo widget picker (admin+ only) -->
+    <button mat-button [matMenuTriggerFor]="demoMenu" class="demo-picker"
+            *ngIf="orgCtx.hasRole('admin') && assistants.length">
+      <mat-icon [class.demo-active]="demoWidget.isDemoActive$ | async">
+        {{ (demoWidget.isDemoActive$ | async) ? 'chat' : 'chat_bubble_outline' }}
+      </mat-icon>
+      <span class="demo-label">Demo</span>
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #demoMenu="matMenu">
+      <button mat-menu-item (click)="setDemoAssistant(null)"
+              [class.active-demo-item]="!demoAssistantId">
+        <mat-icon>block</mat-icon>
+        <span>Off</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item *ngFor="let a of assistants"
+              (click)="setDemoAssistant(a.id)"
+              [class.active-demo-item]="demoAssistantId === a.id">
+        <mat-icon>{{ demoAssistantId === a.id ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon>
+        <span>{{ a.name }}</span>
+      </button>
+    </mat-menu>
+
     <!-- User menu -->
     <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-btn">
       <mat-icon>account_circle</mat-icon>

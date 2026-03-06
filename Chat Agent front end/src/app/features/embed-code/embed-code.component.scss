@@ -1,6 +1,20 @@
 .embed-layout { display: flex; flex-direction: column; gap: 20px; max-width: 860px; }
 
-.scope-card, .guide-card { display: flex; flex-direction: column; gap: 12px; }
+.scope-card, .guide-card, .demo-card { display: flex; flex-direction: column; gap: 12px; }
+
+.demo-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.demo-status {
+  font-size: 0.82rem;
+  color: #4caf50;
+  font-weight: 500;
+  &.warn { color: #f57c00; }
+}
 
 .section-desc { font-size: 0.85rem; color: rgba(0,0,0,0.5); margin: 0; }
 

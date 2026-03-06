@@ -55,6 +55,25 @@
     [downloadUrl]="widgetDownloadUrl">
   </bcc-snippet-display>
 
+  <!-- Live Demo -->
+  <div class="section-card demo-card">
+    <h3 class="section-title"><mat-icon>play_circle</mat-icon> Live Demo</h3>
+    <p class="section-desc">
+      Launch the chat widget directly on this page to preview how it looks and behaves.
+      Uses the current assistant configuration and scope selection above.
+    </p>
+    <div class="demo-actions">
+      <button mat-flat-button color="primary" type="button" (click)="startDemo()" *ngIf="!demoActive" [disabled]="!canChat">
+        <mat-icon>rocket_launch</mat-icon> Launch Widget Demo
+      </button>
+      <button mat-stroked-button color="warn" type="button" (click)="stopDemo()" *ngIf="demoActive">
+        <mat-icon>stop_circle</mat-icon> Stop Demo
+      </button>
+      <span class="demo-status" *ngIf="demoActive">Widget is running on this page</span>
+      <span class="demo-status warn" *ngIf="!canChat">Assistant must be provisioned to demo</span>
+    </div>
+  </div>
+
   <!-- Live test chat sub-component -->
   <bcc-chat-tester
     [assistantId]="assistantId"

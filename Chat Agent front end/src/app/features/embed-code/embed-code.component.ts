@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -19,7 +19,7 @@ import { environment } from '../../../environments/environment';
   templateUrl: './embed-code.component.html',
   styleUrls: ['./embed-code.component.scss'],
 })
-export class EmbedCodeComponent implements OnInit {
+export class EmbedCodeComponent implements OnInit, OnDestroy {
   assistantId = '';
   tenantId = '';
   assistant: IAssistant | null = null;
@@ -32,6 +32,7 @@ export class EmbedCodeComponent implements OnInit {
   selfHostedSnippet = '';
   inlineSnippet = '';
   widgetDownloadUrl = '';
+  demoActive = false;
   private widgetSource = '';
 
   constructor(
@@ -133,6 +134,42 @@ export class EmbedCodeComponent implements OnInit {
       return this.nodes.find((n) => n.id === this.selectedNodeId)?.nodeApiKey ?? '';
     }
     return this.assistant?.apiKey ?? '';
+  }
+
+  startDemo(): void {
+    this.stopDemo(); // clean up any prior instance
+    if (!this.consoleSnippet) return;
+    // eslint-disable-next-line no-eval
+    try {
+      eval(this.consoleSnippet);
+      this.demoActive = true;
+    } catch (e) {
+      this.snackBar.open('Failed to launch demo widget', '', { duration: 3000 });
+    }
+  }
+
+  stopDemo(): void {
+    // Remove widget container
+    const widget = document.getElementById('awsac-widget');
+    if (widget) widget.remove();
+    // Remove injected style tags (widget injects <style> with awsac- rules)
+    document.querySelectorAll('style').forEach((el) => {
+      if (el.textContent?.includes('.awsac-bubble')) el.remove();
+    });
+    // Remove injected script tag
+    document.querySelectorAll('script').forEach((el) => {
+      if (el.src?.includes('aws-agent-chat')) el.remove();
+    });
+    // Clear global reference so re-init works
+    const w = window as unknown as Record<string, unknown>;
+    if (w['AWSAgentChat']) {
+      delete w['AWSAgentChat'];
+    }
+    this.demoActive = false;
+  }
+
+  ngOnDestroy(): void {
+    this.stopDemo();
   }
 
   private flattenTree(nodes: IHierarchyTreeNode[]): IHierarchyTreeNode[] {

@@ -7,6 +7,7 @@ import { assertOwnership, parseBody, resolveNodeRole } from '../auth';
 
 const TABLE = process.env['ASSISTANTS_TABLE'] ?? '';
 const NODE_USERS_TABLE = process.env['NODE_USERS_TABLE'] ?? '';
+const METRICS_TABLE = process.env['METRICS_TABLE'] ?? '';
 
 interface IAssistantChatInfo {
   id: string;
@@ -94,7 +95,28 @@ export async function handleChat(
       roleFilter,
     );
 
-    return ok({ reply, sessionId });
+    // Write metrics record (fire-and-forget)
+    let metricId: string | undefined;
+    try {
+      metricId = uuidv4();
+      await ddb.putItem(METRICS_TABLE, {
+        id: metricId,
+        assistantId,
+        tenantId,
+        sessionId,
+        query: b.message.trim(),
+        responseLength: reply.length,
+        guardrailTriggered: false,
+        videoCited: /video|vimeo|youtube/i.test(reply),
+        satisfied: null,
+        source: 'admin',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (metricErr) {
+      console.error('metrics write error (non-critical)', metricErr);
+    }
+
+    return ok({ reply, sessionId, metricId });
   } catch (e) {
     console.error('chat handler error', e);
     return serverError(String(e));  // serverError now sanitizes — only logs internally

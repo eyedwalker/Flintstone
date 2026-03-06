@@ -9,6 +9,7 @@ const ASSISTANTS_TABLE = process.env['ASSISTANTS_TABLE'] ?? '';
 const NODE_USERS_TABLE = process.env['NODE_USERS_TABLE'] ?? '';
 const ASSISTANT_KB_TABLE = process.env['ASSISTANT_KB_TABLE'] ?? '';
 const KB_DEFS_TABLE = process.env['KNOWLEDGE_BASES_TABLE'] ?? '';
+const METRICS_TABLE = process.env['METRICS_TABLE'] ?? '';
 
 interface IWidgetAssistant {
   id: string;
@@ -159,7 +160,28 @@ export async function handleWidgetChat(
       roleFilter,
     );
 
-    return ok({ success: true, data: { reply, sessionId } });
+    // Write metrics record (fire-and-forget)
+    let metricId: string | undefined;
+    try {
+      metricId = uuidv4();
+      await ddb.putItem(METRICS_TABLE, {
+        id: metricId,
+        assistantId: assistant.id,
+        tenantId: assistant.tenantId,
+        sessionId,
+        query: (b.message || '').trim(),
+        responseLength: reply.length,
+        guardrailTriggered: false,
+        videoCited: /video|vimeo|youtube/i.test(reply),
+        satisfied: null,
+        source: 'widget',
+        createdAt: new Date().toISOString(),
+      });
+    } catch (metricErr) {
+      console.error('metrics write error (non-critical)', metricErr);
+    }
+
+    return ok({ success: true, data: { reply, sessionId, metricId } });
   } catch (e) {
     console.error('widget chat error', e);
     return serverError(String(e));

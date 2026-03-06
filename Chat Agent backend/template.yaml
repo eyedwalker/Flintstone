@@ -543,6 +543,14 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
+        WidgetFeedbackEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/feedback
+            Method: POST
+            Auth:
+              Authorizer: NONE
         # OpenAPI spec — public, no JWT
         DocsEvent:
           Type: HttpApi
