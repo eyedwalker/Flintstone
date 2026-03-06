@@ -26,28 +26,42 @@
 
   <pre class="snippet-block"><code>{{ activeSnippet }}</code></pre>
 
-  <div class="snippet-note" *ngIf="activeTab === 'html'">
+  <div class="snippet-note use-case-note" *ngIf="activeTab === 'html'">
     <mat-icon>info_outline</mat-icon>
-    Paste this just before <code>&lt;/body&gt;</code> on any page where you want the chat widget to appear.
+    <div>
+      <strong>Best for: Production websites</strong><br>
+      The standard way to add the chat widget. Paste this just before <code>&lt;/body&gt;</code> on any page.
+      The widget script loads from our CDN &mdash; no file hosting required on your end. Works with most websites unless they
+      have a strict Content Security Policy that blocks external scripts.
+    </div>
   </div>
-  <div class="snippet-note" *ngIf="activeTab === 'console'">
+  <div class="snippet-note use-case-note" *ngIf="activeTab === 'console'">
     <mat-icon>info_outline</mat-icon>
-    Self-contained inline snippet — paste into the browser DevTools console to demo the widget.
-    Works even on sites with strict CSP since no external scripts are loaded.
+    <div>
+      <strong>Best for: Quick demos &amp; testing</strong><br>
+      Paste this directly into your browser's DevTools console (F12 &rarr; Console) to instantly preview the widget on any
+      page without modifying source code. The widget script is fetched and injected at runtime. Great for showing stakeholders
+      how the widget will look on their site.
+    </div>
   </div>
   <div class="snippet-note self-hosted-note" *ngIf="activeTab === 'self-hosted'">
     <mat-icon>security</mat-icon>
     <div>
-      <strong>For sites with strict Content Security Policy (CSP)</strong><br>
-      Download the widget script and host it on your own domain to bypass CSP restrictions.
+      <strong>Best for: Sites with strict Content Security Policy (CSP)</strong><br>
+      If the target site blocks external scripts (e.g. Encompass, internal portals), download the widget file and host it
+      on the same domain. The snippet then references your local copy instead of our CDN, fully complying with CSP restrictions.
       <button mat-stroked-button type="button" (click)="downloadWidgetScript()" class="download-script-btn">
         <mat-icon>download</mat-icon> Download Widget Script
       </button>
     </div>
   </div>
-  <div class="snippet-note" *ngIf="activeTab === 'inline'">
+  <div class="snippet-note use-case-note" *ngIf="activeTab === 'inline'">
     <mat-icon>info_outline</mat-icon>
-    Fully self-contained snippet with the widget JS embedded inline.
-    Paste into the browser DevTools console to demo on any site — no external scripts loaded, bypasses all CSP restrictions.
+    <div>
+      <strong>Best for: CSP-restricted demos</strong><br>
+      The entire widget script is embedded directly in the snippet &mdash; nothing is loaded externally. Paste into DevTools
+      console to demo on locked-down sites (like Encompass or internal apps) that block both external scripts and dynamic
+      script injection. Larger snippet size but works anywhere.
+    </div>
   </div>
 </div>

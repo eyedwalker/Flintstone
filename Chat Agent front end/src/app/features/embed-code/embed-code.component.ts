@@ -105,7 +105,7 @@ export class EmbedCodeComponent implements OnInit {
         ? {
             enabled: true,
             mode: this.escalationConfig.triggerMode,
-            buttonLabel: 'Talk to a Human',
+            buttonLabel: 'Support',
           }
         : undefined,
     };

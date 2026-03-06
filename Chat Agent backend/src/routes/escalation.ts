@@ -207,7 +207,16 @@ export async function handleEscalation(
         } catch { /* non-critical */ }
         return ok({ success: true, instanceUrl: token.instanceUrl, customFields });
       } catch (e) {
-        return ok({ success: false, error: String(e) });
+        // Return diagnostic info to help troubleshoot
+        const diagnostic: Record<string, unknown> = {
+          authMode: config.authMode,
+          instanceUrl: config.salesforceInstanceUrl,
+          username: config.salesforceUsername,
+          consumerKeyPrefix: config.salesforceConsumerKey?.substring(0, 20) + '...',
+          hasPrivateKey: !!config.ssmPrivateKeyParam,
+          hasPasswordCreds: !!config.ssmPasswordCredentialsParam,
+        };
+        return ok({ success: false, error: String(e), diagnostic });
       }
     }
 
@@ -425,7 +434,7 @@ export async function handleWidgetEscalation(
         Page_Url__c: ctx.getUrl || ctx.url,
         Screen_Resolution__c: diag.screenResolution,
         Session_Id__c: b.sessionId,
-        Environment_Type__c: diag.platform || 'Web',
+        Environment_Type__c: diag.platform,
         Operating_System__c: diag.platform,
         // Encompass / Eyefinity host app fields
         Host_App__c: diag.hostApp,
@@ -448,7 +457,7 @@ export async function handleWidgetEscalation(
       }
     }
 
-    const caseResult = await salesforce.createCase(token.accessToken, token.instanceUrl, {
+    const caseData: salesforce.ISalesforceCase = {
       Subject: caseSubject.substring(0, 255),
       Description: description.substring(0, 32000), // SF Description limit
       Priority: effectivePriority,
@@ -459,7 +468,25 @@ export async function handleWidgetEscalation(
       ...(b.userInfo?.email ? { SuppliedEmail: b.userInfo.email } : {}),
       ...(b.userInfo?.phone ? { SuppliedPhone: b.userInfo.phone } : {}),
       ...customFields,
-    });
+    };
+
+    // Try creating the case; if custom fields cause picklist errors, strip them and retry
+    let caseResult: { id: string; caseNumber?: string };
+    try {
+      caseResult = await salesforce.createCase(token.accessToken, token.instanceUrl, caseData);
+    } catch (createErr) {
+      const errMsg = String(createErr);
+      if (errMsg.includes('INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST') || errMsg.includes('INVALID_FIELD')) {
+        console.warn('Case creation failed with field error, retrying without custom fields:', errMsg);
+        // Strip all custom __c fields and retry with standard fields only
+        const standardData = Object.fromEntries(
+          Object.entries(caseData).filter(([k]) => !k.endsWith('__c'))
+        ) as salesforce.ISalesforceCase;
+        caseResult = await salesforce.createCase(token.accessToken, token.instanceUrl, standardData);
+      } else {
+        throw createErr;
+      }
+    }
 
     // ── Attach transcript + diagnostics as files on the Case ────
 
@@ -495,6 +522,83 @@ export async function handleWidgetEscalation(
     });
   } catch (e) {
     console.error('widget escalation error', e);
+    return serverError(String(e));
+  }
+}
+
+/**
+ * Public widget auto-escalation check — analyzes last messages for triggers.
+ */
+/**
+ * Public widget endpoint — add a follow-up comment to an existing Salesforce Case.
+ * Authenticated via API key.
+ */
+export async function handleWidgetCaseComment(
+  body: Record<string, unknown>,
+  headers: Record<string, string | undefined>,
+): Promise<APIGatewayProxyResultV2> {
+  try {
+    const apiKey = headers['x-api-key'] ?? headers['X-Api-Key'] ?? '';
+    if (!apiKey) return unauthorized('Missing API key');
+
+    const b = parseBody<{
+      caseId: string;
+      comment: string;
+    }>(JSON.stringify(body));
+    if (!b?.caseId || !b?.comment) return badRequest('caseId and comment are required');
+
+    const assistant = await findAssistantByApiKey(apiKey) as {
+      id: string; tenantId: string; name: string;
+    } | null;
+    if (!assistant) return unauthorized('Invalid API key');
+
+    const config = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId: assistant.id });
+    if (!config?.enabled) return badRequest('Escalation is not enabled');
+
+    const token = await getSalesforceToken(config);
+    const commentId = await salesforce.addCaseComment(
+      token.accessToken, token.instanceUrl,
+      b.caseId, b.comment, true,
+    );
+
+    return ok({ success: true, commentId });
+  } catch (e) {
+    console.error('widget case-comment error', e);
+    return serverError(String(e));
+  }
+}
+
+/**
+ * Public widget endpoint — check status of an existing Salesforce Case.
+ * Authenticated via API key.
+ */
+export async function handleWidgetCaseStatus(
+  body: Record<string, unknown>,
+  headers: Record<string, string | undefined>,
+): Promise<APIGatewayProxyResultV2> {
+  try {
+    const apiKey = headers['x-api-key'] ?? headers['X-Api-Key'] ?? '';
+    if (!apiKey) return unauthorized('Missing API key');
+
+    const b = parseBody<{ caseId: string }>(JSON.stringify(body));
+    if (!b?.caseId) return badRequest('caseId is required');
+
+    const assistant = await findAssistantByApiKey(apiKey) as {
+      id: string; tenantId: string; name: string;
+    } | null;
+    if (!assistant) return unauthorized('Invalid API key');
+
+    const config = await ddb.getItem<IEscalationConfig>(ESCALATION_TABLE, { assistantId: assistant.id });
+    if (!config?.enabled) return badRequest('Escalation is not enabled');
+
+    const token = await getSalesforceToken(config);
+    const status = await salesforce.getCaseStatus(
+      token.accessToken, token.instanceUrl, b.caseId,
+    );
+
+    return ok({ success: true, ...status });
+  } catch (e) {
+    console.error('widget case-status error', e);
     return serverError(String(e));
   }
 }

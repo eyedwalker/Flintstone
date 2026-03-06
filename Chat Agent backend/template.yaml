@@ -462,6 +462,8 @@ Resources:
   # ── Lambda Function ────────────────────────────────────────────────
   ApiFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
     Properties:
       FunctionName: !Sub "chat-agent-api-${Stage}"
       CodeUri: ./
@@ -525,6 +527,22 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
+        WidgetCaseCommentEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/case-comment
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WidgetCaseStatusEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/case-status
+            Method: POST
+            Auth:
+              Authorizer: NONE
         # OpenAPI spec — public, no JWT
         DocsEvent:
           Type: HttpApi
@@ -537,6 +555,8 @@ Resources:
 
   ProvisionFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
     Properties:
       FunctionName: !Sub "chat-agent-provision-${Stage}"
       CodeUri: ./

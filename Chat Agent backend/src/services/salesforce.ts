@@ -49,9 +49,10 @@ export async function deletePrivateKey(paramName: string): Promise<void> {
 
 /**
  * Get a Salesforce access token using the JWT Bearer flow.
- * - Build JWT: iss=consumerKey, sub=username, aud=login.salesforce.com
+ * - Build JWT: iss=consumerKey, sub=username, aud=instanceUrl or login.salesforce.com
  * - Sign with RS256 using private key from SSM
  * - Exchange for access_token via token endpoint
+ * - For My Domain orgs, tries the instance URL as aud first, then login.salesforce.com
  */
 export async function getAccessToken(config: ISalesforceConfig): Promise<{ accessToken: string; instanceUrl: string }> {
   // Retrieve private key from SSM
@@ -59,46 +60,89 @@ export async function getAccessToken(config: ISalesforceConfig): Promise<{ acces
     Name: config.ssmPrivateKeyParam,
     WithDecryption: true,
   }));
-  const privateKey = paramRes.Parameter?.Value ?? '';
+  let privateKey = paramRes.Parameter?.Value ?? '';
   if (!privateKey) throw new Error('Private key not found in SSM');
 
-  // Build JWT header + payload
-  const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64url');
-  const now = Math.floor(Date.now() / 1000);
-  const payload = Buffer.from(JSON.stringify({
-    iss: config.consumerKey,
-    sub: config.username,
-    aud: 'https://login.salesforce.com',
-    exp: now + 300, // 5-minute expiry
-  })).toString('base64url');
+  // Normalize line endings (Windows \r\n → Unix \n)
+  privateKey = privateKey.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 
-  const sigInput = `${header}.${payload}`;
-  const signature = crypto.sign('RSA-SHA256', Buffer.from(sigInput), privateKey)
-    .toString('base64url');
-
-  const assertion = `${sigInput}.${signature}`;
-
-  // Exchange JWT for access token
-  const tokenUrl = 'https://login.salesforce.com/services/oauth2/token';
-  const res = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
-    }).toString(),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Salesforce token exchange failed: ${res.status} ${errorText}`);
+  // Validate private key format
+  if (!privateKey.includes('-----BEGIN') || !privateKey.includes('PRIVATE KEY')) {
+    throw new Error(`Invalid private key format. Key starts with: "${privateKey.substring(0, 50)}..."`);
   }
 
-  const data = await res.json() as { access_token: string; instance_url: string };
-  return {
-    accessToken: data.access_token,
-    instanceUrl: data.instance_url || config.instanceUrl,
-  };
+  // Verify the key is parseable
+  try {
+    crypto.createPrivateKey(privateKey);
+  } catch (keyErr) {
+    throw new Error(`Cannot parse private key from SSM: ${keyErr}`);
+  }
+
+  // Determine audience URLs to try.
+  // For My Domain orgs (*.my.salesforce.com), the instance URL must be used as aud.
+  // Also try login.salesforce.com as fallback.
+  const instanceOrigin = config.instanceUrl?.replace(/\/+$/, '');
+  const audUrls: string[] = [];
+  if (instanceOrigin && !instanceOrigin.includes('login.salesforce.com') && !instanceOrigin.includes('test.salesforce.com')) {
+    audUrls.push(instanceOrigin); // My Domain URL first
+  }
+  audUrls.push('https://login.salesforce.com'); // Standard fallback
+
+  let lastError: Error | null = null;
+
+  for (const aud of audUrls) {
+    const tokenUrl = `${aud}/services/oauth2/token`;
+
+    // Build JWT header + payload
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64url');
+    const now = Math.floor(Date.now() / 1000);
+    const claims = {
+      iss: config.consumerKey,
+      sub: config.username,
+      aud,
+      exp: now + 300, // 5-minute expiry
+    };
+    const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+
+    const sigInput = `${header}.${payload}`;
+    const signature = crypto.sign('RSA-SHA256', Buffer.from(sigInput), privateKey)
+      .toString('base64url');
+
+    const assertion = `${sigInput}.${signature}`;
+
+    console.log(`[SF JWT] Attempting auth: aud=${aud} sub=${config.username} iss=${config.consumerKey.substring(0, 20)}... tokenUrl=${tokenUrl}`);
+
+    try {
+      const res = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion,
+        }).toString(),
+      });
+
+      const responseText = await res.text();
+
+      if (!res.ok) {
+        console.warn(`[SF JWT] Failed: aud=${aud} status=${res.status} response=${responseText}`);
+        lastError = new Error(`Salesforce JWT auth failed (aud=${aud}): ${res.status} ${responseText}`);
+        continue; // try next aud URL
+      }
+
+      const data = JSON.parse(responseText) as { access_token: string; instance_url: string };
+      console.log(`[SF JWT] Success: aud=${aud} instance_url=${data.instance_url}`);
+      return {
+        accessToken: data.access_token,
+        instanceUrl: data.instance_url || instanceOrigin,
+      };
+    } catch (fetchErr) {
+      console.warn(`[SF JWT] Network error with aud=${aud}:`, fetchErr);
+      lastError = fetchErr instanceof Error ? fetchErr : new Error(String(fetchErr));
+    }
+  }
+
+  throw lastError ?? new Error('All Salesforce JWT auth attempts failed');
 }
 
 /**
@@ -214,6 +258,97 @@ export async function createCase(
   } catch { /* non-critical */ }
 
   return { id: result.id, caseNumber };
+}
+
+/**
+ * Add an attachment (file) directly to a Salesforce Case.
+ * Body must be base64-encoded.
+ */
+/**
+ * Add a CaseComment to an existing Salesforce Case.
+ */
+export async function addCaseComment(
+  accessToken: string,
+  instanceUrl: string,
+  caseId: string,
+  commentBody: string,
+  isPublic: boolean = true,
+): Promise<string> {
+  const url = `${instanceUrl}/services/data/v60.0/sobjects/CaseComment`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ParentId: caseId,
+      CommentBody: commentBody,
+      IsPublished: isPublic,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Salesforce comment failed: ${res.status} ${errorText}`);
+  }
+
+  const result = await res.json() as { id: string; success: boolean };
+  if (!result.success) throw new Error('Salesforce comment returned success=false');
+  return result.id;
+}
+
+/**
+ * Get the current status + recent comments for a Salesforce Case.
+ */
+export async function getCaseStatus(
+  accessToken: string,
+  instanceUrl: string,
+  caseId: string,
+): Promise<{
+  status: string;
+  priority: string;
+  subject: string;
+  lastModifiedDate: string;
+  comments: Array<{ body: string; createdDate: string; isPublished: boolean }>;
+}> {
+  // Fetch case details
+  const caseUrl = `${instanceUrl}/services/data/v60.0/sobjects/Case/${caseId}?fields=Status,Priority,Subject,LastModifiedDate,CaseNumber`;
+  const caseRes = await fetch(caseUrl, {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!caseRes.ok) {
+    const errorText = await caseRes.text();
+    throw new Error(`Failed to get case: ${caseRes.status} ${errorText}`);
+  }
+  const caseData = await caseRes.json() as Record<string, unknown>;
+
+  // Fetch recent comments (last 10, public only)
+  let comments: Array<{ body: string; createdDate: string; isPublished: boolean }> = [];
+  try {
+    const soql = encodeURIComponent(
+      `SELECT CommentBody, CreatedDate, IsPublished FROM CaseComment WHERE ParentId = '${caseId}' AND IsPublished = true ORDER BY CreatedDate DESC LIMIT 10`
+    );
+    const commentRes = await fetch(`${instanceUrl}/services/data/v60.0/query?q=${soql}`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+    if (commentRes.ok) {
+      const commentData = await commentRes.json() as { records: Array<{ CommentBody: string; CreatedDate: string; IsPublished: boolean }> };
+      comments = commentData.records.map(r => ({
+        body: r.CommentBody,
+        createdDate: r.CreatedDate,
+        isPublished: r.IsPublished,
+      }));
+    }
+  } catch { /* non-critical */ }
+
+  return {
+    status: String(caseData.Status ?? ''),
+    priority: String(caseData.Priority ?? ''),
+    subject: String(caseData.Subject ?? ''),
+    lastModifiedDate: String(caseData.LastModifiedDate ?? ''),
+    comments,
+  };
 }
 
 /**

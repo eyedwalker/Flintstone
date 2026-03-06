@@ -14,7 +14,7 @@ import { handleMetrics } from './routes/metrics';
 import { handleBilling } from './routes/billing';
 import { handleTeam } from './routes/team';
 import { handleKnowledgeBaseDefinitions } from './routes/knowledge-base-definitions';
-import { handleEscalation, handleWidgetEscalation, handleWidgetCheckEscalation } from './routes/escalation';
+import { handleEscalation, handleWidgetEscalation, handleWidgetCheckEscalation, handleWidgetCaseComment, handleWidgetCaseStatus } from './routes/escalation';
 import { handleAttachments, handleWidgetAttachmentUrl, handleWidgetAttachmentConfirm } from './routes/attachments';
 import { handleWidgetPresets } from './routes/widget-presets';
 
@@ -84,6 +84,12 @@ export const handler = async (
   }
   if (rawPath === '/widget/check-escalation' && method === 'POST') {
     return handleWidgetCheckEscalation(body, event.headers);
+  }
+  if (rawPath === '/widget/case-comment' && method === 'POST') {
+    return handleWidgetCaseComment(body, event.headers);
+  }
+  if (rawPath === '/widget/case-status' && method === 'POST') {
+    return handleWidgetCaseStatus(body, event.headers);
   }
   if (rawPath === '/widget/attachment-url' && method === 'POST') {
     return handleWidgetAttachmentUrl(body, event.headers);
