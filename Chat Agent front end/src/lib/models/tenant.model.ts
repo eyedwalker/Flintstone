@@ -49,6 +49,8 @@ export interface ITenant {
   limits: IPlanLimits;
   allowedDomains: string[];
   demoAssistantId?: string;
+  demoAmeliaEnabled?: boolean;
+  demoAmeliaScriptUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -34,17 +34,28 @@
       <mat-icon>arrow_drop_down</mat-icon>
     </button>
     <mat-menu #demoMenu="matMenu">
+      <div mat-menu-item disabled class="demo-section-label">Bedrock Assistant</div>
       <button mat-menu-item (click)="setDemoAssistant(null)"
               [class.active-demo-item]="!demoAssistantId">
         <mat-icon>block</mat-icon>
         <span>Off</span>
       </button>
-      <mat-divider></mat-divider>
       <button mat-menu-item *ngFor="let a of assistants"
               (click)="setDemoAssistant(a.id)"
               [class.active-demo-item]="demoAssistantId === a.id">
         <mat-icon>{{ demoAssistantId === a.id ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon>
         <span>{{ a.name }}</span>
+      </button>
+      <mat-divider></mat-divider>
+      <div mat-menu-item disabled class="demo-section-label">Competitor Widget</div>
+      <button mat-menu-item (click)="toggleAmelia()"
+              [class.active-demo-item]="ameliaEnabled">
+        <mat-icon>{{ ameliaEnabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+        <span>{{ ameliaScriptUrl ? 'Active Script' : 'Default (Amelia)' }}</span>
+      </button>
+      <button mat-menu-item (click)="editAmeliaScript()">
+        <mat-icon>edit</mat-icon>
+        <span>Change Script URL</span>
       </button>
     </mat-menu>
 

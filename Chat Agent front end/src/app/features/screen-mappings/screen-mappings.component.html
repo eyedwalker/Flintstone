@@ -1,0 +1,90 @@
+<div class="screen-mappings-page">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <h2>Screen Mappings</h2>
+      <mat-form-field appearance="outline" class="assistant-select">
+        <mat-label>Assistant</mat-label>
+        <mat-select [(value)]="selectedAssistantId" (selectionChange)="onAssistantChange()">
+          <mat-option *ngFor="let a of assistants" [value]="a.id">{{ a.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="top-bar-right">
+      <button mat-raised-button color="primary" (click)="generate()"
+              [disabled]="generating || !selectedAssistantId">
+        <mat-icon>auto_awesome</mat-icon>
+        {{ generating ? 'Generating...' : 'Generate Mappings' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Status chips -->
+  <div class="status-bar" *ngIf="mappings.length">
+    <span class="status-chip total">{{ mappings.length }} screens</span>
+    <span class="status-chip ai" *ngIf="aiCount">{{ aiCount }} AI Generated</span>
+    <span class="status-chip reviewed" *ngIf="reviewedCount">{{ reviewedCount }} Reviewed</span>
+    <span class="status-chip custom" *ngIf="customCount">{{ customCount }} Custom</span>
+  </div>
+
+  <!-- Search -->
+  <mat-form-field appearance="outline" class="search-field" *ngIf="mappings.length">
+    <mat-label>Search screens...</mat-label>
+    <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearch()">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <!-- Loading -->
+  <div class="loading-wrap" *ngIf="loading || generating">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p *ngIf="generating">Generating screen mappings with AI... this may take a minute.</p>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="!loading && !generating && !mappings.length && selectedAssistantId">
+    <mat-icon class="empty-icon">map</mat-icon>
+    <h3>No screen mappings yet</h3>
+    <p>Click "Generate Mappings" to use AI to map your Encompass screens to relevant videos and help content.</p>
+  </div>
+
+  <!-- Sections -->
+  <mat-accordion multi *ngIf="!loading && sections.length">
+    <mat-expansion-panel *ngFor="let group of sections" [expanded]="group.expanded">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon class="section-icon">folder</mat-icon>
+          {{ group.section }}
+        </mat-panel-title>
+        <mat-panel-description>
+          {{ group.mappings.length }} screen{{ group.mappings.length !== 1 ? 's' : '' }}
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="screen-list">
+        <div class="screen-row" *ngFor="let m of group.mappings" (click)="openDetail(m)">
+          <div class="screen-info">
+            <div class="screen-name">{{ m.screenName }}</div>
+            <div class="screen-url">{{ m.urlPattern }}</div>
+          </div>
+          <div class="screen-badges">
+            <span class="badge video-badge" *ngIf="m.videos?.length" matTooltip="Videos mapped">
+              <mat-icon>ondemand_video</mat-icon> {{ m.videos.length }}
+            </span>
+            <span class="badge article-badge" *ngIf="m.helpArticles?.length" matTooltip="Help articles">
+              <mat-icon>article</mat-icon> {{ m.helpArticles.length }}
+            </span>
+            <span class="badge question-badge" *ngIf="m.trendingQuestions?.length" matTooltip="Trending questions">
+              <mat-icon>help_outline</mat-icon> {{ m.trendingQuestions.length }}
+            </span>
+            <mat-chip-listbox class="status-chip-wrap">
+              <mat-chip [color]="statusColor(m.status)" selected>{{ statusLabel(m.status) }}</mat-chip>
+            </mat-chip-listbox>
+          </div>
+          <button mat-icon-button (click)="deleteMapping(m, $event)" matTooltip="Delete">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</div>

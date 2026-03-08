@@ -1,0 +1,97 @@
+<div class="test-run-viewer-page">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <button mat-icon-button (click)="goBack()"><mat-icon>arrow_back</mat-icon></button>
+      <h2>Test Run Results</h2>
+      <span class="run-status" *ngIf="run" [ngClass]="run.status">{{ run.status }}</span>
+    </div>
+    <button mat-raised-button color="accent" (click)="analyzeAndImprove()"
+            [disabled]="analyzing || isRunning"
+            *ngIf="run?.status === 'completed'">
+      <mat-icon>{{ analyzing ? 'sync' : 'psychology' }}</mat-icon>
+      {{ analyzing ? 'Analyzing...' : 'Analyze & Improve' }}
+    </button>
+  </div>
+
+  <!-- Progress bar for running tests -->
+  <div class="progress-section" *ngIf="run && isRunning">
+    <div class="progress-label">
+      <mat-icon class="spin">sync</mat-icon>
+      Running: {{ run.completedCases }}/{{ run.totalCases }} cases ({{ getProgressPercent() }}%)
+    </div>
+    <mat-progress-bar mode="determinate" [value]="getProgressPercent()"></mat-progress-bar>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-cards" *ngIf="run">
+    <div class="summary-card">
+      <div class="card-value">{{ run.totalCases }}</div>
+      <div class="card-label">Total</div>
+    </div>
+    <div class="summary-card passed">
+      <div class="card-value">{{ run.passedCases }}</div>
+      <div class="card-label">Passed</div>
+    </div>
+    <div class="summary-card failed">
+      <div class="card-value">{{ run.failedCases }}</div>
+      <div class="card-label">Failed</div>
+    </div>
+    <div class="summary-card error" *ngIf="run.errorCases">
+      <div class="card-value">{{ run.errorCases }}</div>
+      <div class="card-label">Errors</div>
+    </div>
+    <div class="summary-card score">
+      <div class="card-value" [style.color]="scoreColor(run.avgScore)">{{ run.avgScore }}</div>
+      <div class="card-label">Avg Score</div>
+    </div>
+    <div class="summary-card reviewed">
+      <div class="card-value">{{ reviewedCount }}/{{ results.length }}</div>
+      <div class="card-label">Reviewed</div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar" *ngIf="results.length">
+    <button mat-stroked-button [class.active]="!statusFilter" (click)="statusFilter=''; applyFilter()">
+      All ({{ results.length }})
+    </button>
+    <button mat-stroked-button [class.active]="statusFilter==='passed'" (click)="statusFilter='passed'; applyFilter()">
+      Passed ({{ run?.passedCases }})
+    </button>
+    <button mat-stroked-button [class.active]="statusFilter==='failed'" (click)="statusFilter='failed'; applyFilter()">
+      Failed ({{ run?.failedCases }})
+    </button>
+    <button mat-stroked-button [class.active]="statusFilter==='error'" (click)="statusFilter='error'; applyFilter()"
+            *ngIf="run?.errorCases">
+      Errors ({{ run?.errorCases }})
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <!-- Results list -->
+  <div class="results-list" *ngIf="!loading && filteredResults.length">
+    <div class="result-row" *ngFor="let r of filteredResults; let i = index" (click)="openResult(r)">
+      <mat-icon [class]="statusClass(r.status)">{{ statusIcon(r.status) }}</mat-icon>
+      <div class="result-info">
+        <span class="result-turn">{{ r.turns[0]?.userMessage || '(empty)' }}</span>
+        <span class="result-meta">
+          {{ r.turns.length }} turn{{ r.turns.length !== 1 ? 's' : '' }}
+          &middot; {{ r.durationMs }}ms
+          <span *ngIf="r.userReview"> &middot; {{ r.userReview.rating }}/5</span>
+        </span>
+      </div>
+      <div class="result-score" [style.color]="scoreColor(r.aiEvaluation?.overallScore ?? 0)">
+        {{ r.aiEvaluation?.overallScore ?? '—' }}
+      </div>
+      <mat-icon class="reviewed-icon" *ngIf="r.userReview">rate_review</mat-icon>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !results.length && run?.status === 'completed'">
+    <p>No results found for this run.</p>
+  </div>
+</div>

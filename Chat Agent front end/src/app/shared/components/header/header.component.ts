@@ -16,6 +16,8 @@ import { IOrganizationMembership, IAssistant, ITenant } from '../../../../lib/mo
 export class HeaderComponent implements OnInit {
   assistants: IAssistant[] = [];
   demoAssistantId: string | null = null;
+  ameliaEnabled = false;
+  ameliaScriptUrl = '';
 
   constructor(
     public auth: AuthService,
@@ -35,6 +37,8 @@ export class HeaderComponent implements OnInit {
     ]);
     this.assistants = (listRes.data ?? []).filter((a) => a.status === 'ready');
     this.demoAssistantId = tenantRes.data?.demoAssistantId || null;
+    this.ameliaEnabled = !!tenantRes.data?.demoAmeliaEnabled;
+    this.ameliaScriptUrl = tenantRes.data?.demoAmeliaScriptUrl || '';
   }
 
   async setDemoAssistant(assistantId: string | null): Promise<void> {
@@ -48,8 +52,36 @@ export class HeaderComponent implements OnInit {
     }
   }
 
+  async toggleAmelia(): Promise<void> {
+    const enable = !this.ameliaEnabled;
+    const ok = await this.demoWidget.setAmelia(enable);
+    if (ok) {
+      this.ameliaEnabled = enable;
+      this.snackBar.open(
+        enable ? 'Competitor widget activated' : 'Competitor widget disabled',
+        '', { duration: 2000 },
+      );
+    }
+  }
+
+  async editAmeliaScript(): Promise<void> {
+    const current = this.ameliaScriptUrl || '';
+    const url = prompt('Enter the competitor chat widget script URL:', current);
+    if (url === null) return; // cancelled
+    const trimmed = url.trim();
+    if (!trimmed) {
+      this.snackBar.open('URL cannot be empty', '', { duration: 2000 });
+      return;
+    }
+    const ok = await this.demoWidget.setAmeliaScriptUrl(trimmed);
+    if (ok) {
+      this.ameliaScriptUrl = trimmed;
+      this.snackBar.open('Competitor script URL updated', '', { duration: 2000 });
+    }
+  }
+
   switchOrg(org: IOrganizationMembership): void {
-    this.demoWidget.teardown();
+    this.demoWidget.teardownAll();
     this.orgCtx.setActiveOrg(org);
     this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
       this.router.navigate(['/dashboard']);
@@ -59,7 +91,7 @@ export class HeaderComponent implements OnInit {
   }
 
   async signOut(): Promise<void> {
-    this.demoWidget.teardown();
+    this.demoWidget.teardownAll();
     this.orgCtx.clear();
     await this.auth.signOut();
   }

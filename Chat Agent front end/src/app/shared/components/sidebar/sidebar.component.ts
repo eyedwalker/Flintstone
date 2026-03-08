@@ -22,6 +22,8 @@ export class SidebarComponent {
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', exact: true },
     { label: 'Assistants', icon: 'smart_toy', route: '/assistants' },
     { label: 'Knowledge Bases', icon: 'menu_book', route: '/knowledge-bases' },
+    { label: 'Screen Mappings', icon: 'map', route: '/screen-mappings' },
+    { label: 'Test Suites', icon: 'science', route: '/test-suites' },
     { label: 'Hierarchy', icon: 'account_tree', route: '/hierarchy' },
     { label: 'Escalation', icon: 'support_agent', route: '/escalation', minRole: 'admin' },
     { label: 'Team', icon: 'group', route: '/team', minRole: 'admin' },

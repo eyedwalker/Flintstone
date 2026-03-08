@@ -1,0 +1,214 @@
+.test-case-editor-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  .top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    h2 { margin: 0; font-weight: 600; }
+  }
+
+  .top-bar-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.stats-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+
+  .stat-chip {
+    font-size: 0.78rem;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-weight: 500;
+
+    &.total { background: #e3f2fd; color: #1565c0; }
+    &.enabled { background: #e8f5e9; color: #2e7d32; }
+    &.ai { background: #fff3e0; color: #e65100; }
+    &.user { background: #f3e5f5; color: #7b1fa2; }
+  }
+}
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  .search-field {
+    flex: 1;
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+  }
+
+  .category-select {
+    width: 200px;
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+  }
+}
+
+.loading-wrap, .generating-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 0;
+  gap: 16px;
+  p { color: rgba(0,0,0,0.6); }
+  .hint { font-size: 0.85rem; color: rgba(0,0,0,0.4); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 64px 24px;
+
+  .empty-icon { font-size: 64px; width: 64px; height: 64px; color: rgba(0,0,0,0.2); }
+  h3 { margin-top: 16px; color: rgba(0,0,0,0.6); }
+  p { color: rgba(0,0,0,0.45); max-width: 400px; margin: 8px auto 16px; }
+  .empty-actions { display: flex; gap: 12px; justify-content: center; }
+}
+
+.case-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.case-row {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.15s;
+
+  &.expanded { border-color: rgba(0,0,0,0.15); }
+  &.disabled { opacity: 0.5; }
+}
+
+.case-summary {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  gap: 12px;
+
+  &:hover { background: rgba(0,0,0,0.02); }
+
+  .enable-toggle { flex-shrink: 0; }
+
+  .case-info {
+    flex: 1;
+    min-width: 0;
+
+    .case-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .case-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-weight: 500;
+
+      &.category { background: #e8eaf6; color: #283593; }
+      &.turns { background: #e0f2f1; color: #00695c; }
+      &.source {
+        &.ai-generated { background: #fff3e0; color: #e65100; }
+        &.user-created { background: #f3e5f5; color: #7b1fa2; }
+        &.imported { background: #e8f5e9; color: #2e7d32; }
+      }
+    }
+  }
+
+  .case-actions {
+    display: flex;
+    align-items: center;
+    .expand-icon { color: rgba(0,0,0,0.3); }
+  }
+}
+
+.case-detail {
+  padding: 16px 20px;
+  background: #fafafa;
+  border-top: 1px solid rgba(0,0,0,0.06);
+
+  .detail-fields {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    .name-field { flex: 2; }
+    .cat-field { flex: 1; }
+    .priority-field { width: 120px; }
+
+    mat-form-field {
+      ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+    }
+  }
+}
+
+.turns-section {
+  .section-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: rgba(0,0,0,0.7);
+  }
+}
+
+.turn-editor {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+
+  .turn-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    .turn-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(0,0,0,0.5);
+    }
+  }
+
+  .turn-field {
+    width: 100%;
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+  }
+}
+
+.add-turn-btn {
+  margin-top: 4px;
+  font-size: 0.85rem;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}

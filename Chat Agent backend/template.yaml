@@ -39,6 +39,12 @@ Globals:
         ASSISTANT_KB_TABLE: !Sub "chat-agent-assistant-kb-${Stage}"
         ESCALATION_CONFIG_TABLE: !Sub "chat-agent-escalation-config-${Stage}"
         WIDGET_PRESETS_TABLE: !Ref WidgetPresetsTable
+        SCREEN_MAPPINGS_TABLE: !Ref ScreenMappingsTable
+        TEST_SUITES_TABLE: !Ref TestSuitesTable
+        TEST_CASES_TABLE: !Ref TestCasesTable
+        TEST_RUNS_TABLE: !Ref TestRunsTable
+        TEST_RESULTS_TABLE: !Ref TestResultsTable
+        TEST_RUNNER_FUNCTION_NAME: !Sub "chat-agent-test-runner-${Stage}"
         ATTACHMENTS_TABLE: !Sub "chat-agent-attachments-${Stage}"
         AUDIT_LOG_TABLE: !Sub "chat-agent-audit-log-${Stage}"
         HIPAA_BUCKET: !Sub "chat-agent-hipaa-${Stage}"
@@ -257,6 +263,115 @@ Resources:
         - AttributeName: userId
           KeyType: HASH
 
+  ScreenMappingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-screen-mappings-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: assistantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: assistantId-index
+          KeySchema:
+            - AttributeName: assistantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  TestSuitesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-test-suites-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: assistantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: assistantId-index
+          KeySchema:
+            - AttributeName: assistantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  TestCasesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-test-cases-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: suiteId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: suiteId-index
+          KeySchema:
+            - AttributeName: suiteId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  TestRunsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-test-runs-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: suiteId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: suiteId-index
+          KeySchema:
+            - AttributeName: suiteId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  TestResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-test-results-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: runId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: runId-index
+          KeySchema:
+            - AttributeName: runId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
   WidgetPresetsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -335,6 +450,16 @@ Resources:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-audit-log-${Stage}"
                   - !GetAtt WidgetPresetsTable.Arn
                   - !Sub "${WidgetPresetsTable.Arn}/index/*"
+                  - !GetAtt ScreenMappingsTable.Arn
+                  - !Sub "${ScreenMappingsTable.Arn}/index/*"
+                  - !GetAtt TestSuitesTable.Arn
+                  - !Sub "${TestSuitesTable.Arn}/index/*"
+                  - !GetAtt TestCasesTable.Arn
+                  - !Sub "${TestCasesTable.Arn}/index/*"
+                  - !GetAtt TestRunsTable.Arn
+                  - !Sub "${TestRunsTable.Arn}/index/*"
+                  - !GetAtt TestResultsTable.Arn
+                  - !Sub "${TestResultsTable.Arn}/index/*"
               - Sid: S3Access
                 Effect: Allow
                 Action:
@@ -388,6 +513,12 @@ Resources:
                   - ssm:PutParameter
                   - ssm:DeleteParameter
                 Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/chat-agent/${Stage}/*"
+              - Sid: LambdaInvoke
+                Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-test-runner-${Stage}"
               - Sid: S3VectorsManage
                 Effect: Allow
                 Action:
@@ -551,6 +682,14 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
+        WidgetScreenContextEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/screen-context
+            Method: GET
+            Auth:
+              Authorizer: NONE
         # OpenAPI spec — public, no JWT
         DocsEvent:
           Type: HttpApi
@@ -578,6 +717,25 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /assistants/{id}/provision
+            Method: POST
+
+  TestRunnerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      FunctionName: !Sub "chat-agent-test-runner-${Stage}"
+      CodeUri: ./
+      Handler: dist/handler.testRunnerHandler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 900
+      MemorySize: 512
+      Events:
+        TestRunEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /test-suites/{suiteId}/run
             Method: POST
 
   # ── HTTP API Gateway ───────────────────────────────────────────────

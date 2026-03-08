@@ -81,10 +81,19 @@ export interface ICrawlProgress {
 
 /** Preview of S3-stored content for a content item */
 export interface IContentPreview {
-  files: { key: string; size: number; text: string }[];
+  files: IPreviewFile[];
   totalFiles: number;
   offset?: number;
   limit?: number;
+}
+
+export interface IPreviewFile {
+  key: string;
+  size: number;
+  text: string;
+  truncated?: boolean;
+  fullSize?: number;
+  error?: string;
 }
 
 /** Upload progress tracker */

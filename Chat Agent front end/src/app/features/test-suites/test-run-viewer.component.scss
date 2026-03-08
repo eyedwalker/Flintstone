@@ -1,0 +1,154 @@
+.test-run-viewer-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  .top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    h2 { margin: 0; font-weight: 600; }
+  }
+
+  .run-status {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.completed { background: #e8f5e9; color: #2e7d32; }
+    &.running, &.queued { background: #e3f2fd; color: #1565c0; }
+    &.failed { background: #ffebee; color: #c62828; }
+    &.cancelled { background: #f5f5f5; color: #757575; }
+  }
+}
+
+.progress-section {
+  background: #e3f2fd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+
+  .progress-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.summary-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+
+  .summary-card {
+    flex: 1;
+    min-width: 100px;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    background: #fafafa;
+    border: 1px solid rgba(0,0,0,0.06);
+
+    .card-value { font-size: 1.5rem; font-weight: 700; }
+    .card-label { font-size: 0.75rem; color: rgba(0,0,0,0.5); margin-top: 4px; }
+
+    &.passed .card-value { color: #2e7d32; }
+    &.failed .card-value { color: #c62828; }
+    &.error .card-value { color: #e65100; }
+    &.score { border: 2px solid rgba(0,0,0,0.1); }
+  }
+}
+
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  button {
+    font-size: 0.8rem;
+    &.active { background: #e3f2fd; color: #1565c0; font-weight: 600; }
+  }
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  gap: 12px;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(0,0,0,0.03); }
+
+  .status-passed { color: #2e7d32; }
+  .status-failed { color: #c62828; }
+  .status-error { color: #e65100; }
+
+  .result-info {
+    flex: 1;
+    min-width: 0;
+
+    .result-turn {
+      display: block;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-meta {
+      font-size: 0.75rem;
+      color: rgba(0,0,0,0.45);
+      margin-top: 2px;
+    }
+  }
+
+  .result-score {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .reviewed-icon {
+    color: #1565c0;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  color: rgba(0,0,0,0.5);
+}

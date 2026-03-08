@@ -17,6 +17,8 @@ import { handleKnowledgeBaseDefinitions } from './routes/knowledge-base-definiti
 import { handleEscalation, handleWidgetEscalation, handleWidgetCheckEscalation, handleWidgetCaseComment, handleWidgetCaseStatus } from './routes/escalation';
 import { handleAttachments, handleWidgetAttachmentUrl, handleWidgetAttachmentConfirm } from './routes/attachments';
 import { handleWidgetPresets } from './routes/widget-presets';
+import { handleScreenMappings, handleWidgetScreenContext } from './routes/screen-mappings';
+import { handleTestSuites, handleTestRuns } from './routes/test-suites';
 
 // Bedrock services (only imported in provision handler, kept separate for cold-start)
 import * as bedrockAgent from './services/bedrock-agent';
@@ -100,6 +102,9 @@ export const handler = async (
   if (rawPath === '/widget/attachment-confirm' && method === 'POST') {
     return handleWidgetAttachmentConfirm(body, event.headers);
   }
+  if (rawPath === '/widget/screen-context' && method === 'GET') {
+    return handleWidgetScreenContext((event.queryStringParameters ?? {}) as Record<string, string>);
+  }
 
   const ctx = await resolveRequestContext(event);
   if (!ctx) return forbidden('Missing tenant identity');
@@ -159,6 +164,15 @@ export const handler = async (
     }
     if (rawPath.startsWith('/widget-presets')) {
       return handleWidgetPresets(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/screen-mappings')) {
+      return handleScreenMappings(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/test-suites')) {
+      return handleTestSuites(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/test-runs')) {
+      return handleTestRuns(method, rawPath, body, params, query, ctx);
     }
     return notFound('Route not found');
   } catch (e) {
@@ -440,6 +454,172 @@ export const provisionHandler = async (
       status: 'error',
       updatedAt: new Date().toISOString(),
     }).catch(() => undefined);
+    return serverError(String(e));
+  }
+};
+
+/**
+ * Test Runner Lambda — 15-minute timeout for executing test suites.
+ * Called by POST /test-suites/:suiteId/run
+ * Also handles continuation invocations for large test suites.
+ */
+export const testRunnerHandler = async (
+  event: APIGatewayProxyEventV2WithJWTAuthorizer
+): Promise<APIGatewayProxyResultV2> => {
+  const anyEvent = event as any;
+
+  // Handle async screen mapping generation
+  if (anyEvent._screenMappingGeneration) {
+    const { assistantId, tenantId } = anyEvent._screenMappingGeneration;
+    try {
+      console.log(`Starting async screen mapping generation for assistant ${assistantId}`);
+      const { generateMappings } = await import('./services/screen-mapping-ai');
+      const result = await generateMappings(assistantId, tenantId);
+      console.log(`Screen mapping complete: ${result.count} mappings`);
+    } catch (e) {
+      console.error('Screen mapping generation failed:', e);
+    }
+    return { statusCode: 200, body: 'ok' };
+  }
+
+  // Handle async test case generation (invoked from /generate endpoint)
+  if (anyEvent._testGeneration) {
+    const { suiteId, assistantId, tenantId, count, categories } = anyEvent._testGeneration;
+    const TEST_SUITES_TABLE = process.env['TEST_SUITES_TABLE'] ?? '';
+    const TEST_CASES_TABLE = process.env['TEST_CASES_TABLE'] ?? '';
+    try {
+      console.log(`Starting async test generation for suite ${suiteId}, target ${count} cases`);
+      const { generateTestCases } = await import('./services/test-generation');
+      const result = await generateTestCases(suiteId, assistantId, tenantId, count, categories);
+      console.log(`Generation complete: ${result.count} cases`);
+
+      // Update suite case count
+      const cases = await ddb.queryItems<{ id: string }>(
+        TEST_CASES_TABLE, 'suiteId = :s', { ':s': suiteId }, undefined, 'suiteId-index',
+      );
+      await ddb.updateItem(TEST_SUITES_TABLE, { id: suiteId }, {
+        testCaseCount: cases.length,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error('Async test generation failed:', e);
+    }
+    return { statusCode: 200, body: 'ok' };
+  }
+
+  // Handle continuation invocations (async Lambda self-invoke)
+  if (anyEvent._testRunContinuation) {
+    const { runId, suiteId, assistantId, tenantId, offset } = anyEvent._testRunContinuation;
+    const TEST_SUITES_TABLE = process.env['TEST_SUITES_TABLE'] ?? '';
+    const TEST_RUNS_TABLE = process.env['TEST_RUNS_TABLE'] ?? '';
+    try {
+      const { executeTestRun } = await import('./services/test-runner');
+      await executeTestRun(runId, suiteId, assistantId, tenantId, offset);
+      // executeTestRun returns when either:
+      // a) All cases are done (run marked 'completed' by runner)
+      // b) It self-invoked a continuation (run still 'running')
+      // Only update suite if the run is actually finished.
+      const run = await ddb.getItem<{ status: string }>(TEST_RUNS_TABLE, { id: runId });
+      if (run?.status === 'completed') {
+        await ddb.updateItem(TEST_SUITES_TABLE, { id: suiteId }, {
+          lastRunStatus: 'completed',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      // If status is still 'running', a continuation Lambda was invoked — do nothing.
+    } catch (e) {
+      console.error('Test run failed:', e);
+      await ddb.updateItem(TEST_RUNS_TABLE, { id: runId }, {
+        status: 'failed',
+        updatedAt: new Date().toISOString(),
+      });
+      await ddb.updateItem(TEST_SUITES_TABLE, { id: suiteId }, {
+        lastRunStatus: 'failed',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    return { statusCode: 200, body: 'ok' };
+  }
+
+  const method = event.requestContext.http.method.toUpperCase();
+  if (method === 'OPTIONS') return cors();
+
+  const ctx = await resolveRequestContext(event);
+  if (!ctx) return forbidden('Missing tenant identity');
+  if (!requireRole(ctx, 'admin')) return forbidden('Admin role required');
+
+  const rawPath = event.rawPath.replace(/^\/dev|^\/prod/, '');
+  const suiteIdMatch = rawPath.match(/\/test-suites\/([^/]+)\/run/);
+  const suiteId = suiteIdMatch?.[1];
+  if (!suiteId) return badRequest('suiteId required');
+
+  try {
+    const { v4: uuidv4 } = await import('uuid');
+
+    // Load suite to get assistantId
+    const TEST_SUITES_TABLE = process.env['TEST_SUITES_TABLE'] ?? '';
+    const TEST_RUNS_TABLE = process.env['TEST_RUNS_TABLE'] ?? '';
+    const TEST_CASES_TABLE = process.env['TEST_CASES_TABLE'] ?? '';
+
+    const suite = await ddb.getItem<{ id: string; assistantId: string; tenantId: string }>(
+      TEST_SUITES_TABLE, { id: suiteId }
+    );
+    if (!suite || suite.tenantId !== ctx.organizationId) return notFound('Suite not found');
+
+    // Count enabled cases
+    const cases = await ddb.queryItems<{ id: string; enabled: boolean }>(
+      TEST_CASES_TABLE, 'suiteId = :s', { ':s': suiteId }, undefined, 'suiteId-index',
+    );
+    const enabledCount = cases.filter(c => c.enabled).length;
+    if (enabledCount === 0) return badRequest('No enabled test cases in this suite');
+
+    // Create run record
+    const runId = uuidv4();
+    await ddb.putItem(TEST_RUNS_TABLE, {
+      id: runId,
+      suiteId,
+      assistantId: suite.assistantId,
+      tenantId: ctx.organizationId,
+      status: 'queued',
+      totalCases: enabledCount,
+      completedCases: 0,
+      passedCases: 0,
+      failedCases: 0,
+      errorCases: 0,
+      avgScore: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Update suite with lastRunId so UI can navigate to results
+    await ddb.updateItem(TEST_SUITES_TABLE, { id: suiteId }, {
+      lastRunId: runId,
+      lastRunAt: new Date().toISOString(),
+      lastRunStatus: 'running',
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Self-invoke this Lambda asynchronously for the actual test execution.
+    // API Gateway Lambdas freeze on response, so fire-and-don't-await won't work.
+    const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+    const lambdaClient = new LambdaClient({});
+    await lambdaClient.send(new InvokeCommand({
+      FunctionName: process.env['TEST_RUNNER_FUNCTION_NAME'] || process.env['AWS_LAMBDA_FUNCTION_NAME'] || '',
+      InvocationType: 'Event', // async — returns immediately
+      Payload: Buffer.from(JSON.stringify({
+        _testRunContinuation: {
+          runId,
+          suiteId,
+          assistantId: suite.assistantId,
+          tenantId: ctx.organizationId,
+          offset: 0,
+        },
+      })),
+    }));
+
+    return ok({ runId, totalCases: enabledCount, status: 'queued' });
+  } catch (e) {
+    console.error('Test runner handler error', e);
     return serverError(String(e));
   }
 };

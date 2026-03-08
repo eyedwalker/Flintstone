@@ -1,0 +1,87 @@
+<div class="test-suites-page">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <h2>Test Suites</h2>
+      <mat-form-field appearance="outline" class="assistant-select">
+        <mat-select [(value)]="selectedAssistantId" (selectionChange)="onAssistantChange()">
+          <mat-option *ngFor="let a of assistants" [value]="a.id">{{ a.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-raised-button color="primary" (click)="createSuite()" [disabled]="!selectedAssistantId">
+      <mat-icon>add</mat-icon> Create Suite
+    </button>
+  </div>
+
+  <!-- Active run progress -->
+  <div class="run-progress" *ngIf="activeRun && (activeRun.status === 'running' || activeRun.status === 'queued')">
+    <div class="run-progress-header">
+      <mat-icon class="spin">sync</mat-icon>
+      <span>Running test suite... {{ activeRun.completedCases }}/{{ activeRun.totalCases }} cases</span>
+      <span class="run-stats">
+        <span class="stat passed">{{ activeRun.passedCases }} passed</span>
+        <span class="stat failed">{{ activeRun.failedCases }} failed</span>
+        <span class="stat error" *ngIf="activeRun.errorCases">{{ activeRun.errorCases }} errors</span>
+      </span>
+    </div>
+    <mat-progress-bar mode="determinate" [value]="getProgressPercent()"></mat-progress-bar>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="36"></mat-spinner>
+    <p>Loading test suites...</p>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="!loading && !suites.length && selectedAssistantId">
+    <mat-icon class="empty-icon">science</mat-icon>
+    <h3>No test suites yet</h3>
+    <p>Create a test suite to start evaluating your assistant's responses with AI-generated and custom test cases.</p>
+    <button mat-raised-button color="primary" (click)="createSuite()">
+      <mat-icon>add</mat-icon> Create Your First Suite
+    </button>
+  </div>
+
+  <!-- Suite cards -->
+  <div class="suite-list" *ngIf="!loading && suites.length">
+    <div class="suite-card" *ngFor="let suite of suites" (click)="openSuite(suite)">
+      <div class="suite-header">
+        <div class="suite-name">{{ suite.name }}</div>
+        <div class="suite-actions">
+          <button mat-stroked-button color="primary"
+                  *ngIf="suite.lastRunStatus === 'completed'"
+                  (click)="viewResults(suite, $event)"
+                  class="view-results-btn">
+            <mat-icon>assessment</mat-icon> View Results
+          </button>
+          <button mat-icon-button
+                  (click)="startRun(suite, $event)"
+                  [disabled]="activeRun?.status === 'running'"
+                  matTooltip="Run test suite">
+            <mat-icon>play_arrow</mat-icon>
+          </button>
+          <button mat-icon-button
+                  (click)="deleteSuite(suite, $event)"
+                  matTooltip="Delete suite">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div class="suite-meta">
+        <span class="meta-item">
+          <mat-icon>quiz</mat-icon>
+          {{ suite.testCaseCount }} test case{{ suite.testCaseCount !== 1 ? 's' : '' }}
+        </span>
+        <span class="meta-item" *ngIf="suite.lastRunAt">
+          <mat-icon>schedule</mat-icon>
+          Last run: {{ suite.lastRunAt | date:'short' }}
+        </span>
+        <span class="meta-item status-badge" *ngIf="suite.lastRunStatus"
+              [ngClass]="suite.lastRunStatus">
+          {{ suite.lastRunStatus }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

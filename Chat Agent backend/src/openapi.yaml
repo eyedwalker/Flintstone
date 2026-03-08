@@ -54,6 +54,10 @@ tags:
     description: Escalation file attachments
   - name: Widget Presets
     description: Reusable widget visual presets
+  - name: Test Suites
+    description: AI test suite management — create, edit, and manage test suites and cases
+  - name: Test Runs
+    description: Test execution, results, reviews, and AI improvement analysis
 
 security:
   - CognitoJWT: []
@@ -563,6 +567,306 @@ components:
           type: string
           format: date-time
         updatedAt:
+          type: string
+          format: date-time
+
+    # ── Test Suite Schemas ─────────────────────────────────────────
+
+    TestSuite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        assistantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+            enum: [factual, multi-turn, procedural, video-citation, role-based, out-of-scope, adversarial, edge-case, context-dependent]
+        testCaseCount:
+          type: integer
+        lastRunAt:
+          type: string
+          format: date-time
+        lastRunStatus:
+          type: string
+          enum: [queued, running, completed, failed, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TestTurn:
+      type: object
+      properties:
+        userMessage:
+          type: string
+          description: The prompt to send to the assistant
+        expectedBehavior:
+          type: string
+          description: Natural language description of expected response
+        assertions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestAssertion"
+
+    TestAssertion:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [contains, not-contains, similar-to, mentions-video, cites-source, tone, length-min, length-max, llm-rubric]
+        value:
+          type: string
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    TestCase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        suiteId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+          enum: [factual, multi-turn, procedural, video-citation, role-based, out-of-scope, adversarial, edge-case, context-dependent]
+        source:
+          type: string
+          enum: [ai-generated, user-created, imported]
+        sourceContentId:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestTurn"
+        roleLevel:
+          type: integer
+          minimum: 0
+          maximum: 4
+        context:
+          type: object
+          additionalProperties:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TestRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        suiteId:
+          type: string
+          format: uuid
+        assistantId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, completed, failed, cancelled]
+        totalCases:
+          type: integer
+        completedCases:
+          type: integer
+        passedCases:
+          type: integer
+        failedCases:
+          type: integer
+        errorCases:
+          type: integer
+        avgScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        improvements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Improvement"
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AiEvaluation:
+      type: object
+      properties:
+        overallScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        metrics:
+          type: object
+          properties:
+            relevance:
+              type: number
+            accuracy:
+              type: number
+            completeness:
+              type: number
+            tone:
+              type: number
+            guardrailCompliance:
+              type: number
+        reasoning:
+          type: string
+        issues:
+          type: array
+          items:
+            type: string
+
+    TestTurnResult:
+      type: object
+      properties:
+        userMessage:
+          type: string
+        expectedBehavior:
+          type: string
+        actualResponse:
+          type: string
+        latencyMs:
+          type: integer
+        turnScore:
+          type: number
+        assertionResults:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              passed:
+                type: boolean
+              detail:
+                type: string
+
+    UserReview:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        feedback:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+            enum: [hallucination, incomplete, wrong-tone, off-topic, incorrect, too-verbose, too-brief, missing-video, perfect, guardrail-issue]
+        reviewedAt:
+          type: string
+          format: date-time
+
+    TestResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        runId:
+          type: string
+          format: uuid
+        testCaseId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [passed, failed, error]
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestTurnResult"
+        aiEvaluation:
+          $ref: "#/components/schemas/AiEvaluation"
+        userReview:
+          $ref: "#/components/schemas/UserReview"
+        durationMs:
+          type: integer
+        sessionId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Improvement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [KNOWLEDGE_GAP, PROMPT_IMPROVEMENT, GUARDRAIL_ADJUSTMENT, CONTENT_UPDATE]
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+        proposedContent:
+          type: string
+          description: For KNOWLEDGE_GAP — the text to add to the knowledge base
+        promptDiff:
+          type: object
+          properties:
+            before:
+              type: string
+            after:
+              type: string
+        applied:
+          type: boolean
+        appliedAt:
           type: string
           format: date-time
 
@@ -2673,3 +2977,550 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  # ── Test Suites ──────────────────────────────────────────────────
+  /test-suites:
+    get:
+      tags: [Test Suites]
+      summary: List test suites
+      description: Returns all test suites for the given assistant. Requires admin+.
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - name: assistantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Filter by assistant ID
+      responses:
+        "200":
+          description: List of test suites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestSuite"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Test Suites]
+      summary: Create test suite
+      description: Creates a new test suite for an assistant. Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assistantId, name]
+              properties:
+                assistantId:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                description:
+                  type: string
+                categories:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Suite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /test-suites/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Test Suites]
+      summary: Get test suite
+      description: Returns a single test suite by ID. Requires admin+.
+      responses:
+        "200":
+          description: Test suite
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Test Suites]
+      summary: Update test suite
+      description: Updates suite name, description, or categories. Requires admin+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                categories:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Updated suite
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Test Suites]
+      summary: Delete test suite
+      description: Deletes the suite and all its test cases. Requires admin+.
+      responses:
+        "204":
+          description: Deleted
+
+  /test-suites/{suiteId}/cases:
+    parameters:
+      - name: suiteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Test Suites]
+      summary: List test cases
+      description: Returns all test cases in the suite. Requires admin+.
+      responses:
+        "200":
+          description: List of test cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestCase"
+    post:
+      tags: [Test Suites]
+      summary: Create test case
+      description: Creates a new user-authored test case. Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                category:
+                  type: string
+                  enum: [factual, multi-turn, procedural, video-citation, role-based, out-of-scope, adversarial, edge-case, context-dependent]
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                turns:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestTurn"
+                roleLevel:
+                  type: integer
+                context:
+                  type: object
+                  additionalProperties:
+                    type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Test case created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestCase"
+
+  /test-suites/{suiteId}/cases/{caseId}:
+    parameters:
+      - name: suiteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: caseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Test Suites]
+      summary: Update test case
+      description: Updates any field on a test case. Requires admin+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                category:
+                  type: string
+                priority:
+                  type: string
+                turns:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestTurn"
+                roleLevel:
+                  type: integer
+                tags:
+                  type: array
+                  items:
+                    type: string
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated test case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestCase"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Test Suites]
+      summary: Delete test case
+      description: Deletes a test case and updates the suite count. Requires admin+.
+      responses:
+        "204":
+          description: Deleted
+
+  /test-suites/{suiteId}/generate:
+    parameters:
+      - name: suiteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Test Suites]
+      summary: AI-generate test cases
+      description: |
+        Uses AI to generate test cases from the assistant's knowledge base content.
+        Generates diverse cases across categories including factual, multi-turn,
+        procedural, adversarial (Garak-inspired probes), and edge cases.
+        Requires admin+.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                count:
+                  type: integer
+                  default: 100
+                  description: Target number of test cases to generate
+                categories:
+                  type: array
+                  items:
+                    type: string
+                  description: Limit generation to specific categories
+      responses:
+        "200":
+          description: Generation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: Number of test cases generated
+
+  /test-suites/{suiteId}/import:
+    parameters:
+      - name: suiteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Test Suites]
+      summary: Bulk import test cases
+      description: Imports an array of test cases into the suite. Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cases]
+              properties:
+                cases:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      category:
+                        type: string
+                      priority:
+                        type: string
+                      turns:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/TestTurn"
+                      roleLevel:
+                        type: integer
+                      tags:
+                        type: array
+                        items:
+                          type: string
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: integer
+
+  /test-suites/{suiteId}/run:
+    parameters:
+      - name: suiteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Test Runs]
+      summary: Start a test run
+      description: |
+        Starts an automated test run for all enabled cases in the suite.
+        Executes via a dedicated Lambda (15-min timeout) that invokes the
+        Bedrock agent for each test case, evaluates responses using LLM-as-judge
+        (relevance, accuracy, completeness, tone, guardrail compliance), and
+        records results. Supports multi-turn conversations.
+        Requires admin+.
+      responses:
+        "200":
+          description: Run started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                    format: uuid
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Test Runs ────────────────────────────────────────────────────
+  /test-runs/{runId}:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Test Runs]
+      summary: Get test run status
+      description: |
+        Returns the current state of a test run including progress counters.
+        Poll this endpoint every 3-5s while status is `running` or `queued`.
+        Requires admin+.
+      responses:
+        "200":
+          description: Test run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestRun"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Test Runs]
+      summary: Cancel test run
+      description: Cancels a running or queued test run. Requires admin+.
+      responses:
+        "204":
+          description: Cancelled
+
+  /test-runs/{runId}/results:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Test Runs]
+      summary: Get test run results
+      description: |
+        Returns all results for a test run. Each result includes the full
+        conversation (turns), AI evaluation scores, and optional user review.
+        Requires admin+.
+      responses:
+        "200":
+          description: List of results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestResult"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /test-runs/{runId}/results/{resultId}/review:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: resultId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Test Runs]
+      summary: Submit user review
+      description: |
+        Submits or updates a human review for a test result.
+        Includes star rating (1-5), feedback text, and categorization tags.
+        Requires admin+.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserReview"
+      responses:
+        "200":
+          description: Review saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /test-runs/{runId}/analyze:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Test Runs]
+      summary: AI analyze run results
+      description: |
+        Triggers AI analysis of low-scoring and negatively reviewed results.
+        Generates improvement suggestions categorized as: knowledge gaps,
+        prompt improvements, guardrail adjustments, and content updates.
+        Uses Claude Sonnet for high-quality recommendations.
+        Requires admin+.
+      responses:
+        "200":
+          description: Improvement suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Improvement"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /test-runs/{runId}/improvements:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Test Runs]
+      summary: Get cached improvements
+      description: Returns previously generated improvement suggestions for a run. Requires admin+.
+      responses:
+        "200":
+          description: Improvement list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Improvement"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /test-runs/{runId}/improvements/{improvementId}/apply:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: improvementId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Test Runs]
+      summary: Apply improvement
+      description: |
+        Applies an AI-suggested improvement. For KNOWLEDGE_GAP, creates new
+        content in the knowledge base. For PROMPT_IMPROVEMENT, updates the
+        assistant's system prompt. Requires admin+.
+      responses:
+        "200":
+          description: Improvement applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          $ref: "#/components/responses/NotFound"

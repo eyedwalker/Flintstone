@@ -1,0 +1,164 @@
+<div class="test-case-editor-page">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <button mat-icon-button (click)="goBack()" matTooltip="Back to suites">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h2>{{ suite?.name || 'Test Cases' }}</h2>
+    </div>
+    <div class="top-bar-actions">
+      <button mat-stroked-button (click)="createCase()">
+        <mat-icon>add</mat-icon> Add Case
+      </button>
+      <button mat-stroked-button color="primary" (click)="generateContentTests()" [disabled]="generating">
+        <mat-icon>auto_awesome</mat-icon> Content Tests
+      </button>
+      <button mat-stroked-button color="warn" (click)="generateSafetyTests()" [disabled]="generating">
+        <mat-icon>security</mat-icon> Safety Tests
+      </button>
+      <button mat-icon-button (click)="refreshCases()" matTooltip="Refresh">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar" *ngIf="cases.length">
+    <span class="stat-chip total">{{ cases.length }} total</span>
+    <span class="stat-chip enabled">{{ enabledCount }} enabled</span>
+    <span class="stat-chip ai">{{ aiGeneratedCount }} AI</span>
+    <span class="stat-chip user">{{ userCreatedCount }} custom</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar" *ngIf="cases.length">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Search test cases..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="category-select">
+      <mat-select [(value)]="categoryFilter" (selectionChange)="applyFilters()" placeholder="All categories">
+        <mat-option value="">All ({{ cases.length }})</mat-option>
+        <mat-option *ngFor="let cat of categories" [value]="cat">
+          {{ cat }} ({{ getCategoryCount(cat) }})
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <!-- Generating overlay -->
+  <div class="generating-overlay" *ngIf="generating">
+    <mat-spinner diameter="36"></mat-spinner>
+    <p *ngIf="generatingType === 'content'">Generating content quality tests from full knowledge base...</p>
+    <p *ngIf="generatingType === 'safety'">Generating safety, security, bias &amp; jailbreak detection tests...</p>
+    <p class="hint">Running in background — new cases will appear as they're generated. You can navigate away.</p>
+    <p class="hint">{{ cases.length }} cases so far</p>
+    <button mat-stroked-button (click)="stopGenerationPolling()">Stop Watching</button>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="!loading && !generating && !cases.length">
+    <mat-icon class="empty-icon">quiz</mat-icon>
+    <h3>No test cases yet</h3>
+    <p>Generate test cases from your knowledge base using AI, or create them manually.</p>
+    <div class="empty-actions">
+      <button mat-raised-button color="primary" (click)="generateContentTests()">
+        <mat-icon>auto_awesome</mat-icon> Generate Content Tests
+      </button>
+      <button mat-raised-button color="warn" (click)="generateSafetyTests()">
+        <mat-icon>security</mat-icon> Generate Safety Tests
+      </button>
+      <button mat-stroked-button (click)="createCase()">
+        <mat-icon>add</mat-icon> Create Manually
+      </button>
+    </div>
+  </div>
+
+  <!-- Case list -->
+  <div class="case-list" *ngIf="!loading && !generating && filteredCases.length">
+    <div class="case-row" *ngFor="let tc of filteredCases"
+         [class.expanded]="expandedCaseId === tc.id"
+         [class.disabled]="!tc.enabled">
+
+      <!-- Collapsed row -->
+      <div class="case-summary" (click)="toggleExpand(tc)">
+        <mat-slide-toggle [checked]="tc.enabled" (click)="$event.stopPropagation()" (change)="toggleEnabled(tc)"
+                          class="enable-toggle"></mat-slide-toggle>
+        <div class="case-info">
+          <span class="case-name">{{ tc.name }}</span>
+          <span class="case-badges">
+            <span class="badge category">{{ tc.category }}</span>
+            <span class="badge priority" [style.color]="priorityColor(tc.priority)">{{ tc.priority }}</span>
+            <span class="badge turns">{{ tc.turns.length }} turn{{ tc.turns.length !== 1 ? 's' : '' }}</span>
+            <span class="badge source" [ngClass]="tc.source">{{ tc.source }}</span>
+          </span>
+        </div>
+        <div class="case-actions">
+          <button mat-icon-button (click)="deleteCase(tc, $event)" matTooltip="Delete">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+          <mat-icon class="expand-icon">{{ expandedCaseId === tc.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+      </div>
+
+      <!-- Expanded editor -->
+      <div class="case-detail" *ngIf="expandedCaseId === tc.id">
+        <div class="detail-fields">
+          <mat-form-field appearance="outline" class="name-field">
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="tc.name">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="cat-field">
+            <mat-label>Category</mat-label>
+            <mat-select [(value)]="tc.category">
+              <mat-option *ngFor="let cat of categories" [value]="cat">{{ cat }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="priority-field">
+            <mat-label>Priority</mat-label>
+            <mat-select [(value)]="tc.priority">
+              <mat-option value="low">Low</mat-option>
+              <mat-option value="medium">Medium</mat-option>
+              <mat-option value="high">High</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Turns editor -->
+        <div class="turns-section">
+          <div class="section-label">Conversation Turns</div>
+          <div class="turn-editor" *ngFor="let turn of tc.turns; let i = index">
+            <div class="turn-header">
+              <span class="turn-label">Turn {{ i + 1 }}</span>
+              <button mat-icon-button (click)="removeTurn(tc, i)" *ngIf="tc.turns.length > 1" matTooltip="Remove turn">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <mat-form-field appearance="outline" class="turn-field">
+              <mat-label>User Message</mat-label>
+              <textarea matInput [(ngModel)]="turn.userMessage" rows="2"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="turn-field">
+              <mat-label>Expected Behavior</mat-label>
+              <textarea matInput [(ngModel)]="turn.expectedBehavior" rows="2"></textarea>
+            </mat-form-field>
+          </div>
+          <button mat-stroked-button (click)="addTurn(tc)" class="add-turn-btn">
+            <mat-icon>add</mat-icon> Add Turn
+          </button>
+        </div>
+
+        <div class="detail-actions">
+          <button mat-raised-button color="primary" (click)="saveCase(tc)">
+            <mat-icon>save</mat-icon> Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

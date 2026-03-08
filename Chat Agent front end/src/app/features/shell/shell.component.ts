@@ -14,6 +14,6 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.demoWidget.teardown();
+    this.demoWidget.teardownAll();
   }
 }

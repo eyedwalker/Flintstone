@@ -456,11 +456,16 @@
             <div class="preview-files" *ngIf="!previewLoading && previewData">
               <div class="preview-file" *ngFor="let file of previewData.files; let i = index">
                 <div class="preview-file-header">
-                  <mat-icon>description</mat-icon>
+                  <mat-icon>{{ file.error ? 'error_outline' : 'description' }}</mat-icon>
                   <span class="preview-file-name">{{ file.key }}</span>
                   <span class="preview-file-size">{{ formatBytes(file.size) }}</span>
                 </div>
-                <pre class="preview-file-text">{{ file.text }}</pre>
+                <div class="preview-file-error" *ngIf="file.error">{{ file.error }}</div>
+                <pre class="preview-file-text" *ngIf="!file.error && file.text">{{ file.text }}</pre>
+                <div class="preview-file-truncated" *ngIf="file.truncated">
+                  Truncated preview ({{ formatBytes(file.text.length) }} of {{ formatBytes(file.fullSize ?? file.size) }})
+                </div>
+                <div class="preview-file-empty" *ngIf="!file.error && !file.text">(empty file)</div>
               </div>
               <div class="preview-pagination" *ngIf="previewData.totalFiles > (previewData.limit ?? 20)">
                 <button mat-stroked-button type="button"

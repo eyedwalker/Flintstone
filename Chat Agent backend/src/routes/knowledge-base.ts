@@ -607,13 +607,28 @@ export async function handleKnowledgeBase(
         const offset = parseInt(query['offset'] ?? '0', 10);
         const slice = textFiles.slice(offset, offset + maxPreview);
 
+        const MAX_TEXT_CHARS = 3000; // Truncate preview text to avoid massive payloads
         const files = await Promise.all(slice.map(async (obj) => {
-          const text = await s3.getObject(obj.key);
-          return {
-            key: obj.key.replace(item.s3Key!, ''),
-            size: obj.size,
-            text,
-          };
+          try {
+            const text = await s3.getObject(obj.key);
+            const truncated = text.length > MAX_TEXT_CHARS;
+            return {
+              key: obj.key.replace(item.s3Key!, ''),
+              size: obj.size,
+              text: truncated ? text.slice(0, MAX_TEXT_CHARS) : text,
+              truncated,
+              fullSize: text.length,
+            };
+          } catch (e) {
+            return {
+              key: obj.key.replace(item.s3Key!, ''),
+              size: obj.size,
+              text: '',
+              truncated: false,
+              fullSize: 0,
+              error: 'Failed to read file',
+            };
+          }
         }));
 
         return ok({ files, totalFiles: textFiles.length, offset, limit: maxPreview });

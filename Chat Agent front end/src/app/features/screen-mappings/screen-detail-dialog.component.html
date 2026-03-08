@@ -1,0 +1,97 @@
+<h2 mat-dialog-title>{{ mapping.screenName }}</h2>
+
+<mat-dialog-content>
+  <!-- Screen Info -->
+  <div class="info-section">
+    <div class="info-row">
+      <span class="info-label">Section</span>
+      <span class="info-value">{{ mapping.section }}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">URL Pattern</span>
+      <code class="info-value mono">{{ mapping.urlPattern }}</code>
+    </div>
+    <div class="info-row" *ngIf="mapping.purpose">
+      <span class="info-label">Purpose</span>
+      <span class="info-value">{{ mapping.purpose }}</span>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <!-- Videos -->
+  <h3 class="section-title">
+    <mat-icon>ondemand_video</mat-icon>
+    Videos ({{ mapping.videos.length }})
+  </h3>
+
+  <div class="pill-grid">
+    <div class="content-pill video-pill" *ngFor="let v of mapping.videos; let i = index"
+         (click)="openUrl(v.url)" [matTooltip]="v.reason">
+      <mat-icon class="pill-icon">play_circle</mat-icon>
+      <span class="pill-label">{{ v.title }}</span>
+      <span class="pill-score">{{ v.relevanceScore }}</span>
+      <mat-icon class="pill-pin" *ngIf="v.pinned" (click)="togglePin(v); $event.stopPropagation()">push_pin</mat-icon>
+      <mat-icon class="pill-remove" (click)="removeVideo(i); $event.stopPropagation()">close</mat-icon>
+    </div>
+  </div>
+
+  <p class="empty-hint" *ngIf="!mapping.videos.length">No videos mapped to this screen.</p>
+
+  <mat-divider></mat-divider>
+
+  <!-- Help Articles -->
+  <h3 class="section-title">
+    <mat-icon>article</mat-icon>
+    Help Articles ({{ mapping.helpArticles?.length || 0 }})
+  </h3>
+
+  <div class="pill-grid">
+    <div class="content-pill article-pill" *ngFor="let a of mapping.helpArticles; let i = index"
+         (click)="openUrl(a.url)" [matTooltip]="a.url">
+      <mat-icon class="pill-icon">description</mat-icon>
+      <span class="pill-label">{{ a.title }}</span>
+      <span class="pill-score">{{ a.relevanceScore }}</span>
+      <mat-icon class="pill-remove" (click)="removeArticle(i); $event.stopPropagation()">close</mat-icon>
+    </div>
+  </div>
+
+  <p class="empty-hint" *ngIf="!mapping.helpArticles?.length">No help articles mapped to this screen.</p>
+
+  <mat-divider></mat-divider>
+
+  <!-- Trending Questions -->
+  <h3 class="section-title">
+    <mat-icon>help_outline</mat-icon>
+    Trending Questions ({{ mapping.trendingQuestions.length }})
+  </h3>
+
+  <div cdkDropList (cdkDropListDropped)="dropQuestion($event)" class="question-list">
+    <div class="question-row" *ngFor="let q of mapping.trendingQuestions; let i = index" cdkDrag>
+      <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+      <mat-form-field appearance="outline" class="question-input">
+        <input matInput [(ngModel)]="mapping.trendingQuestions[i]">
+      </mat-form-field>
+      <button mat-icon-button (click)="removeQuestion(i)" matTooltip="Remove">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="add-question">
+    <mat-form-field appearance="outline" class="question-input">
+      <mat-label>Add a question</mat-label>
+      <input matInput [(ngModel)]="newQuestion" (keyup.enter)="addQuestion()">
+    </mat-form-field>
+    <button mat-icon-button (click)="addQuestion()" [disabled]="!newQuestion.trim()">
+      <mat-icon>add_circle</mat-icon>
+    </button>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="saving">
+    {{ saving ? 'Saving...' : 'Save' }}
+  </button>
+</mat-dialog-actions>

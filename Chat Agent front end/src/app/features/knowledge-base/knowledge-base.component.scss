@@ -592,6 +592,28 @@
     color: #333;
     font-family: 'SF Mono', 'Menlo', monospace;
   }
+
+  .preview-file-error {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    color: #c62828;
+    background: #ffebee;
+  }
+
+  .preview-file-truncated {
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    color: #e65100;
+    background: #fff3e0;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .preview-file-empty {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    color: rgba(0,0,0,0.35);
+    font-style: italic;
+  }
 }
 
 .preview-pagination {
