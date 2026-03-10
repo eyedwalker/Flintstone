@@ -114,6 +114,11 @@ export interface IVimeoBrowserData {
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
+      <button mat-button class="select-all-btn" *ngIf="selectableCount > 0"
+              (click)="allSelected ? deselectAll() : selectAll()">
+        <mat-icon>{{ allSelected ? 'deselect' : 'select_all' }}</mat-icon>
+        {{ allSelected ? 'Deselect All' : 'Select All' }} ({{ selectableCount }})
+      </button>
       <span class="selection-count" *ngIf="selectedIds.size > 0">
         {{ selectedIds.size }} selected
       </span>
@@ -237,7 +242,8 @@ export interface IVimeoBrowserData {
 
     .load-more { display: flex; justify-content: center; padding: 16px 0; }
 
-    .selection-count { font-size: 0.85rem; font-weight: 600; color: #006FB4; margin-right: auto; }
+    .select-all-btn { font-size: 0.8rem; margin-right: auto; }
+    .selection-count { font-size: 0.85rem; font-weight: 600; color: #006FB4; margin-right: 8px; }
 
     mat-dialog-content { max-height: 60vh; overflow-y: auto; min-height: 200px; }
     mat-dialog-actions { padding: 12px 0 0; }
@@ -336,6 +342,28 @@ export class VimeoBrowserDialogComponent implements OnInit {
     } else {
       this.selectedIds.add(videoId);
     }
+  }
+
+  get selectableVideos(): IVimeoVideoItem[] {
+    return this.videos.filter(v => !v.alreadyImported);
+  }
+
+  get selectableCount(): number {
+    return this.selectableVideos.length;
+  }
+
+  get allSelected(): boolean {
+    return this.selectableCount > 0 && this.selectableVideos.every(v => this.selectedIds.has(v.videoId));
+  }
+
+  selectAll(): void {
+    for (const v of this.selectableVideos) {
+      this.selectedIds.add(v.videoId);
+    }
+  }
+
+  deselectAll(): void {
+    this.selectedIds.clear();
   }
 
   importSelected(): void {
