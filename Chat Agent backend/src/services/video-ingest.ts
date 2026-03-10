@@ -35,9 +35,54 @@ export interface IVimeoListResult {
   hasMore: boolean;
 }
 
-/** List videos from the authenticated Vimeo account */
+export interface IVimeoFolder {
+  id: string;
+  name: string;
+  videoCount: number;
+}
+
+export interface IVimeoFoldersResult {
+  folders: IVimeoFolder[];
+  total: number;
+}
+
+const VIMEO_HEADERS = (token: string) => ({
+  Authorization: `Bearer ${token}`,
+  Accept: 'application/vnd.vimeo.*+json;version=3.4',
+});
+
+/** List folders (projects) from the authenticated Vimeo account */
+export async function listFolders(accessToken: string): Promise<IVimeoFoldersResult> {
+  const params = new URLSearchParams({
+    fields: 'uri,name,metadata.connections.videos',
+    per_page: '100',
+    sort: 'name',
+    direction: 'asc',
+  });
+
+  const res = await fetch(`https://api.vimeo.com/me/projects?${params}`, {
+    headers: VIMEO_HEADERS(accessToken),
+  });
+  if (!res.ok) throw new Error(`Vimeo API error: ${res.status}`);
+  const data: any = await res.json();
+
+  const folders: IVimeoFolder[] = (data.data ?? []).map((p: any) => {
+    const uri: string = p.uri ?? '';
+    const id = uri.split('/').pop() ?? '';
+    return {
+      id,
+      name: p.name ?? '',
+      videoCount: p.metadata?.connections?.videos?.total ?? 0,
+    };
+  });
+
+  return { folders, total: data.total ?? 0 };
+}
+
+/** List videos from the authenticated Vimeo account, optionally filtered by folder and exclude keywords */
 export async function listAccountVideos(
-  accessToken: string, page = 1, perPage = 25, query?: string
+  accessToken: string, page = 1, perPage = 25, query?: string,
+  folderId?: string, excludeKeywords?: string[],
 ): Promise<IVimeoListResult> {
   const params = new URLSearchParams({
     fields: 'uri,name,description,duration,pictures,link,created_time',
@@ -48,16 +93,17 @@ export async function listAccountVideos(
   });
   if (query) params.set('query', query);
 
-  const res = await fetch(`https://api.vimeo.com/me/videos?${params}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/vnd.vimeo.*+json;version=3.4',
-    },
+  const baseUrl = folderId
+    ? `https://api.vimeo.com/me/projects/${folderId}/videos`
+    : `https://api.vimeo.com/me/videos`;
+
+  const res = await fetch(`${baseUrl}?${params}`, {
+    headers: VIMEO_HEADERS(accessToken),
   });
   if (!res.ok) throw new Error(`Vimeo API error: ${res.status}`);
   const data: any = await res.json();
 
-  const videos: IVimeoVideoItem[] = (data.data ?? []).map((v: any) => ({
+  let videos: IVimeoVideoItem[] = (data.data ?? []).map((v: any) => ({
     uri: v.uri,
     videoId: v.uri.replace('/videos/', ''),
     name: v.name ?? '',
@@ -68,6 +114,15 @@ export async function listAccountVideos(
     link: v.link,
     createdTime: v.created_time,
   }));
+
+  // Apply keyword exclusion filter
+  if (excludeKeywords?.length) {
+    const lowerKeywords = excludeKeywords.map(k => k.toLowerCase().trim()).filter(Boolean);
+    videos = videos.filter(v => {
+      const text = `${v.name} ${v.description}`.toLowerCase();
+      return !lowerKeywords.some(kw => text.includes(kw));
+    });
+  }
 
   return {
     videos,

@@ -135,6 +135,19 @@ export interface IIngestionJob {
   updatedAt: string;
 }
 
+/** A Vimeo folder/project */
+export interface IVimeoFolder {
+  id: string;
+  name: string;
+  videoCount: number;
+}
+
+/** Result from listing Vimeo folders */
+export interface IVimeoFoldersResult {
+  folders: IVimeoFolder[];
+  total: number;
+}
+
 /** A Vimeo video from the account browse endpoint */
 export interface IVimeoVideoItem {
   videoId: string;
@@ -186,6 +199,7 @@ export interface IKnowledgeBaseDefinition {
   isDefault: boolean;
   bedrockKnowledgeBaseId?: string;
   vimeoAccessToken?: string;
+  vimeoExcludeKeywords?: string[];
   vectorBucketName?: string;
   vectorIndexName?: string;
   status: KbDefStatus;

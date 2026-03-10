@@ -46,6 +46,7 @@ export class KbDetailComponent implements OnInit, OnDestroy {
 
   // Vimeo
   vimeoToken = '';
+  vimeoExcludeKeywords = '';
   savingVimeoToken = false;
 
   // URL form
@@ -122,6 +123,7 @@ export class KbDetailComponent implements OnInit, OnDestroy {
     const defRes = await this.kbManager.getDefinition(this.kbId);
     this.kbDef = defRes.data ?? null;
     this.vimeoToken = this.kbDef?.vimeoAccessToken ?? '';
+    this.vimeoExcludeKeywords = (this.kbDef?.vimeoExcludeKeywords ?? []).join(', ');
     if (this.kbDef?.bedrockKnowledgeBaseId) {
       const cRes = await this.kbManager.listContentByKbId(this.kbDef.bedrockKnowledgeBaseId);
       this.content = cRes.data ?? [];
@@ -356,13 +358,21 @@ export class KbDetailComponent implements OnInit, OnDestroy {
 
   // ── Vimeo ──────────────────────────────────────────────────────────────────
 
+  private get excludeKeywordsArray(): string[] {
+    return this.vimeoExcludeKeywords.split(',').map(k => k.trim()).filter(Boolean);
+  }
+
   async saveVimeoToken(): Promise<void> {
     if (this.savingVimeoToken) return;
     this.savingVimeoToken = true;
-    const result = await this.kbManager.updateDefinition(this.kbId, { vimeoAccessToken: this.vimeoToken.trim() });
+    const keywords = this.excludeKeywordsArray;
+    const result = await this.kbManager.updateDefinition(this.kbId, {
+      vimeoAccessToken: this.vimeoToken.trim(),
+      vimeoExcludeKeywords: keywords,
+    });
     if (result.success) {
-      this.kbDef = { ...this.kbDef!, vimeoAccessToken: this.vimeoToken.trim() };
-      this.snackBar.open('Vimeo token saved', '', { duration: 2500 });
+      this.kbDef = { ...this.kbDef!, vimeoAccessToken: this.vimeoToken.trim(), vimeoExcludeKeywords: keywords };
+      this.snackBar.open('Vimeo settings saved', '', { duration: 2500 });
     } else {
       this.snackBar.open('Save failed', 'OK', { duration: 3000 });
     }
@@ -373,7 +383,12 @@ export class KbDetailComponent implements OnInit, OnDestroy {
     const ref = this.dialog.open(VimeoBrowserDialogComponent, {
       width: '900px',
       maxHeight: '85vh',
-      data: { assistantId: 'kb-shared', kbManager: this.kbManager, kbDefId: this.kbId },
+      data: {
+        assistantId: 'kb-shared',
+        kbManager: this.kbManager,
+        kbDefId: this.kbId,
+        excludeKeywords: this.kbDef?.vimeoExcludeKeywords,
+      },
     });
     ref.afterClosed().subscribe(async (selectedVideoIds: string[] | null) => {
       if (!selectedVideoIds?.length) return;

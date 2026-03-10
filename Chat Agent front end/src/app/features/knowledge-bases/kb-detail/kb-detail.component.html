@@ -78,14 +78,20 @@
         <div class="vimeo-token-row">
           <mat-icon class="vimeo-icon">video_library</mat-icon>
           <div class="vimeo-token-info">
-            <span class="vimeo-token-label">Vimeo Access Token</span>
-            <span class="vimeo-token-hint">Required to ingest private Vimeo videos. Get one from
+            <span class="vimeo-token-label">Vimeo Settings</span>
+            <span class="vimeo-token-hint">Access token from
               <a href="https://developer.vimeo.com/apps" target="_blank" rel="noopener">developer.vimeo.com</a>.
             </span>
           </div>
           <mat-form-field appearance="outline" class="vimeo-token-field">
             <mat-label>Personal access token</mat-label>
             <input matInput [(ngModel)]="vimeoToken" type="password" placeholder="Paste token here">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="vimeo-exclude-field">
+            <mat-label>Exclude keywords</mat-label>
+            <input matInput [(ngModel)]="vimeoExcludeKeywords"
+                   placeholder="officemate, acuity logic, encompass">
+            <mat-hint>Comma-separated. Videos matching these will be hidden.</mat-hint>
           </mat-form-field>
           <button mat-stroked-button type="button" (click)="saveVimeoToken()" [disabled]="savingVimeoToken">
             <mat-spinner diameter="16" *ngIf="savingVimeoToken"></mat-spinner>

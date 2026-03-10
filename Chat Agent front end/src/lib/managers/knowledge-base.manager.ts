@@ -11,6 +11,7 @@ import {
   IContentPreview,
   IVimeoBrowseResult,
   IVimeoBulkResult,
+  IVimeoFoldersResult,
   ContentScope,
   RoleLevelValue,
 } from '../models/knowledge-base.model';
@@ -135,12 +136,21 @@ export class KnowledgeBaseManager {
     return this.api.post<{ deleted: number; total: number }>('/knowledge-base/content/bulk-delete', { ids });
   }
 
+  /** List Vimeo folders/projects */
+  async listVimeoFolders(
+    assistantId: string, kbDefId?: string,
+  ): Promise<IAccessorResult<IVimeoFoldersResult>> {
+    return this.api.post<IVimeoFoldersResult>('/knowledge-base/vimeo/folders', {
+      assistantId, kbDefId,
+    });
+  }
+
   /** Browse Vimeo account videos */
   async browseVimeo(
-    assistantId: string, page = 1, perPage = 25, query?: string, kbDefId?: string,
+    assistantId: string, page = 1, perPage = 25, query?: string, kbDefId?: string, folderId?: string,
   ): Promise<IAccessorResult<IVimeoBrowseResult>> {
     return this.api.post<IVimeoBrowseResult>('/knowledge-base/vimeo/browse', {
-      assistantId, page, perPage, query, kbDefId,
+      assistantId, page, perPage, query, kbDefId, folderId,
     });
   }
 
@@ -199,7 +209,7 @@ export class KnowledgeBaseManager {
   }
 
   /** Update a KB definition */
-  async updateDefinition(id: string, data: { name?: string; description?: string; vimeoAccessToken?: string }): Promise<IAccessorResult<IKnowledgeBaseDefinition>> {
+  async updateDefinition(id: string, data: { name?: string; description?: string; vimeoAccessToken?: string; vimeoExcludeKeywords?: string[] }): Promise<IAccessorResult<IKnowledgeBaseDefinition>> {
     return this.api.put<IKnowledgeBaseDefinition>(`/knowledge-bases/${id}`, data);
   }
 

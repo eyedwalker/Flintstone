@@ -47,6 +47,7 @@ interface IAssistant {
   bedrockGuardrailId?: string;
   bedrockGuardrailVersion?: string;
   vimeoAccessToken?: string;
+  vimeoExcludeKeywords?: string[];
 }
 
 export async function handleAssistants(

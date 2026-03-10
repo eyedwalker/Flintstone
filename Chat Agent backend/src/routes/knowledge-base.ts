@@ -337,15 +337,39 @@ export async function handleKnowledgeBase(
       return ok(status);
     }
 
-    // POST /knowledge-base/vimeo/browse — list videos from Vimeo account
-    if (method === 'POST' && path.endsWith('/vimeo/browse')) {
-      const b = parseBody<{ assistantId: string; kbDefId?: string; page?: number; perPage?: number; query?: string }>(JSON.stringify(body));
+    // POST /knowledge-base/vimeo/folders — list Vimeo folders/projects
+    if (method === 'POST' && path.endsWith('/vimeo/folders')) {
+      const b = parseBody<{ assistantId: string; kbDefId?: string }>(JSON.stringify(body));
       if (!b?.assistantId) return badRequest('assistantId required');
 
       const token = await resolveVimeoToken(b.assistantId, b.kbDefId);
       if (!token) return badRequest('No Vimeo access token configured');
 
-      const result = await videoIngest.listAccountVideos(token, b.page ?? 1, b.perPage ?? 25, b.query);
+      const result = await videoIngest.listFolders(token);
+      return ok(result);
+    }
+
+    // POST /knowledge-base/vimeo/browse — list videos from Vimeo account
+    if (method === 'POST' && path.endsWith('/vimeo/browse')) {
+      const b = parseBody<{ assistantId: string; kbDefId?: string; page?: number; perPage?: number; query?: string; folderId?: string }>(JSON.stringify(body));
+      if (!b?.assistantId) return badRequest('assistantId required');
+
+      const token = await resolveVimeoToken(b.assistantId, b.kbDefId);
+      if (!token) return badRequest('No Vimeo access token configured');
+
+      // Load exclude keywords from KB definition or assistant
+      let excludeKeywords: string[] | undefined;
+      if (b.kbDefId && KB_DEFS_TABLE) {
+        const kbDef = await ddb.getItem<{ vimeoExcludeKeywords?: string[] }>(KB_DEFS_TABLE, { id: b.kbDefId });
+        if (kbDef?.vimeoExcludeKeywords?.length) excludeKeywords = kbDef.vimeoExcludeKeywords;
+      } else if (b.assistantId && b.assistantId !== 'kb-shared') {
+        const asst = await ddb.getItem<{ vimeoExcludeKeywords?: string[] }>(
+          process.env['ASSISTANTS_TABLE'] ?? '', { id: b.assistantId }
+        );
+        if (asst?.vimeoExcludeKeywords?.length) excludeKeywords = asst.vimeoExcludeKeywords;
+      }
+
+      const result = await videoIngest.listAccountVideos(token, b.page ?? 1, b.perPage ?? 25, b.query, b.folderId, excludeKeywords);
 
       // Cross-reference with existing content to mark already-imported videos
       const existing = await ddb.queryItems<IContentItem>(

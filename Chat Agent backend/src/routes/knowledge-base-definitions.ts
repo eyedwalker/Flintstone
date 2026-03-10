@@ -21,6 +21,7 @@ export interface IKnowledgeBaseDefinition {
   vectorBucketName?: string;
   vectorIndexName?: string;
   vimeoAccessToken?: string;
+  vimeoExcludeKeywords?: string[];
   status: 'draft' | 'provisioning' | 'ready' | 'error';
   contentCount?: number;
   createdAt: string;
@@ -217,11 +218,12 @@ export async function handleKnowledgeBaseDefinitions(
       if (!kbDef) return notFound('Knowledge base not found');
       if (kbDef.tenantId !== tenantId) return forbidden();
 
-      const b = parseBody<{ name?: string; description?: string; vimeoAccessToken?: string }>(JSON.stringify(body));
+      const b = parseBody<{ name?: string; description?: string; vimeoAccessToken?: string; vimeoExcludeKeywords?: string[] }>(JSON.stringify(body));
       const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
       if (b?.name !== undefined) updates.name = b.name;
       if (b?.description !== undefined) updates.description = b.description;
       if (b?.vimeoAccessToken !== undefined) updates.vimeoAccessToken = b.vimeoAccessToken;
+      if (b?.vimeoExcludeKeywords !== undefined) updates.vimeoExcludeKeywords = b.vimeoExcludeKeywords;
 
       await ddb.updateItem(KB_DEFS_TABLE, { id }, updates);
       return ok({ ...kbDef, ...updates });

@@ -86,6 +86,7 @@ export interface IAssistant {
   bedrockGuardrailId?: string;
   bedrockGuardrailVersion?: string;
   vimeoAccessToken?: string;
+  vimeoExcludeKeywords?: string[];
   modelConfig: IModelConfig;
   widgetConfig: IWidgetConfig;
   apiKey: string;

@@ -449,7 +449,12 @@
 
 .vimeo-token-field {
   flex: 1;
-  min-width: 220px;
+  min-width: 200px;
+}
+
+.vimeo-exclude-field {
+  flex: 1;
+  min-width: 200px;
 }
 
 // ── Bulk actions bar ────────────────────────────────────────────────────────

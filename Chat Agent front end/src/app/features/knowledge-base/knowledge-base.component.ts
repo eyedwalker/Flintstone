@@ -42,6 +42,7 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
   showUrlForm = false;
   urlIngesting = false;
   vimeoToken = '';
+  vimeoExcludeKeywords = '';
   savingVimeoToken = false;
   scopeFilter: ContentScope | '' = '';
   typeFilter: ContentType | '' = '';
@@ -114,6 +115,7 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
     ]);
     this.assistant = aRes.data ?? null;
     this.vimeoToken = this.assistant?.vimeoAccessToken ?? '';
+    this.vimeoExcludeKeywords = (this.assistant?.vimeoExcludeKeywords ?? []).join(', ');
     this.content = cRes.data ?? [];
     this.loading = false;
     this.startStatusPolling();
@@ -325,11 +327,19 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
 
   // ── Vimeo token ────────────────────────────────────────────────────────────
 
+  private get excludeKeywordsArray(): string[] {
+    return this.vimeoExcludeKeywords.split(',').map(k => k.trim()).filter(Boolean);
+  }
+
   async saveVimeoToken(): Promise<void> {
     if (this.savingVimeoToken) return;
     this.savingVimeoToken = true;
-    const result = await this.assistantManager.updateAssistant(this.assistantId, { vimeoAccessToken: this.vimeoToken.trim() });
-    this.snackBar.open(result.success ? 'Vimeo token saved' : 'Save failed', result.success ? '' : 'OK', { duration: 2500 });
+    const keywords = this.excludeKeywordsArray;
+    const result = await this.assistantManager.updateAssistant(this.assistantId, {
+      vimeoAccessToken: this.vimeoToken.trim(),
+      vimeoExcludeKeywords: keywords,
+    });
+    this.snackBar.open(result.success ? 'Vimeo settings saved' : 'Save failed', result.success ? '' : 'OK', { duration: 2500 });
     this.savingVimeoToken = false;
   }
 
@@ -453,7 +463,11 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
     const ref = this.dialog.open(VimeoBrowserDialogComponent, {
       width: '900px',
       maxHeight: '85vh',
-      data: { assistantId: this.assistantId, kbManager: this.kbManager },
+      data: {
+        assistantId: this.assistantId,
+        kbManager: this.kbManager,
+        excludeKeywords: this.assistant?.vimeoExcludeKeywords,
+      },
     });
     ref.afterClosed().subscribe(async (selectedVideoIds: string[] | null) => {
       if (!selectedVideoIds?.length) return;

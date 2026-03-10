@@ -1,12 +1,13 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { KnowledgeBaseManager } from '../../../../lib/managers/knowledge-base.manager';
-import { IVimeoVideoItem } from '../../../../lib/models/knowledge-base.model';
+import { IVimeoVideoItem, IVimeoFolder } from '../../../../lib/models/knowledge-base.model';
 
 export interface IVimeoBrowserData {
   assistantId: string;
   kbManager: KnowledgeBaseManager;
   kbDefId?: string;
+  excludeKeywords?: string[];
 }
 
 @Component({
@@ -19,6 +20,24 @@ export interface IVimeoBrowserData {
     </h2>
 
     <mat-dialog-content>
+      <!-- Folder bar -->
+      <div class="folder-bar" *ngIf="folders.length > 0">
+        <button class="folder-chip" [class.active]="!selectedFolderId"
+                (click)="selectFolder(null)">
+          All Videos
+        </button>
+        <button class="folder-chip" *ngFor="let folder of folders"
+                [class.active]="selectedFolderId === folder.id"
+                (click)="selectFolder(folder.id)">
+          {{ folder.name }}
+          <span class="folder-count">{{ folder.videoCount }}</span>
+        </button>
+      </div>
+      <div class="folder-bar-loading" *ngIf="foldersLoading">
+        <mat-spinner diameter="16"></mat-spinner>
+        <span>Loading folders...</span>
+      </div>
+
       <!-- Search -->
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Search videos</mat-label>
@@ -29,6 +48,12 @@ export interface IVimeoBrowserData {
         </button>
         <mat-icon matSuffix *ngIf="!searchQuery">search</mat-icon>
       </mat-form-field>
+
+      <!-- Exclude keywords indicator -->
+      <div class="exclude-indicator" *ngIf="data.excludeKeywords?.length">
+        <mat-icon>filter_list</mat-icon>
+        <span>Filtering out: {{ data.excludeKeywords!.join(', ') }}</span>
+      </div>
 
       <!-- Loading -->
       <div class="loading-state" *ngIf="loading && videos.length === 0">
@@ -107,6 +132,43 @@ export interface IVimeoBrowserData {
     .vimeo-title-icon { vertical-align: middle; margin-right: 6px; color: #1ab7ea; }
     .vimeo-total { font-size: 0.78rem; font-weight: 400; color: rgba(0,0,0,0.45); margin-left: 8px; }
 
+    .folder-bar {
+      display: flex; gap: 6px; padding: 4px 0 12px;
+      overflow-x: auto; white-space: nowrap;
+      scrollbar-width: thin;
+    }
+    .folder-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: #fff; color: #333;
+      font-size: 0.8rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+      flex-shrink: 0;
+      &:hover { background: #f5f5f5; border-color: rgba(0,0,0,0.25); }
+      &.active { background: #006FB4; color: #fff; border-color: #006FB4; }
+    }
+    .folder-count {
+      font-size: 0.7rem; font-weight: 700;
+      background: rgba(0,0,0,0.08); border-radius: 8px;
+      padding: 1px 6px; min-width: 18px; text-align: center;
+    }
+    .folder-chip.active .folder-count {
+      background: rgba(255,255,255,0.25);
+    }
+    .folder-bar-loading {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0 12px; font-size: 0.8rem; color: rgba(0,0,0,0.45);
+    }
+
+    .exclude-indicator {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; margin-bottom: 10px;
+      background: #fff3e0; border-radius: 6px;
+      font-size: 0.78rem; color: #e65100;
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    }
+
     .search-field { width: 100%; margin-bottom: 8px; }
 
     .loading-state, .empty-state, .error-state {
@@ -183,6 +245,9 @@ export interface IVimeoBrowserData {
 })
 export class VimeoBrowserDialogComponent implements OnInit {
   videos: IVimeoVideoItem[] = [];
+  folders: IVimeoFolder[] = [];
+  selectedFolderId: string | null = null;
+  foldersLoading = false;
   selectedIds = new Set<string>();
   loading = false;
   errorMessage = '';
@@ -197,6 +262,25 @@ export class VimeoBrowserDialogComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadFolders();
+    this.loadVideos(1);
+  }
+
+  async loadFolders(): Promise<void> {
+    this.foldersLoading = true;
+    try {
+      const result = await this.data.kbManager.listVimeoFolders(
+        this.data.assistantId, this.data.kbDefId,
+      );
+      if (result.success && result.data) {
+        this.folders = result.data.folders;
+      }
+    } catch { /* folders are optional */ }
+    this.foldersLoading = false;
+  }
+
+  selectFolder(folderId: string | null): void {
+    this.selectedFolderId = folderId;
     this.loadVideos(1);
   }
 
@@ -205,16 +289,28 @@ export class VimeoBrowserDialogComponent implements OnInit {
     this.errorMessage = '';
     try {
       const result = await this.data.kbManager.browseVimeo(
-        this.data.assistantId, page, 25, this.searchQuery || undefined, this.data.kbDefId,
+        this.data.assistantId, page, 25, this.searchQuery || undefined,
+        this.data.kbDefId, this.selectedFolderId ?? undefined,
       );
       if (!result.success) {
         this.errorMessage = result.error ?? 'Failed to load videos';
         return;
       }
+      let vids = result.data!.videos;
+
+      // Client-side exclude filtering (defense-in-depth, backend also filters)
+      if (this.data.excludeKeywords?.length) {
+        const lowerKws = this.data.excludeKeywords.map(k => k.toLowerCase().trim()).filter(Boolean);
+        vids = vids.filter(v => {
+          const text = `${v.name} ${v.description}`.toLowerCase();
+          return !lowerKws.some(kw => text.includes(kw));
+        });
+      }
+
       if (page === 1) {
-        this.videos = result.data!.videos;
+        this.videos = vids;
       } else {
-        this.videos = [...this.videos, ...result.data!.videos];
+        this.videos = [...this.videos, ...vids];
       }
       this.total = result.data!.total;
       this.hasMore = result.data!.hasMore;
