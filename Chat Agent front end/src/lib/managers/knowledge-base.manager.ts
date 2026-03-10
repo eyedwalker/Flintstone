@@ -81,6 +81,7 @@ export class KnowledgeBaseManager {
     scope: ContentScope,
     minRoleLevel: RoleLevelValue = 0,
     useBDA: boolean = false,
+    kbDefId?: string,
   ): Promise<IAccessorResult<IKnowledgeBaseContent>> {
     return this.api.post<IKnowledgeBaseContent>('/knowledge-base/ingest-video', {
       url,
@@ -89,6 +90,7 @@ export class KnowledgeBaseManager {
       scope,
       minRoleLevel,
       useBDA,
+      kbDefId,
     });
   }
 
@@ -135,20 +137,20 @@ export class KnowledgeBaseManager {
 
   /** Browse Vimeo account videos */
   async browseVimeo(
-    assistantId: string, page = 1, perPage = 25, query?: string,
+    assistantId: string, page = 1, perPage = 25, query?: string, kbDefId?: string,
   ): Promise<IAccessorResult<IVimeoBrowseResult>> {
     return this.api.post<IVimeoBrowseResult>('/knowledge-base/vimeo/browse', {
-      assistantId, page, perPage, query,
+      assistantId, page, perPage, query, kbDefId,
     });
   }
 
   /** Bulk ingest selected Vimeo videos */
   async bulkIngestVimeo(
     assistantId: string, knowledgeBaseId: string, videoIds: string[],
-    scope?: string, minRoleLevel?: number, useBDA?: boolean,
+    scope?: string, minRoleLevel?: number, useBDA?: boolean, kbDefId?: string,
   ): Promise<IAccessorResult<IVimeoBulkResult>> {
     return this.api.post<IVimeoBulkResult>('/knowledge-base/vimeo/bulk-ingest', {
-      assistantId, knowledgeBaseId, videoIds, scope, minRoleLevel, useBDA,
+      assistantId, knowledgeBaseId, videoIds, scope, minRoleLevel, useBDA, kbDefId,
     });
   }
 
@@ -197,7 +199,7 @@ export class KnowledgeBaseManager {
   }
 
   /** Update a KB definition */
-  async updateDefinition(id: string, data: { name?: string; description?: string }): Promise<IAccessorResult<IKnowledgeBaseDefinition>> {
+  async updateDefinition(id: string, data: { name?: string; description?: string; vimeoAccessToken?: string }): Promise<IAccessorResult<IKnowledgeBaseDefinition>> {
     return this.api.put<IKnowledgeBaseDefinition>(`/knowledge-bases/${id}`, data);
   }
 

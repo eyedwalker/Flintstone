@@ -11,6 +11,24 @@ import { forbidden } from '../response';
 
 const CONTENT_TABLE = process.env['CONTENT_TABLE'] ?? '';
 const BUCKET = process.env['S3_CONTENT_BUCKET'] ?? '';
+const KB_DEFS_TABLE = process.env['KNOWLEDGE_BASES_TABLE'] ?? '';
+
+/** Resolve Vimeo token — checks assistant first, then KB definition (for shared KBs) */
+async function resolveVimeoToken(assistantId: string, kbDefId?: string): Promise<string> {
+  // Try assistant record first
+  if (assistantId && assistantId !== 'kb-shared') {
+    const asst = await ddb.getItem<{ vimeoAccessToken?: string }>(
+      process.env['ASSISTANTS_TABLE'] ?? '', { id: assistantId }
+    );
+    if (asst?.vimeoAccessToken) return asst.vimeoAccessToken;
+  }
+  // Fallback: look up from KB definition by its ID
+  if (kbDefId && KB_DEFS_TABLE) {
+    const kbDef = await ddb.getItem<{ vimeoAccessToken?: string }>(KB_DEFS_TABLE, { id: kbDefId });
+    if (kbDef?.vimeoAccessToken) return kbDef.vimeoAccessToken;
+  }
+  return '';
+}
 
 interface IContentItem {
   id: string;
@@ -238,14 +256,11 @@ export async function handleKnowledgeBase(
       const detected = videoIngest.detectVideoUrl(b.url);
       if (!detected) return badRequest('URL is not a recognized Vimeo or YouTube video');
 
-      // Get Vimeo access token from assistant record if needed
+      // Get Vimeo access token from assistant or KB definition
       let vimeoToken = '';
       if (detected.platform === 'vimeo') {
-        const asst = await ddb.getItem<{ vimeoAccessToken?: string }>(
-          process.env['ASSISTANTS_TABLE'] ?? '', { id: b.assistantId }
-        );
-        vimeoToken = asst?.vimeoAccessToken ?? '';
-        if (!vimeoToken) return badRequest('No Vimeo access token configured for this assistant');
+        vimeoToken = await resolveVimeoToken(b.assistantId, (b as any).kbDefId);
+        if (!vimeoToken) return badRequest('No Vimeo access token configured');
       }
 
       // Fetch transcript and metadata
@@ -324,13 +339,10 @@ export async function handleKnowledgeBase(
 
     // POST /knowledge-base/vimeo/browse — list videos from Vimeo account
     if (method === 'POST' && path.endsWith('/vimeo/browse')) {
-      const b = parseBody<{ assistantId: string; page?: number; perPage?: number; query?: string }>(JSON.stringify(body));
+      const b = parseBody<{ assistantId: string; kbDefId?: string; page?: number; perPage?: number; query?: string }>(JSON.stringify(body));
       if (!b?.assistantId) return badRequest('assistantId required');
 
-      const asst = await ddb.getItem<{ vimeoAccessToken?: string }>(
-        process.env['ASSISTANTS_TABLE'] ?? '', { id: b.assistantId }
-      );
-      const token = asst?.vimeoAccessToken;
+      const token = await resolveVimeoToken(b.assistantId, b.kbDefId);
       if (!token) return badRequest('No Vimeo access token configured');
 
       const result = await videoIngest.listAccountVideos(token, b.page ?? 1, b.perPage ?? 25, b.query);
@@ -356,16 +368,13 @@ export async function handleKnowledgeBase(
     // POST /knowledge-base/vimeo/bulk-ingest — import multiple Vimeo videos
     if (method === 'POST' && path.endsWith('/vimeo/bulk-ingest')) {
       const b = parseBody<{
-        assistantId: string; knowledgeBaseId: string;
+        assistantId: string; knowledgeBaseId: string; kbDefId?: string;
         videoIds: string[]; scope?: string; minRoleLevel?: number; useBDA?: boolean;
       }>(JSON.stringify(body));
       if (!b?.assistantId || !b?.knowledgeBaseId || !b?.videoIds?.length)
         return badRequest('assistantId, knowledgeBaseId, videoIds required');
 
-      const asst = await ddb.getItem<{ vimeoAccessToken?: string }>(
-        process.env['ASSISTANTS_TABLE'] ?? '', { id: b.assistantId }
-      );
-      const token = asst?.vimeoAccessToken;
+      const token = await resolveVimeoToken(b.assistantId, b.kbDefId);
       if (!token) return badRequest('No Vimeo access token configured');
 
       const results: { videoId: string; contentId?: string; error?: string }[] = [];

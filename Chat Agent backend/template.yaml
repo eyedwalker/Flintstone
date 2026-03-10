@@ -513,6 +513,18 @@ Resources:
                   - ssm:PutParameter
                   - ssm:DeleteParameter
                 Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/chat-agent/${Stage}/*"
+              - Sid: CognitoAdmin
+                Effect: Allow
+                Action:
+                  - cognito-idp:ListUsers
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:AdminInitiateAuth
+                  - cognito-idp:AdminSetUserMFAPreference
+                  - cognito-idp:AssociateSoftwareToken
+                  - cognito-idp:VerifySoftwareToken
+                Resource: !GetAtt UserPool.Arn
               - Sid: LambdaInvoke
                 Effect: Allow
                 Action:
@@ -753,8 +765,9 @@ Resources:
             IdentitySource: "$request.header.Authorization"
         DefaultAuthorizer: CognitoJwtAuthorizer
       DefaultRouteSettings:
-        ThrottlingBurstLimit: 50
-        ThrottlingRateLimit: 100
+        # Scaled for 8,000 Encompass workstations (~800-1,200 concurrent users)
+        ThrottlingBurstLimit: 500
+        ThrottlingRateLimit: 1000
       CorsConfiguration:
         AllowMethods:
           - GET

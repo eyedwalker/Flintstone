@@ -12,6 +12,8 @@ import { PlacementPickerComponent } from './components/placement-picker/placemen
 import { WidgetPreviewComponent } from './components/widget-preview/widget-preview.component';
 import { MetricCardComponent } from './components/metric-card/metric-card.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
+import { EditContentDialogComponent } from './components/edit-content-dialog/edit-content-dialog.component';
+import { VimeoBrowserDialogComponent } from './components/vimeo-browser-dialog/vimeo-browser-dialog.component';
 
 const COMPONENTS = [
   HeaderComponent,
@@ -22,6 +24,8 @@ const COMPONENTS = [
   WidgetPreviewComponent,
   MetricCardComponent,
   ConfirmDialogComponent,
+  EditContentDialogComponent,
+  VimeoBrowserDialogComponent,
 ];
 
 @NgModule({

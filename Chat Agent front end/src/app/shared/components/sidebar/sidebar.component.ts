@@ -28,6 +28,7 @@ export class SidebarComponent {
     { label: 'Escalation', icon: 'support_agent', route: '/escalation', minRole: 'admin' },
     { label: 'Team', icon: 'group', route: '/team', minRole: 'admin' },
     { label: 'Billing', icon: 'credit_card', route: '/billing', minRole: 'admin' },
+    { label: 'Architecture', icon: 'account_tree', route: '/architecture' },
     { label: 'API Docs', icon: 'api', route: '/api-docs' },
   ];
 

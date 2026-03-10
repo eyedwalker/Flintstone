@@ -16,8 +16,6 @@ import { ChatTesterComponent } from '../embed-code/chat-tester/chat-tester.compo
 import { SnippetDisplayComponent } from '../embed-code/snippet-display/snippet-display.component';
 import { MetricsComponent } from '../metrics/metrics.component';
 import { AssistantKbPickerComponent } from './assistant-kb-picker/assistant-kb-picker.component';
-import { EditContentDialogComponent } from '../../shared/components/edit-content-dialog/edit-content-dialog.component';
-import { VimeoBrowserDialogComponent } from '../../shared/components/vimeo-browser-dialog/vimeo-browser-dialog.component';
 
 const routes: Routes = [
   { path: '', component: AssistantListComponent },
@@ -49,8 +47,6 @@ const routes: Routes = [
     SnippetDisplayComponent,
     MetricsComponent,
     AssistantKbPickerComponent,
-    EditContentDialogComponent,
-    VimeoBrowserDialogComponent,
   ],
   imports: [SharedModule, RouterModule.forChild(routes)],
 })

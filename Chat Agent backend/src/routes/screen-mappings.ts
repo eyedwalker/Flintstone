@@ -16,6 +16,7 @@ interface IScreenMapping {
   urlRegex: string;
   purpose: string;
   videos: unknown[];
+  helpArticles: unknown[];
   trendingQuestions: string[];
   status: string;
   createdAt: string;
@@ -93,6 +94,7 @@ export async function handleScreenMappings(
 
       const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
       if (body['videos'] !== undefined) updates['videos'] = body['videos'];
+      if (body['helpArticles'] !== undefined) updates['helpArticles'] = body['helpArticles'];
       if (body['trendingQuestions'] !== undefined) updates['trendingQuestions'] = body['trendingQuestions'];
       if (body['status'] !== undefined) updates['status'] = body['status'];
       if (body['screenName'] !== undefined) updates['screenName'] = body['screenName'];
@@ -155,25 +157,47 @@ export async function handleWidgetScreenContext(
       'assistantId-index',
     );
 
-    // Try to match the URL against each mapping's regex
+    // Extract the path portion of the URL (ignore domain/protocol)
+    let urlPath = url;
+    try {
+      // Handle full URLs — extract just the path
+      if (url.startsWith('http')) {
+        urlPath = new URL(url).pathname;
+      } else if (url.includes('://')) {
+        urlPath = url.split('://')[1]?.split('/').slice(1).join('/') || url;
+        if (!urlPath.startsWith('/')) urlPath = '/' + urlPath;
+      }
+    } catch {
+      // If URL parsing fails, use as-is
+    }
+
+    // Try to match the URL path against each mapping's regex patterns
     for (const mapping of mappings) {
-      try {
-        const regex = new RegExp(mapping.urlRegex);
-        if (regex.test(url)) {
-          return ok({
-            screenName: mapping.screenName,
-            section: mapping.section,
-            videos: mapping.videos,
-            trendingQuestions: mapping.trendingQuestions,
-          });
+      // Split comma-separated patterns and test each one
+      const patterns = mapping.urlRegex.split(/,\s*/);
+      for (const pattern of patterns) {
+        const trimmed = pattern.trim();
+        if (!trimmed || !trimmed.startsWith('\\/')) continue; // skip non-path patterns
+        try {
+          // Match if the path contains or ends with the pattern (case-insensitive)
+          const regex = new RegExp(trimmed + '(?:\\/.*)?$', 'i');
+          if (regex.test(urlPath)) {
+            return ok({
+              screenName: mapping.screenName,
+              section: mapping.section,
+              videos: mapping.videos,
+              helpArticles: mapping.helpArticles || [],
+              trendingQuestions: mapping.trendingQuestions,
+            });
+          }
+        } catch {
+          // Invalid regex, skip
         }
-      } catch {
-        // Invalid regex, skip
       }
     }
 
     // No match — return empty so widget uses defaults
-    return ok({ screenName: null, videos: [], trendingQuestions: [] });
+    return ok({ screenName: null, videos: [], helpArticles: [], trendingQuestions: [] });
   } catch (e) {
     console.error('widget screen-context error', e);
     return serverError(String(e));

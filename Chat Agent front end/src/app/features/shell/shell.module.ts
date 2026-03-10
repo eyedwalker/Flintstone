@@ -33,6 +33,7 @@ const routes: Routes = [
       },
       { path: 'screen-mappings', loadChildren: () => import('../screen-mappings/screen-mappings.module').then((m) => m.ScreenMappingsModule) },
       { path: 'test-suites', loadChildren: () => import('../test-suites/test-suites.module').then((m) => m.TestSuitesModule) },
+      { path: 'architecture', loadChildren: () => import('../architecture/architecture.module').then((m) => m.ArchitectureModule) },
       { path: 'api-docs', loadChildren: () => import('../api-docs/api-docs.module').then((m) => m.ApiDocsModule) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

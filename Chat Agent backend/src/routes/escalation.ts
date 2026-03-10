@@ -273,6 +273,13 @@ export async function handleWidgetEscalation(
     }>(JSON.stringify(body));
     if (!b?.chatHistory?.length) return badRequest('chatHistory is required');
 
+    // Normalize: widget sends { text } but backend uses { content }
+    b.chatHistory = b.chatHistory.map((m: any) => ({
+      role: m.role,
+      content: m.content || m.text || '',
+      timestamp: m.timestamp,
+    }));
+
     // Look up assistant by API key (uses GSI with scan fallback)
     const assistant = await findAssistantByApiKey(apiKey) as {
       id: string; tenantId: string; status: string; apiKey: string; name: string;
@@ -628,9 +635,9 @@ export async function handleWidgetCheckEscalation(
     if (!config?.enabled) return ok({ shouldEscalate: false });
     if (config.triggerMode === 'manual') return ok({ shouldEscalate: false });
 
-    // Check keyword triggers
+    // Check keyword triggers (normalize: widget sends text, backend expects content)
     const lastMessages = b.messages.slice(-3);
-    const allText = lastMessages.map(m => m.content.toLowerCase()).join(' ');
+    const allText = lastMessages.map((m: any) => (m.content || m.text || '').toLowerCase()).join(' ');
     const triggeredKeyword = config.autoTriggers.keywords?.find(kw => allText.includes(kw.toLowerCase()));
 
     // Check max turns

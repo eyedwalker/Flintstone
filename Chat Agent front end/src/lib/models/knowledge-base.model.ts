@@ -185,6 +185,7 @@ export interface IKnowledgeBaseDefinition {
   description?: string;
   isDefault: boolean;
   bedrockKnowledgeBaseId?: string;
+  vimeoAccessToken?: string;
   vectorBucketName?: string;
   vectorIndexName?: string;
   status: KbDefStatus;

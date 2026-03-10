@@ -6,6 +6,7 @@ import { IVimeoVideoItem } from '../../../../lib/models/knowledge-base.model';
 export interface IVimeoBrowserData {
   assistantId: string;
   kbManager: KnowledgeBaseManager;
+  kbDefId?: string;
 }
 
 @Component({
@@ -204,7 +205,7 @@ export class VimeoBrowserDialogComponent implements OnInit {
     this.errorMessage = '';
     try {
       const result = await this.data.kbManager.browseVimeo(
-        this.data.assistantId, page, 25, this.searchQuery || undefined,
+        this.data.assistantId, page, 25, this.searchQuery || undefined, this.data.kbDefId,
       );
       if (!result.success) {
         this.errorMessage = result.error ?? 'Failed to load videos';
