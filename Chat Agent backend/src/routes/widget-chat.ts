@@ -152,13 +152,15 @@ export async function handleWidgetChat(
     }
 
     const sessionId = b.sessionId ?? uuidv4();
-    const reply = await bedrockChat.invokeAgent(
+    const agentResult = await bedrockChat.invokeAgent(
       assistant.bedrockAgentId,
       assistant.bedrockAgentAliasId,
       finalMessage,
       sessionId,
       roleFilter,
     );
+
+    const reply = agentResult.text;
 
     // Write metrics record (fire-and-forget)
     let metricId: string | undefined;
@@ -181,7 +183,15 @@ export async function handleWidgetChat(
       console.error('metrics write error (non-critical)', metricErr);
     }
 
-    return ok({ success: true, data: { reply, sessionId, metricId } });
+    return ok({
+      success: true,
+      data: {
+        reply,
+        sessionId,
+        metricId,
+        ...(agentResult.actionGroupCalls && { actionGroupCalls: agentResult.actionGroupCalls }),
+      },
+    });
   } catch (e) {
     console.error('widget chat error', e);
     return serverError(String(e));

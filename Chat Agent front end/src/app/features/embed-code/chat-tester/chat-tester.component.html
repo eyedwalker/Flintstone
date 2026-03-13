@@ -28,6 +28,27 @@
       </div>
       <div *ngFor="let msg of chatMessages" class="chat-message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
         <div class="chat-bubble">{{ msg.text }}</div>
+        <div *ngIf="msg.actionGroupCalls?.length" class="tool-call-badge">
+          <mat-icon class="tool-icon">ac_unit</mat-icon>
+          <span>Snowflake Analytics ({{ msg.actionGroupCalls!.length }} tool{{ msg.actionGroupCalls!.length > 1 ? 's' : '' }})</span>
+          <div class="tool-call-details">
+            <div *ngFor="let call of msg.actionGroupCalls" class="tool-call-item">
+              <mat-icon class="tool-check">check_circle</mat-icon>
+              <code>{{ call.apiPath || call.actionGroupName }}</code>
+            </div>
+          </div>
+        </div>
+        <!-- Download links from report generation -->
+        <ng-container *ngFor="let call of (msg.actionGroupCalls || [])">
+          <a *ngIf="getDownloadUrl(call)" class="report-download" [href]="getDownloadUrl(call)" target="_blank" rel="noopener">
+            <mat-icon>download</mat-icon>
+            <span>{{ getFilename(call) }}</span>
+            <span class="dl-meta" *ngIf="getRowCount(call)">{{ getRowCount(call) }} rows</span>
+          </a>
+          <div *ngIf="getChartImage(call)" class="chart-inline">
+            <img [src]="getChartImage(call)" alt="Chart">
+          </div>
+        </ng-container>
       </div>
       <div *ngIf="chatLoading" class="chat-message assistant">
         <div class="chat-bubble typing">

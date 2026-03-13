@@ -32,8 +32,9 @@
 
 .chat-message {
   display: flex;
-  &.user { justify-content: flex-end; }
-  &.assistant { justify-content: flex-start; }
+  flex-direction: column;
+  &.user { align-items: flex-end; }
+  &.assistant { align-items: flex-start; }
 }
 
 .chat-bubble {
@@ -85,4 +86,47 @@
 .chat-input-row {
   display: flex; gap: 10px; align-items: flex-start;
   .chat-field { flex: 1; margin-bottom: -1.25em; }
+}
+
+// ── Snowflake tool call indicator ──────────────────────────────────────────────
+.tool-call-badge {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  margin-top: 4px; padding: 4px 10px;
+  background: #f0f9ff; border: 1px solid #b3e0f7;
+  border-radius: 8px; font-size: 0.75rem; color: #29B5E8;
+  max-width: 75%;
+
+  .tool-icon { font-size: 16px; width: 16px; height: 16px; color: #29B5E8; }
+
+  .tool-call-details {
+    width: 100%; margin-top: 4px;
+    .tool-call-item {
+      display: flex; align-items: center; gap: 4px; padding: 1px 0;
+      .tool-check { font-size: 14px; width: 14px; height: 14px; color: #34A853; }
+      code { font-size: 0.7rem; color: #1a6d8a; }
+    }
+  }
+}
+
+// ── Report download link ─────────────────────────────────────────────────────
+.report-download {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 4px; padding: 8px 12px; max-width: 75%;
+  background: #e8f5e9; border: 1px solid #a5d6a7;
+  border-radius: 8px; text-decoration: none;
+  color: #2e7d32; font-size: 0.75rem; font-weight: 500;
+  transition: background 0.15s;
+
+  &:hover { background: #c8e6c9; }
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #2e7d32; }
+  .dl-meta { font-size: 0.65rem; color: #4caf50; margin-left: auto; }
+}
+
+// ── Inline chart ─────────────────────────────────────────────────────────────
+.chart-inline {
+  margin-top: 4px; max-width: 75%;
+  border-radius: 8px; overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #fff;
+  img { width: 100%; height: auto; display: block; }
 }

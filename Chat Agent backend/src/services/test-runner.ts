@@ -257,13 +257,14 @@ async function executeTestCase(
       message = `[Context: ${ctxParts.join(', ')}]\n${message}`;
     }
 
-    const reply = await invokeAgent(
+    const agentResult = await invokeAgent(
       assistant.bedrockAgentId,
       assistant.bedrockAgentAliasId,
       message,
       sessionId,
       roleFilter as any,
     );
+    const reply = agentResult.text;
 
     const latencyMs = Date.now() - turnStart;
 

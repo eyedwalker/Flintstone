@@ -21,11 +21,28 @@ export interface IMultiKbRoleFilter {
   roleLevel: number;
 }
 
+/** Structured action group call extracted from Bedrock Agent traces */
+export interface IActionGroupCall {
+  actionGroupName: string;
+  apiPath?: string;
+  verb?: string;
+  parameters?: Array<{ name: string; type?: string; value?: string }>;
+  result?: string;
+}
+
+/** Full result from invokeAgent including text and optional trace data */
+export interface IAgentResult {
+  text: string;
+  actionGroupCalls?: IActionGroupCall[];
+}
+
 /**
  * Send a message to a Bedrock Agent and collect the full response.
  * Supports single KB (legacy IRoleFilter) or multiple KBs (IMultiKbRoleFilter).
  * When roleFilter is provided, only KB chunks whose minRoleLevel ≤ caller's roleLevel
  * are returned, enforcing document-level access control.
+ *
+ * Returns structured result with text and any action group calls from traces.
  */
 export async function invokeAgent(
   agentId: string,
@@ -33,7 +50,7 @@ export async function invokeAgent(
   userMessage: string,
   sessionId: string,
   roleFilter?: IRoleFilter | IMultiKbRoleFilter,
-): Promise<string> {
+): Promise<IAgentResult> {
   let sessionState: Record<string, unknown> | undefined;
 
   if (roleFilter) {
@@ -63,19 +80,69 @@ export async function invokeAgent(
     agentAliasId,
     sessionId,
     inputText: userMessage,
+    enableTrace: true,
     sessionState: sessionState as any,
   }));
 
-  // Collect streaming chunks into a single string
+  // Collect streaming chunks and trace events
   const parts: string[] = [];
+  const pendingCalls = new Map<string, IActionGroupCall>();
+  const completedCalls: IActionGroupCall[] = [];
+
   if (res.completion) {
     for await (const event of res.completion) {
       if (event.chunk?.bytes) {
         parts.push(new TextDecoder().decode(event.chunk.bytes));
       }
+
+      // Extract action group calls from orchestration traces
+      if (event.trace?.trace?.orchestrationTrace) {
+        const ot = event.trace.trace.orchestrationTrace as any;
+
+        // Invocation input — agent is about to call an action group
+        if (ot.invocationInput?.actionGroupInvocationInput) {
+          const agi = ot.invocationInput.actionGroupInvocationInput;
+          const id = ot.invocationInput.invocationId ?? agi.apiPath ?? 'unknown';
+          pendingCalls.set(id, {
+            actionGroupName: agi.actionGroupName ?? '',
+            apiPath: agi.apiPath,
+            verb: agi.verb,
+            parameters: agi.parameters,
+          });
+        }
+
+        // Observation — result came back from the action group
+        if (ot.observation?.actionGroupInvocationOutput) {
+          const out = ot.observation.actionGroupInvocationOutput;
+          const id = ot.observation.traceId ?? '';
+          // Match with pending call or create standalone
+          const pending = [...pendingCalls.values()].pop();
+          if (pending) {
+            pending.result = out.text;
+            completedCalls.push(pending);
+            // Remove from pending
+            const key = [...pendingCalls.entries()].find(([, v]) => v === pending)?.[0];
+            if (key) pendingCalls.delete(key);
+          } else {
+            completedCalls.push({
+              actionGroupName: 'unknown',
+              result: out.text,
+            });
+          }
+        }
+      }
     }
   }
-  return parts.join('');
+
+  // Add any remaining pending calls (invoked but no observation yet)
+  for (const call of pendingCalls.values()) {
+    completedCalls.push(call);
+  }
+
+  return {
+    text: parts.join(''),
+    actionGroupCalls: completedCalls.length > 0 ? completedCalls : undefined,
+  };
 }
 
 /**

@@ -87,13 +87,15 @@ export async function handleChat(
       : undefined;
 
     const sessionId = b.sessionId ?? uuidv4();
-    const reply = await bedrockChat.invokeAgent(
+    const agentResult = await bedrockChat.invokeAgent(
       assistant.bedrockAgentId,
       assistant.bedrockAgentAliasId,
       b.message.trim(),
       sessionId,
       roleFilter,
     );
+
+    const reply = agentResult.text;
 
     // Write metrics record (fire-and-forget)
     let metricId: string | undefined;
@@ -116,7 +118,12 @@ export async function handleChat(
       console.error('metrics write error (non-critical)', metricErr);
     }
 
-    return ok({ reply, sessionId, metricId });
+    return ok({
+      reply,
+      sessionId,
+      metricId,
+      ...(agentResult.actionGroupCalls && { actionGroupCalls: agentResult.actionGroupCalls }),
+    });
   } catch (e) {
     console.error('chat handler error', e);
     return serverError(String(e));  // serverError now sanitizes — only logs internally
