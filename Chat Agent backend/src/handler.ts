@@ -5,7 +5,7 @@ import { resolveRequestContext, requireRole, parseBody } from './auth';
 import { ok, notFound, serverError, forbidden, badRequest, cors, corsHeaders } from './response';
 import { handleAssistants } from './routes/assistants';
 import { handleChat } from './routes/chat';
-import { handleWidgetChat } from './routes/widget-chat';
+import { handleWidgetChat, handleWidgetChatPoll, handleWidgetDownload, processChatJob } from './routes/widget-chat';
 import { handleHierarchy } from './routes/hierarchy';
 import { handleKnowledgeBase } from './routes/knowledge-base';
 import { handleGuardrails } from './routes/guardrails';
@@ -80,6 +80,16 @@ export const handler = async (
   // Public widget endpoints — authenticated via API key, no JWT required
   if (rawPath === '/widget/chat' && method === 'POST') {
     return handleWidgetChat(body, event.headers);
+  }
+  // Poll for async chat job result: GET /widget/chat/{jobId}
+  const chatPollMatch = rawPath.match(/^\/widget\/chat\/([a-f0-9-]+)$/);
+  if (chatPollMatch && method === 'GET') {
+    return handleWidgetChatPoll(chatPollMatch[1], event.headers);
+  }
+  // Secure file download: GET /widget/download/{key+}
+  const downloadMatch = rawPath.match(/^\/widget\/download\/(.+)$/);
+  if (downloadMatch && method === 'GET') {
+    return handleWidgetDownload(decodeURIComponent(downloadMatch[1]), event.headers);
   }
   if (rawPath === '/widget/escalate' && method === 'POST') {
     return handleWidgetEscalation(body, event.headers);
@@ -303,8 +313,12 @@ async function handleCrawlJob(job: {
 export const provisionHandler = async (
   event: APIGatewayProxyEventV2WithJWTAuthorizer
 ): Promise<APIGatewayProxyResultV2> => {
-  // Handle async crawl jobs (invoked via Lambda.invoke, not API Gateway)
+  // Handle async jobs (invoked via Lambda.invoke, not API Gateway)
   const anyEvent = event as any;
+  if (anyEvent._chatJob) {
+    await processChatJob(anyEvent._chatJob);
+    return { statusCode: 200, body: 'ok' };
+  }
   if (anyEvent._crawlJob) {
     await handleCrawlJob(anyEvent._crawlJob);
     return { statusCode: 200, body: 'ok' };

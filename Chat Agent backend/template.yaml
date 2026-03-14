@@ -49,6 +49,9 @@ Globals:
         AUDIT_LOG_TABLE: !Sub "chat-agent-audit-log-${Stage}"
         HIPAA_BUCKET: !Sub "chat-agent-hipaa-${Stage}"
         COGNITO_USER_POOL_ID: !Ref UserPool
+        REPORT_BUCKET: !Sub "snowflake-eyecare-reports-${Stage}"
+        CHAT_JOBS_TABLE: !Ref ChatJobsTable
+        CHAT_WORKER_FUNCTION_NAME: !Sub "chat-agent-provision-${Stage}"
         PROVISION_FUNCTION_NAME: !Sub "chat-agent-provision-${Stage}"
         STRIPE_SECRET_KEY_PARAM: !Sub "/chat-agent/${Stage}/stripe/secret-key"
         FRONTEND_URL: ""
@@ -85,6 +88,15 @@ Resources:
             Priority: 1
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
+        InviteMessageTemplate:
+          EmailSubject: "You've been invited to Encompass Assist"
+          EmailMessage: |
+            <h2>Welcome to Encompass Assist</h2>
+            <p>You've been invited to test the Encompass Assist AI assistant.</p>
+            <p><strong>Username:</strong> {username}<br/>
+            <strong>Temporary password:</strong> {####}</p>
+            <p>Sign in at: <a href="https://d3srbl2yqx3tra.cloudfront.net">https://d3srbl2yqx3tra.cloudfront.net</a></p>
+            <p>You will be asked to set a new password on your first login.</p>
       DeletionProtection: ACTIVE
 
   UserPoolClient:
@@ -107,6 +119,23 @@ Resources:
       PreventUserExistenceErrors: ENABLED
 
   # ── DynamoDB Tables ────────────────────────────────────────────────
+  ChatJobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-chat-jobs-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
   AssistantsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -470,6 +499,8 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:s3:::${ContentBucketName}"
                   - !Sub "arn:aws:s3:::${ContentBucketName}/*"
+                  - !Sub "arn:aws:s3:::snowflake-eyecare-reports-${Stage}"
+                  - !Sub "arn:aws:s3:::snowflake-eyecare-reports-${Stage}/*"
               - Sid: BedrockAccess
                 Effect: Allow
                 Action:
@@ -531,6 +562,7 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-test-runner-${Stage}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-provision-${Stage}"
               - Sid: S3VectorsManage
                 Effect: Allow
                 Action:
@@ -612,7 +644,7 @@ Resources:
       CodeUri: ./
       Handler: dist/handler.handler
       Role: !GetAtt LambdaExecutionRole.Arn
-      Timeout: 30
+      Timeout: 120
       MemorySize: 512
       Events:
         ApiEvent:
@@ -636,6 +668,22 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /widget/chat
             Method: POST
+            Auth:
+              Authorizer: NONE
+        WidgetDownloadEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/download/{proxy+}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+        WidgetChatPollEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /widget/chat/{jobId}
+            Method: GET
             Auth:
               Authorizer: NONE
         WidgetEscalateEvent:
