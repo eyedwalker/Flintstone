@@ -1,0 +1,112 @@
+.page-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+
+  h2 { margin: 0; font-size: 24px; font-weight: 500; }
+  .subtitle { margin: 4px 0 0; color: #666; font-size: 14px; }
+}
+
+.loading-bar { margin-bottom: 16px; }
+
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: #666;
+
+  .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #ccc; margin-bottom: 16px; }
+  h3 { margin: 0 0 8px; color: #333; }
+  p { margin: 0 0 8px; }
+  .hint { font-size: 13px; color: #999; margin-bottom: 24px; }
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+.schedule-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  .status-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.card-actions {
+  display: flex;
+  gap: 0;
+  button { transform: scale(0.85); }
+}
+
+.schedule-name {
+  margin: 12px 0 16px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.schedule-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #666;
+  .meta-icon { font-size: 16px; width: 16px; height: 16px; color: #999; }
+}
+
+mat-divider { margin: 0 0 12px; }
+
+.run-info {
+  display: flex;
+  gap: 24px;
+}
+
+.run-stat {
+  display: flex;
+  flex-direction: column;
+  .run-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+  .run-value {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    &.error { color: #f44336; }
+  }
+}
+
+.run-status-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  &.success { color: #4caf50; }
+  &.error { color: #f44336; }
+}

@@ -1,0 +1,137 @@
+.page-container { padding: 24px; max-width: 1000px; margin: 0 auto; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  h2 { margin: 0; font-size: 22px; }
+}
+.header-actions { display: flex; gap: 8px; }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  .chip-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+.meta-text { font-size: 13px; color: #999; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.sql-card { grid-column: 1 / -1; }
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+.detail-label { color: #666; font-weight: 500; }
+
+.recipient-list { margin-top: 8px; }
+.recipient {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 14px;
+  .recipient-icon { font-size: 16px; width: 16px; height: 16px; color: #999; }
+}
+
+.error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff3f3;
+  border-radius: 6px;
+  color: #d32f2f;
+  font-size: 13px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+.sql-block {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  border-radius: 6px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.runs-section {
+  h3 { margin: 0 0 16px; font-size: 18px; }
+  .no-runs { color: #999; font-size: 14px; padding: 24px 0; text-align: center; }
+}
+
+.run-card {
+  margin-bottom: 8px;
+  padding: 12px 16px !important;
+}
+
+.run-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.run-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 90px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+.run-meta {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #666;
+  flex: 1;
+  .run-duration { font-size: 12px; color: #999; }
+}
+.run-delivery {
+  display: flex;
+  gap: 8px;
+}
+.delivery-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: #666;
+  .delivery-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+.download-btn { font-size: 12px; }
+.run-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff3f3;
+  border-radius: 4px;
+  color: #d32f2f;
+  font-size: 12px;
+}

@@ -1,0 +1,129 @@
+<div class="page-container">
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <div class="page-header" *ngIf="schedule">
+    <div class="header-left">
+      <button mat-icon-button (click)="goBack()" matTooltip="Back">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h2>{{ schedule.name }}</h2>
+        <div class="status-row">
+          <span class="status-chip" [style.color]="getRunStatusColor(schedule.status)">
+            <mat-icon class="chip-icon">{{ getRunStatusIcon(schedule.status) }}</mat-icon>
+            {{ schedule.status | titlecase }}
+          </span>
+          <span class="meta-text">{{ schedule.totalRuns }} total runs</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="triggerRun()" [disabled]="schedule.status === 'disabled'">
+        <mat-icon>play_arrow</mat-icon> Run Now
+      </button>
+      <button mat-stroked-button (click)="togglePause()">
+        <mat-icon>{{ schedule.status === 'active' ? 'pause' : 'play_circle' }}</mat-icon>
+        {{ schedule.status === 'active' ? 'Pause' : 'Resume' }}
+      </button>
+      <button mat-stroked-button color="warn" (click)="deleteSchedule()">
+        <mat-icon>delete</mat-icon> Delete
+      </button>
+    </div>
+  </div>
+
+  <div class="detail-grid" *ngIf="schedule">
+    <!-- Config Card -->
+    <mat-card>
+      <mat-card-header><mat-card-title>Configuration</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div class="detail-row">
+          <span class="detail-label">Schedule</span>
+          <span>{{ schedule.scheduleExpression }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Timezone</span>
+          <span>{{ schedule.timezone }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Format</span>
+          <span>{{ schedule.reportConfig.format | uppercase }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Report Type</span>
+          <span>{{ schedule.reportType | titlecase }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Created</span>
+          <span>{{ formatDate(schedule.createdAt) }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Delivery Card -->
+    <mat-card>
+      <mat-card-header><mat-card-title>Delivery</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div *ngIf="schedule.delivery.email?.recipients?.length">
+          <span class="detail-label">Email Recipients</span>
+          <div class="recipient-list">
+            <div *ngFor="let email of schedule.delivery.email!.recipients" class="recipient">
+              <mat-icon class="recipient-icon">email</mat-icon> {{ email }}
+            </div>
+          </div>
+        </div>
+        <div *ngIf="schedule.delivery.sms?.recipients?.length" style="margin-top: 12px;">
+          <span class="detail-label">SMS Recipients</span>
+          <div class="recipient-list">
+            <div *ngFor="let phone of schedule.delivery.sms!.recipients" class="recipient">
+              <mat-icon class="recipient-icon">sms</mat-icon> {{ phone }}
+            </div>
+          </div>
+        </div>
+        <div *ngIf="schedule.lastRunError" class="error-box">
+          <mat-icon>warning</mat-icon>
+          <span>{{ schedule.lastRunError }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- SQL Card -->
+    <mat-card class="sql-card">
+      <mat-card-header><mat-card-title>SQL Query</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <pre class="sql-block">{{ schedule.reportConfig.sql }}</pre>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Run History -->
+  <div class="runs-section" *ngIf="schedule">
+    <h3>Run History</h3>
+    <div *ngIf="runs.length === 0" class="no-runs">No runs yet</div>
+    <mat-card *ngFor="let run of runs" class="run-card">
+      <div class="run-row">
+        <div class="run-status" [style.color]="getRunStatusColor(run.status)">
+          <mat-icon>{{ getRunStatusIcon(run.status) }}</mat-icon>
+          <span>{{ run.status | titlecase }}</span>
+        </div>
+        <div class="run-meta">
+          <span>{{ formatDate(run.startedAt) }}</span>
+          <span class="run-duration" *ngIf="run.durationMs">{{ formatDuration(run.durationMs) }}</span>
+        </div>
+        <div class="run-delivery" *ngIf="run.deliveryResults">
+          <span *ngIf="run.deliveryResults.email?.length" class="delivery-badge">
+            <mat-icon class="delivery-icon">email</mat-icon>
+            {{ run.deliveryResults.email!.length }} sent
+          </span>
+          <span *ngIf="run.deliveryResults.sms?.length" class="delivery-badge">
+            <mat-icon class="delivery-icon">sms</mat-icon>
+            {{ run.deliveryResults.sms!.length }} sent
+          </span>
+        </div>
+        <a *ngIf="run.reportUrl" [href]="run.reportUrl" target="_blank" mat-stroked-button class="download-btn">
+          <mat-icon>download</mat-icon> Download
+        </a>
+      </div>
+      <div *ngIf="run.error" class="run-error">{{ run.error }}</div>
+    </mat-card>
+  </div>
+</div>

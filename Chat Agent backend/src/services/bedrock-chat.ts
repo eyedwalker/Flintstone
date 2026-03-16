@@ -50,6 +50,7 @@ export async function invokeAgent(
   userMessage: string,
   sessionId: string,
   roleFilter?: IRoleFilter | IMultiKbRoleFilter,
+  tenantId?: string,
 ): Promise<IAgentResult> {
   let sessionState: Record<string, unknown> | undefined;
 
@@ -75,13 +76,19 @@ export async function invokeAgent(
     };
   }
 
+  // Merge sessionAttributes (tenantId) into sessionState for action group access
+  const mergedSessionState: Record<string, unknown> = {
+    ...(sessionState ?? {}),
+    ...(tenantId ? { sessionAttributes: { tenantId } } : {}),
+  };
+
   const res = await client.send(new InvokeAgentCommand({
     agentId,
     agentAliasId,
     sessionId,
     inputText: userMessage,
     enableTrace: true,
-    sessionState: sessionState as any,
+    sessionState: Object.keys(mergedSessionState).length > 0 ? mergedSessionState as any : undefined,
   }));
 
   // Collect streaming chunks and trace events

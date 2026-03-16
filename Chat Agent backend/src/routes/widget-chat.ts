@@ -268,6 +268,7 @@ export async function processChatJob(job: {
       job.message,
       job.sessionId,
       job.roleFilter,
+      job.tenantId,
     );
 
     const reply = agentResult.text;

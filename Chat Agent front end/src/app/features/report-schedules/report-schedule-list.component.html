@@ -1,0 +1,93 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h2>Scheduled Reports</h2>
+      <p class="subtitle">Automated reports delivered via email and SMS</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon> New Schedule
+    </button>
+  </div>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <div *ngIf="!loading && schedules.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">schedule_send</mat-icon>
+    <h3>No scheduled reports yet</h3>
+    <p>Create a schedule to automatically generate and deliver reports via email or SMS.</p>
+    <p class="hint">You can also ask the chat agent: "Schedule a weekly revenue report every Monday"</p>
+    <button mat-raised-button color="primary" (click)="openCreate()">Create First Schedule</button>
+  </div>
+
+  <div class="schedule-grid" *ngIf="schedules.length > 0">
+    <mat-card *ngFor="let s of schedules" class="schedule-card" (click)="openDetail(s)">
+      <mat-card-header>
+        <div class="card-title-row">
+          <div class="status-badge" [style.color]="getStatusColor(s.status)">
+            <mat-icon class="status-icon">{{ getStatusIcon(s.status) }}</mat-icon>
+            <span class="status-text">{{ s.status | titlecase }}</span>
+          </div>
+          <div class="card-actions">
+            <button mat-icon-button matTooltip="Run Now" (click)="triggerRun(s, $event)"
+                    [disabled]="s.status === 'disabled'">
+              <mat-icon>play_arrow</mat-icon>
+            </button>
+            <button mat-icon-button
+                    [matTooltip]="s.status === 'active' ? 'Pause' : 'Resume'"
+                    (click)="togglePause(s, $event)"
+                    [disabled]="s.status === 'disabled'">
+              <mat-icon>{{ s.status === 'active' ? 'pause' : 'play_circle' }}</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Delete" color="warn" (click)="deleteSchedule(s, $event)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <h3 class="schedule-name">{{ s.name }}</h3>
+
+        <div class="schedule-meta">
+          <div class="meta-item">
+            <mat-icon class="meta-icon">repeat</mat-icon>
+            <span>{{ formatFrequency(s.scheduleExpression) }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon class="meta-icon">schedule</mat-icon>
+            <span>{{ s.timezone }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon class="meta-icon">people</mat-icon>
+            <span>{{ getRecipientCount(s) }} recipient{{ getRecipientCount(s) !== 1 ? 's' : '' }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon class="meta-icon">description</mat-icon>
+            <span>{{ s.reportConfig.format | uppercase }}</span>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="run-info">
+          <div class="run-stat">
+            <span class="run-label">Last Run</span>
+            <span class="run-value" [class.error]="s.lastRunStatus === 'failed'">
+              {{ s.lastRunAt ? formatDate(s.lastRunAt) : 'Never' }}
+              <mat-icon *ngIf="s.lastRunStatus === 'success'" class="run-status-icon success">check_circle</mat-icon>
+              <mat-icon *ngIf="s.lastRunStatus === 'failed'" class="run-status-icon error">error</mat-icon>
+            </span>
+          </div>
+          <div class="run-stat">
+            <span class="run-label">Total Runs</span>
+            <span class="run-value">{{ s.totalRuns }}</span>
+          </div>
+          <div class="run-stat" *ngIf="s.consecutiveFailures > 0">
+            <span class="run-label">Failures</span>
+            <span class="run-value error">{{ s.consecutiveFailures }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
