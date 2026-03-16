@@ -53,6 +53,10 @@ Globals:
         CHAT_JOBS_TABLE: !Ref ChatJobsTable
         CHAT_WORKER_FUNCTION_NAME: !Sub "chat-agent-provision-${Stage}"
         PROVISION_FUNCTION_NAME: !Sub "chat-agent-provision-${Stage}"
+        REPORT_SCHEDULES_TABLE: !Ref ReportSchedulesTable
+        REPORT_RUNS_TABLE: !Ref ReportRunsTable
+        SNOWFLAKE_LAMBDA_ARN: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:snowflake-action-group-${Stage}"
+        SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
         STRIPE_SECRET_KEY_PARAM: !Sub "/chat-agent/${Stage}/stripe/secret-key"
         FRONTEND_URL: ""
         ALLOWED_ORIGINS: ""  # Comma-separated list of allowed origins for CORS (empty = allow all)
@@ -401,6 +405,57 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  ReportSchedulesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-report-schedules-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: tenantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: tenantId-index
+          KeySchema:
+            - AttributeName: tenantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  ReportRunsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-report-runs-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: scheduleId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: scheduleId-index
+          KeySchema:
+            - AttributeName: scheduleId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
   WidgetPresetsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -477,6 +532,7 @@ Resources:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-attachments-${Stage}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-attachments-${Stage}/index/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/chat-agent-audit-log-${Stage}"
+                  - !GetAtt ChatJobsTable.Arn
                   - !GetAtt WidgetPresetsTable.Arn
                   - !Sub "${WidgetPresetsTable.Arn}/index/*"
                   - !GetAtt ScreenMappingsTable.Arn
@@ -489,6 +545,10 @@ Resources:
                   - !Sub "${TestRunsTable.Arn}/index/*"
                   - !GetAtt TestResultsTable.Arn
                   - !Sub "${TestResultsTable.Arn}/index/*"
+                  - !GetAtt ReportSchedulesTable.Arn
+                  - !Sub "${ReportSchedulesTable.Arn}/index/*"
+                  - !GetAtt ReportRunsTable.Arn
+                  - !Sub "${ReportRunsTable.Arn}/index/*"
               - Sid: S3Access
                 Effect: Allow
                 Action:
@@ -563,6 +623,25 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-test-runner-${Stage}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-provision-${Stage}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:snowflake-action-group-${Stage}"
+              - Sid: SchedulerAccess
+                Effect: Allow
+                Action:
+                  - scheduler:CreateSchedule
+                  - scheduler:UpdateSchedule
+                  - scheduler:DeleteSchedule
+                  - scheduler:GetSchedule
+                Resource: !Sub "arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/default/report-*"
+              - Sid: SchedulerPassRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt SchedulerExecutionRole.Arn
+              - Sid: SESAccess
+                Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: "*"
               - Sid: S3VectorsManage
                 Effect: Allow
                 Action:
@@ -633,6 +712,27 @@ Resources:
                   - bedrock:InvokeModel
                   - bedrock:Retrieve
                 Resource: "*"
+
+  # ── EventBridge Scheduler Role ──────────────────────────────────────
+  SchedulerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "chat-agent-scheduler-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeReportWorker
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-provision-${Stage}"
 
   # ── Lambda Function ────────────────────────────────────────────────
   ApiFunction:

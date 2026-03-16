@@ -19,6 +19,7 @@ import { handleAttachments, handleWidgetAttachmentUrl, handleWidgetAttachmentCon
 import { handleWidgetPresets } from './routes/widget-presets';
 import { handleScreenMappings, handleWidgetScreenContext } from './routes/screen-mappings';
 import { handleTestSuites, handleTestRuns } from './routes/test-suites';
+import { handleReportSchedules } from './routes/report-schedules';
 
 // Bedrock services (only imported in provision handler, kept separate for cold-start)
 import * as bedrockAgent from './services/bedrock-agent';
@@ -51,10 +52,21 @@ interface IKbDef {
 /**
  * Main API Lambda — handles all routes except /assistants/:id/provision
  * which is handled by provisionHandler (longer timeout).
+ *
+ * Also handles Bedrock Agent action group invocations (different event shape).
  */
 export const handler = async (
-  event: APIGatewayProxyEventV2WithJWTAuthorizer
-): Promise<APIGatewayProxyResultV2> => {
+  event: APIGatewayProxyEventV2WithJWTAuthorizer & Record<string, unknown>
+): Promise<APIGatewayProxyResultV2 | Record<string, unknown>> => {
+  // ── Bedrock Action Group invocation ─────────────────────────────────────
+  // When Bedrock invokes this Lambda for a tool call, the event shape is:
+  //   OpenAPI-based: { actionGroup, apiPath, httpMethod, parameters, sessionAttributes, ... }
+  //   Function-based: { actionGroup, function, parameters, sessionAttributes, ... }
+  if ((event as any).actionGroup && ((event as any).apiPath || (event as any).function)) {
+    const { handleActionGroup } = await import('./services/front-office-actions');
+    return handleActionGroup(event as any) as any;
+  }
+
   const method = event.requestContext.http.method.toUpperCase();
 
   // Handle CORS preflight before auth check — no JWT required for OPTIONS
@@ -183,6 +195,9 @@ export const handler = async (
     }
     if (rawPath.startsWith('/test-runs')) {
       return handleTestRuns(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/report-schedules')) {
+      return handleReportSchedules(method, rawPath, body, params, query, ctx);
     }
     return notFound('Route not found');
   } catch (e) {
@@ -321,6 +336,11 @@ export const provisionHandler = async (
   }
   if (anyEvent._crawlJob) {
     await handleCrawlJob(anyEvent._crawlJob);
+    return { statusCode: 200, body: 'ok' };
+  }
+  if (anyEvent._reportJob) {
+    const { executeScheduledReport } = await import('./services/report-scheduler');
+    await executeScheduledReport(anyEvent._reportJob);
     return { statusCode: 200, body: 'ok' };
   }
 
