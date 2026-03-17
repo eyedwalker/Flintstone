@@ -30,6 +30,16 @@ export class AgentTrainingComponent implements OnInit {
   aiInstruction = '';
   aiRevising = false;
   aiTarget: 'prompt' | 'guide' = 'prompt';
+  aiImage: string | null = null;
+  aiImageName = '';
+
+  // Versioning
+  versions: Array<{ id: string; createdAt: string; savedBy: string; preview: string; size: number }> = [];
+  loadingVersions = false;
+  showVersions = false;
+
+  // Drag & drop
+  isDragging = false;
 
   // Tips for data experts
   readonly expertTips = [
@@ -141,6 +151,33 @@ export class AgentTrainingComponent implements OnInit {
     return (this.dataGuide || '').split('\n').length;
   }
 
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.snackBar.open('Please select an image file', '', { duration: 3000 });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.snackBar.open('Image must be under 5MB', '', { duration: 3000 });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.aiImage = reader.result as string;
+      this.aiImageName = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeImage(): void {
+    this.aiImage = null;
+    this.aiImageName = '';
+  }
+
   async aiRevise(): Promise<void> {
     if (!this.aiInstruction.trim()) return;
 
@@ -152,6 +189,7 @@ export class AgentTrainingComponent implements OnInit {
       document,
       instruction: this.aiInstruction,
       documentType,
+      ...(this.aiImage ? { image: this.aiImage } : {}),
     });
 
     this.aiRevising = false;
@@ -164,8 +202,102 @@ export class AgentTrainingComponent implements OnInit {
       }
       this.snackBar.open('AI revision applied — review the changes then Save', '', { duration: 4000 });
       this.aiInstruction = '';
+      this.aiImage = null;
+      this.aiImageName = '';
     } else {
       this.snackBar.open('AI revision failed: ' + (res.error ?? 'Unknown'), '', { duration: 4000 });
     }
+  }
+
+  // ── Version History ─────────────────────────────────────────────────────
+
+  async loadVersions(type: 'system-prompt' | 'data-guide'): Promise<void> {
+    this.loadingVersions = true;
+    this.showVersions = true;
+    const res = await this.api.get<any[]>('/agent-config/versions', {
+      assistantId: this.selectedAssistantId,
+      type,
+    });
+    this.versions = res.data ?? [];
+    this.loadingVersions = false;
+  }
+
+  async revertToVersion(version: { id: string; createdAt: string }): Promise<void> {
+    if (!confirm(`Revert to version from ${new Date(version.createdAt).toLocaleString()}? Current content will be saved as a new version.`)) return;
+
+    const res = await this.api.post<any>('/agent-config/revert', { versionId: version.id });
+    if (res.success && res.data?.content) {
+      if (this.aiTarget === 'prompt') {
+        this.activePrompt = res.data.content;
+      } else {
+        this.dataGuide = res.data.content;
+      }
+      this.snackBar.open('Reverted — review and Save to apply', '', { duration: 3000 });
+      this.showVersions = false;
+    }
+  }
+
+  // ── Drag & Drop ─────────────────────────────────────────────────────────
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+
+    const files = event.dataTransfer?.files;
+    if (!files?.length) return;
+
+    const file = files[0];
+    this.handleDroppedFile(file);
+  }
+
+  onFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) this.handleDroppedFile(file);
+  }
+
+  private handleDroppedFile(file: File): void {
+    if (file.size > 10 * 1024 * 1024) {
+      this.snackBar.open('File must be under 10MB', '', { duration: 3000 });
+      return;
+    }
+
+    // Images → attach to AI Assist
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.aiImage = reader.result as string;
+        this.aiImageName = file.name;
+        this.snackBar.open(`Image "${file.name}" attached — describe what to extract in the AI Assist box`, '', { duration: 4000 });
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Text/Markdown/SQL/CSV → read content and put in AI instruction
+    if (file.type.startsWith('text/') || file.name.match(/\.(md|sql|csv|txt|json)$/i)) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const content = reader.result as string;
+        this.aiInstruction = `Incorporate the following content from file "${file.name}" into the document:\n\n${content}`;
+        this.snackBar.open(`File "${file.name}" loaded — click "Apply with AI" to incorporate it`, '', { duration: 4000 });
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    this.snackBar.open(`Unsupported file type: ${file.type || file.name}. Use images, .md, .sql, .csv, or .txt`, '', { duration: 4000 });
   }
 }

@@ -32,7 +32,10 @@
               <mat-button-toggle value="bedrock">Bedrock Agent (Live)</mat-button-toggle>
               <mat-button-toggle value="ddb">DynamoDB Config</mat-button-toggle>
             </mat-button-toggle-group>
-            <button mat-raised-button color="primary" (click)="savePrompt()" [disabled]="savingPrompt">
+            <button mat-stroked-button type="button" (click)="loadVersions('system-prompt')">
+              <mat-icon>history</mat-icon> History
+            </button>
+            <button mat-raised-button color="primary" type="button" (click)="savePrompt()" [disabled]="savingPrompt">
               <mat-spinner *ngIf="savingPrompt" diameter="18" class="inline-spinner"></mat-spinner>
               {{ savingPrompt ? 'Saving...' : 'Save & Deploy' }}
             </button>
@@ -67,7 +70,10 @@
             </p>
           </div>
           <div class="tab-actions">
-            <button mat-raised-button color="primary" (click)="saveDataGuide()" [disabled]="savingGuide">
+            <button mat-stroked-button type="button" (click)="loadVersions('data-guide')">
+              <mat-icon>history</mat-icon> History
+            </button>
+            <button mat-raised-button color="primary" type="button" (click)="saveDataGuide()" [disabled]="savingGuide">
               <mat-spinner *ngIf="savingGuide" diameter="18" class="inline-spinner"></mat-spinner>
               {{ savingGuide ? 'Saving...' : 'Save & Re-index' }}
             </button>
@@ -138,6 +144,37 @@
 
   </mat-tab-group>
 
+  <!-- ═══ Version History Panel ═══ -->
+  <div class="version-panel" *ngIf="showVersions">
+    <div class="version-header">
+      <h3><mat-icon>history</mat-icon> Version History</h3>
+      <button mat-icon-button type="button" (click)="showVersions = false"><mat-icon>close</mat-icon></button>
+    </div>
+    <mat-progress-bar *ngIf="loadingVersions" mode="indeterminate"></mat-progress-bar>
+    <div *ngIf="!loadingVersions && versions.length === 0" class="no-versions">
+      No previous versions found. Versions are saved automatically each time you save.
+    </div>
+    <div *ngFor="let v of versions" class="version-item" (click)="revertToVersion(v)">
+      <div class="version-meta">
+        <span class="version-date">{{ v.createdAt | date:'medium' }}</span>
+        <span class="version-size">{{ v.size | number }} chars</span>
+      </div>
+      <div class="version-preview">{{ v.preview }}</div>
+    </div>
+  </div>
+
+  <!-- ═══ Drag & Drop Zone ═══ -->
+  <div class="drop-zone" [class.dragging]="isDragging"
+       (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+       *ngIf="!loading && selectedAssistantId">
+    <input type="file" #docInput accept="image/*,.md,.sql,.csv,.txt,.json" (change)="onFileSelect($event)" hidden>
+    <div class="drop-content" (click)="docInput.click()">
+      <mat-icon class="drop-icon">{{ isDragging ? 'file_download' : 'upload_file' }}</mat-icon>
+      <span>{{ isDragging ? 'Drop file here' : 'Drag & drop a file, or click to browse' }}</span>
+      <span class="drop-hint">Images (screenshots), .sql, .md, .csv, .txt, .json</span>
+    </div>
+  </div>
+
   <!-- ═══ AI Assist Panel (sticky bottom) ═══ -->
   <div class="ai-assist-panel" *ngIf="!loading && selectedAssistantId">
     <div class="ai-header">
@@ -151,13 +188,31 @@
         <mat-button-toggle value="guide">Data Guide</mat-button-toggle>
       </mat-button-toggle-group>
       <div class="ai-input-row">
-        <textarea class="ai-input" [(ngModel)]="aiInstruction" rows="3"
-                  placeholder="Examples:
+        <div class="ai-input-wrapper">
+          <textarea class="ai-input" [(ngModel)]="aiInstruction" rows="3"
+                    placeholder="Examples:
 &#8226; Add a section about the Order table — DerivedStatus means: 1=New, 2=InProgress, 3=Complete, 4=Canceled
-&#8226; Add this SQL pattern for AR aging by carrier: SELECT &quot;CarrierName&quot;, SUM(&quot;ClaimTotalBalance&quot;) FROM DATAMART.&quot;ARMartFct_Billing&quot; GROUP BY 1
-&#8226; Tell the agent to always exclude TransactionTypeId 5 and 7 when calculating net collections
-&#8226; Add a note that the Amount column in BillingTransaction can be negative for adjustments"></textarea>
-        <button mat-raised-button color="accent" (click)="aiRevise()"
+&#8226; Add this SQL pattern for AR aging by carrier: SELECT ...
+&#8226; Tell the agent to always exclude TransactionTypeId 5 and 7
+&#8226; Attach a screenshot of a report and say 'extract the SQL from this'"></textarea>
+
+          <div class="ai-attachments">
+            <input type="file" #imageInput accept="image/*" (change)="onImageSelected($event)" hidden>
+            <button mat-stroked-button type="button" (click)="imageInput.click()" class="attach-btn">
+              <mat-icon>add_photo_alternate</mat-icon>
+              {{ aiImage ? 'Change Image' : 'Attach Screenshot' }}
+            </button>
+            <div *ngIf="aiImage" class="image-preview">
+              <img [src]="aiImage" class="preview-thumb" alt="Attached screenshot">
+              <span class="preview-name">{{ aiImageName }}</span>
+              <button mat-icon-button type="button" (click)="removeImage()" class="remove-btn">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button mat-raised-button color="accent" type="button" (click)="aiRevise()"
                 [disabled]="aiRevising || !aiInstruction.trim()" class="ai-button">
           <mat-spinner *ngIf="aiRevising" diameter="18" class="inline-spinner"></mat-spinner>
           {{ aiRevising ? 'Revising...' : 'Apply with AI' }}
