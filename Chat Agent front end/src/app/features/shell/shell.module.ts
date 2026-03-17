@@ -65,6 +65,12 @@ const routes: Routes = [
         data: { minRole: 'viewer' },
       },
       {
+        path: 'agent-training',
+        loadChildren: () => import('../agent-training/agent-training.module').then((m) => m.AgentTrainingModule),
+        canActivate: [RoleGuard],
+        data: { minRole: 'admin' },
+      },
+      {
         path: 'report-schedules',
         loadChildren: () => import('../report-schedules/report-schedules.module').then((m) => m.ReportSchedulesModule),
         canActivate: [RoleGuard],

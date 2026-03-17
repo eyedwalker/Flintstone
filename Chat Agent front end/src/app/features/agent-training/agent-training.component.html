@@ -1,0 +1,168 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h2>Agent Training</h2>
+      <p class="subtitle">Teach the AI about your data — edit the system prompt, data guide, and view schema catalog</p>
+    </div>
+    <mat-form-field appearance="outline" class="assistant-select" *ngIf="assistants.length > 1">
+      <mat-label>Assistant</mat-label>
+      <mat-select [(value)]="selectedAssistantId" (selectionChange)="onAssistantChange()">
+        <mat-option *ngFor="let a of assistants" [value]="a.id">{{ a.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <mat-tab-group animationDuration="200ms" *ngIf="!loading">
+
+    <!-- ═══ Tab 1: System Prompt ═══ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">psychology</mat-icon> System Prompt
+      </ng-template>
+      <div class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h3>Agent System Prompt</h3>
+            <p class="tab-desc">This is the instruction that controls how the AI behaves, what it knows about your schema, and how it writes SQL.</p>
+          </div>
+          <div class="tab-actions">
+            <mat-button-toggle-group [(value)]="promptSource" class="source-toggle">
+              <mat-button-toggle value="bedrock">Bedrock Agent (Live)</mat-button-toggle>
+              <mat-button-toggle value="ddb">DynamoDB Config</mat-button-toggle>
+            </mat-button-toggle-group>
+            <button mat-raised-button color="primary" (click)="savePrompt()" [disabled]="savingPrompt">
+              <mat-spinner *ngIf="savingPrompt" diameter="18" class="inline-spinner"></mat-spinner>
+              {{ savingPrompt ? 'Saving...' : 'Save & Deploy' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-stats">
+          <span>{{ getPromptLineCount() }} lines</span>
+          <span>{{ activePrompt.length | number }} characters</span>
+          <span class="source-label" [class.live]="promptSource === 'bedrock'">
+            {{ promptSource === 'bedrock' ? 'LIVE on Bedrock Agent' : 'DynamoDB config (applied on Provision)' }}
+          </span>
+        </div>
+
+        <textarea class="code-editor" [(ngModel)]="activePrompt" rows="30"
+                  placeholder="Enter the system prompt..."></textarea>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 2: Data Guide ═══ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">menu_book</mat-icon> Data Guide
+      </ng-template>
+      <div class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h3>Analytics Data Guide</h3>
+            <p class="tab-desc">
+              Reference document indexed by the Knowledge Base. Describes tables, columns, business rules, SQL patterns, and common pitfalls.
+              <br>The AI retrieves this via RAG when answering data questions.
+            </p>
+          </div>
+          <div class="tab-actions">
+            <button mat-raised-button color="primary" (click)="saveDataGuide()" [disabled]="savingGuide">
+              <mat-spinner *ngIf="savingGuide" diameter="18" class="inline-spinner"></mat-spinner>
+              {{ savingGuide ? 'Saving...' : 'Save & Re-index' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-stats">
+          <span>{{ getGuideLineCount() }} lines</span>
+          <span>{{ dataGuide.length | number }} characters</span>
+          <span *ngIf="lastGuideModified">Last saved: {{ lastGuideModified | date:'medium' }}</span>
+        </div>
+
+        <textarea class="code-editor" [(ngModel)]="dataGuide" rows="30"
+                  placeholder="Enter the data guide (Markdown format)..."></textarea>
+
+        <mat-expansion-panel class="tips-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon>lightbulb</mat-icon> Tips for Data Experts
+            </mat-panel-title>
+            <mat-panel-description>What to add and how to format it</mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="tips-grid">
+            <mat-card *ngFor="let tip of expertTips" class="tip-card">
+              <mat-icon class="tip-icon">{{ tip.icon }}</mat-icon>
+              <h4>{{ tip.title }}</h4>
+              <pre class="tip-example">{{ tip.example }}</pre>
+            </mat-card>
+          </div>
+
+          <mat-card class="format-guide">
+            <h4>Format Guide</h4>
+            <p>Use Markdown. The AI reads this document when deciding how to query your data. Include:</p>
+            <ul>
+              <li><strong>Table descriptions</strong> — what each table/view represents in business terms</li>
+              <li><strong>Column meanings</strong> — especially coded values (status codes, type IDs)</li>
+              <li><strong>SQL examples</strong> — wrap in ```sql code blocks</li>
+              <li><strong>Business rules</strong> — "always filter by X", "exclude type Y"</li>
+              <li><strong>Join patterns</strong> — how tables relate, what keys to use</li>
+              <li><strong>Common pitfalls</strong> — things that trip up queries</li>
+            </ul>
+          </mat-card>
+        </mat-expansion-panel>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 3: View Catalog ═══ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">table_chart</mat-icon> View Catalog
+      </ng-template>
+      <div class="tab-content">
+        <div class="tab-header">
+          <div>
+            <h3>Snowflake View Catalog</h3>
+            <p class="tab-desc">
+              Auto-generated catalog of all 136 views in DEV_ANALYTICS — columns, types, and descriptions.
+              This is read-only (regenerate by running the extraction script).
+            </p>
+          </div>
+        </div>
+
+        <textarea class="code-editor readonly" [ngModel]="viewCatalog" rows="30" readonly
+                  title="Snowflake view catalog (read-only)" placeholder="No view catalog loaded"></textarea>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+
+  <!-- ═══ AI Assist Panel (sticky bottom) ═══ -->
+  <div class="ai-assist-panel" *ngIf="!loading && selectedAssistantId">
+    <div class="ai-header">
+      <mat-icon class="ai-icon">auto_awesome</mat-icon>
+      <strong>AI Assist</strong>
+      <span class="ai-hint">Describe what to add or change — the AI will revise the document for you to review</span>
+    </div>
+    <div class="ai-body">
+      <mat-button-toggle-group [(value)]="aiTarget" class="ai-target-toggle">
+        <mat-button-toggle value="prompt">System Prompt</mat-button-toggle>
+        <mat-button-toggle value="guide">Data Guide</mat-button-toggle>
+      </mat-button-toggle-group>
+      <div class="ai-input-row">
+        <textarea class="ai-input" [(ngModel)]="aiInstruction" rows="3"
+                  placeholder="Examples:
+&#8226; Add a section about the Order table — DerivedStatus means: 1=New, 2=InProgress, 3=Complete, 4=Canceled
+&#8226; Add this SQL pattern for AR aging by carrier: SELECT &quot;CarrierName&quot;, SUM(&quot;ClaimTotalBalance&quot;) FROM DATAMART.&quot;ARMartFct_Billing&quot; GROUP BY 1
+&#8226; Tell the agent to always exclude TransactionTypeId 5 and 7 when calculating net collections
+&#8226; Add a note that the Amount column in BillingTransaction can be negative for adjustments"></textarea>
+        <button mat-raised-button color="accent" (click)="aiRevise()"
+                [disabled]="aiRevising || !aiInstruction.trim()" class="ai-button">
+          <mat-spinner *ngIf="aiRevising" diameter="18" class="inline-spinner"></mat-spinner>
+          {{ aiRevising ? 'Revising...' : 'Apply with AI' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

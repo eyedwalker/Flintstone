@@ -24,6 +24,7 @@ export class SidebarComponent {
     { label: 'Knowledge Bases', icon: 'menu_book', route: '/knowledge-bases', minRole: 'viewer' },
     { label: 'Screen Mappings', icon: 'map', route: '/screen-mappings', minRole: 'viewer' },
     { label: 'Test Suites', icon: 'science', route: '/test-suites', minRole: 'viewer' },
+    { label: 'Agent Training', icon: 'model_training', route: '/agent-training', minRole: 'admin' },
     { label: 'Report Schedules', icon: 'schedule_send', route: '/report-schedules', minRole: 'admin' },
     { label: 'Hierarchy', icon: 'account_tree', route: '/hierarchy', minRole: 'viewer' },
     { label: 'Escalation', icon: 'support_agent', route: '/escalation', minRole: 'admin' },

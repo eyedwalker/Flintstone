@@ -20,6 +20,7 @@ import { handleWidgetPresets } from './routes/widget-presets';
 import { handleScreenMappings, handleWidgetScreenContext } from './routes/screen-mappings';
 import { handleTestSuites, handleTestRuns } from './routes/test-suites';
 import { handleReportSchedules } from './routes/report-schedules';
+import { handleAgentConfig } from './routes/agent-config';
 
 // Bedrock services (only imported in provision handler, kept separate for cold-start)
 import * as bedrockAgent from './services/bedrock-agent';
@@ -198,6 +199,9 @@ export const handler = async (
     }
     if (rawPath.startsWith('/report-schedules')) {
       return handleReportSchedules(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/agent-config')) {
+      return handleAgentConfig(method, rawPath, body, params, query, ctx);
     }
     return notFound('Route not found');
   } catch (e) {
