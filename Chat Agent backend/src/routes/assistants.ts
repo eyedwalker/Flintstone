@@ -136,6 +136,34 @@ export async function handleAssistants(
       delete updates['id'];
       delete updates['tenantId'];
       await ddb.updateItem(TABLE, { id }, updates);
+
+      // Sync to live Bedrock agent if provisioned
+      if (item.bedrockAgentId) {
+        const newModelConfig = (updates['modelConfig'] ?? item.modelConfig) as Record<string, unknown>;
+        const modelChanged = newModelConfig['modelId'] !== (item.modelConfig as any)?.modelId;
+        const promptChanged = newModelConfig['systemPrompt'] !== (item.modelConfig as any)?.systemPrompt;
+
+        if (modelChanged || promptChanged) {
+          try {
+            const bedrockAgent = await import('../services/bedrock-agent');
+            const agentRoleArn = process.env['BEDROCK_AGENT_ROLE_ARN'] ?? '';
+            await bedrockAgent.updateAgent(
+              item.bedrockAgentId,
+              (updates['name'] as string) ?? item.name,
+              {
+                modelId: newModelConfig['modelId'] as string,
+                systemPrompt: newModelConfig['systemPrompt'] as string,
+              },
+              agentRoleArn,
+            );
+            await bedrockAgent.prepareAgent(item.bedrockAgentId);
+            console.log(`[Assistants] Synced model/prompt to Bedrock agent ${item.bedrockAgentId}`);
+          } catch (err) {
+            console.error('[Assistants] Failed to sync to Bedrock (non-blocking):', err);
+          }
+        }
+      }
+
       return ok({ ...item, ...updates });
     }
 

@@ -64,6 +64,14 @@ export const handler = async (
   //   OpenAPI-based: { actionGroup, apiPath, httpMethod, parameters, sessionAttributes, ... }
   //   Function-based: { actionGroup, function, parameters, sessionAttributes, ... }
   if ((event as any).actionGroup && ((event as any).apiPath || (event as any).function)) {
+    const actionGroupName = (event as any).actionGroup ?? '';
+
+    // Route to the correct action group handler
+    if (actionGroupName.includes('escalation') || actionGroupName.includes('support')) {
+      const { handleEscalationAction } = await import('./services/escalation-agent');
+      return handleEscalationAction(event as any) as any;
+    }
+
     const { handleActionGroup } = await import('./services/front-office-actions');
     return handleActionGroup(event as any) as any;
   }

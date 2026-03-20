@@ -38,6 +38,8 @@ const DEFAULT_REGISTRY: Omit<IAgentDefinition, 'tenantId'>[] = [
       'Analytics and knowledge base agent. Handles Snowflake data queries, charts, reports, ' +
       'and VSP knowledge base lookups about Encompass practice management.',
     type: 'bedrock-agent',
+    bedrockAgentId: 'KBAQR27COL',
+    bedrockAgentAliasId: 'TSTALIASID',
     capabilities: ['snowflake-analytics', 'knowledge-base', 'reports', 'charts'],
     routingKeywords: [
       'report', 'chart', 'graph', 'query', 'data', 'analytics', 'revenue',
@@ -55,6 +57,8 @@ const DEFAULT_REGISTRY: Omit<IAgentDefinition, 'tenantId'>[] = [
       'Front office operations agent. Handles appointment scheduling, patient lookup, ' +
       'SMS, email, and voice calls.',
     type: 'bedrock-agent',
+    bedrockAgentId: 'IYVTI2D2VJ',
+    bedrockAgentAliasId: 'TSTALIASID',
     capabilities: ['appointments', 'sms', 'email', 'patient-lookup', 'voice'],
     routingKeywords: [
       'appointment', 'schedule', 'book', 'cancel', 'reschedule',
@@ -64,6 +68,25 @@ const DEFAULT_REGISTRY: Omit<IAgentDefinition, 'tenantId'>[] = [
     ],
     enabled: true,
     priority: 2,
+  },
+  {
+    id: 'escalation',
+    name: 'Support Escalation',
+    description:
+      'Support escalation agent. Handles frustrated users, creates Salesforce cases, ' +
+      'checks case status, transfers to live agents (Amelia), and follows up on open cases.',
+    type: 'bedrock-agent',
+    bedrockAgentId: 'WIE61RPMPV',
+    bedrockAgentAliasId: 'TSTALIASID',
+    capabilities: ['salesforce-cases', 'live-agent-transfer', 'conversation-summary'],
+    routingKeywords: [
+      'talk to someone', 'speak to a person', 'human', 'agent', 'help me',
+      'frustrated', 'not working', 'broken', 'escalate', 'manager',
+      'supervisor', 'complaint', 'support case', 'ticket', 'case status',
+      'follow up', 'live agent', 'transfer me', 'real person',
+    ],
+    enabled: true,
+    priority: 3,
   },
 ];
 

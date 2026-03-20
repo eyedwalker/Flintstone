@@ -262,10 +262,37 @@ export async function processChatJob(job: {
   assistantId: string; tenantId: string; userQuery: string;
 }): Promise<void> {
   try {
+    // Check orchestrator flag
+    let agentId = job.agentId;
+    let agentAliasId = job.agentAliasId;
+    let routedAgentName: string | undefined;
+
+    try {
+      const TENANTS_TABLE = process.env['TENANTS_TABLE'] ?? '';
+      if (TENANTS_TABLE) {
+        const tenant = await ddb.getItem<{ useOrchestrator?: boolean }>(TENANTS_TABLE, { id: job.tenantId });
+        if (tenant?.useOrchestrator) {
+          const orchestrator = await import('../services/orchestrator');
+          const result = await orchestrator.dispatch(job.message, job.sessionId, job.tenantId);
+          if (!orchestrator.isBlocked(result)) {
+            const dispatch = result as any;
+            if (dispatch.agent?.bedrockAgentId) {
+              agentId = dispatch.agent.bedrockAgentId;
+              agentAliasId = dispatch.agent.bedrockAgentAliasId ?? 'TSTALIASID';
+              routedAgentName = dispatch.agent.name;
+              console.log(`[WidgetChat] Orchestrator routed to: ${routedAgentName} (${agentId})`);
+            }
+          }
+        }
+      }
+    } catch (orchErr) {
+      console.warn('[WidgetChat] Orchestrator error (falling back to default):', orchErr);
+    }
+
     const startMs = Date.now();
     const agentResult = await bedrockChat.invokeAgent(
-      job.agentId,
-      job.agentAliasId,
+      agentId,
+      agentAliasId,
       job.message,
       job.sessionId,
       job.roleFilter,
@@ -295,6 +322,7 @@ export async function processChatJob(job: {
         videoCited: /video|vimeo|youtube/i.test(reply),
         satisfied: null,
         source: 'widget',
+        ...(routedAgentName && { routedAgent: routedAgentName }),
         createdAt: new Date().toISOString(),
       });
     } catch (metricErr) {

@@ -371,6 +371,18 @@ export class ArchitectureComponent implements OnInit {
       icon: 'calendar_today',
     },
     {
+      id: 'escalation',
+      name: 'Support Escalation',
+      type: 'Bedrock Agent',
+      model: 'Claude Haiku 4.5',
+      status: 'active',
+      bedrockAgentId: 'WIE61RPMPV',
+      description: 'Support escalation — creates Salesforce cases, checks live agent availability, transfers to Amelia, follows up on tickets',
+      capabilities: ['Conversation summary', 'Salesforce case creation', 'Case status check', 'Live agent transfer (Amelia)', 'Case comments'],
+      toolCount: 6,
+      icon: 'support_agent',
+    },
+    {
       id: 'claims',
       name: 'Insurance Claims Agent',
       type: 'Planned',
