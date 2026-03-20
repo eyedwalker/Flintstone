@@ -27,10 +27,10 @@
         <p>Send a message to test your assistant</p>
       </div>
       <div *ngFor="let msg of chatMessages" class="chat-message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
-        <div class="chat-bubble">{{ msg.text }}</div>
+        <div class="chat-bubble" [innerHTML]="renderMessage(msg.text)"></div>
         <div *ngIf="msg.actionGroupCalls?.length" class="tool-call-badge">
-          <mat-icon class="tool-icon">ac_unit</mat-icon>
-          <span>Snowflake Analytics ({{ msg.actionGroupCalls!.length }} tool{{ msg.actionGroupCalls!.length > 1 ? 's' : '' }})</span>
+          <mat-icon class="tool-icon">{{ getActionGroupIcon(msg.actionGroupCalls!) }}</mat-icon>
+          <span>{{ getActionGroupLabel(msg.actionGroupCalls!) }} ({{ msg.actionGroupCalls!.length }} tool{{ msg.actionGroupCalls!.length > 1 ? 's' : '' }})</span>
           <div class="tool-call-details">
             <div *ngFor="let call of msg.actionGroupCalls" class="tool-call-item">
               <mat-icon class="tool-check">check_circle</mat-icon>

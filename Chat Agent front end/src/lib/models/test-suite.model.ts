@@ -86,6 +86,9 @@ export interface ITestRun {
   errorCases: number;
   avgScore: number;
   improvements?: IImprovement[];
+  modelId?: string;
+  iterationId?: string;
+  approvedForTraining?: number;
   startedAt?: string;
   completedAt?: string;
   createdAt: string;
@@ -146,6 +149,7 @@ export interface ITestResult {
   turns: ITestTurnResult[];
   aiEvaluation: IAiEvaluation;
   userReview?: IUserReview;
+  trainerAnnotation?: ITrainerAnnotation;
   durationMs: number;
   sessionId: string;
   createdAt: string;
@@ -192,3 +196,126 @@ export const REVIEW_TAGS = [
 ] as const;
 
 export type ReviewTag = (typeof REVIEW_TAGS)[number];
+
+// ── RAFT (Retrieval-Augmented Fine-Tuning) Types ──────────────────────────────
+
+/** Trainer correction for a single conversation turn */
+export interface ITrainerCorrection {
+  turnIndex: number;
+  idealResponse: string;
+  correctionNotes?: string;
+  retrievalContext?: string;
+}
+
+/** Training readiness status */
+export type TrainingStatus = 'unreviewed' | 'corrected' | 'approved' | 'excluded';
+
+/** Trainer annotation on a test result — extends ITestResult */
+export interface ITrainerAnnotation {
+  corrections: ITrainerCorrection[];
+  trainingStatus: TrainingStatus;
+  annotatedBy: string;
+  annotatedAt: string;
+}
+
+/** Training dataset metadata */
+export interface ITrainingDataset {
+  id: string;
+  tenantId: string;
+  assistantId: string;
+  name: string;
+  description: string;
+  sourceRunIds: string[];
+  format: 'bedrock-llama' | 'bedrock-titan' | 'huggingface-raft';
+  totalExamples: number;
+  s3Key: string;
+  fileSizeBytes: number;
+  splitConfig: { trainPct: number; validationPct: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Fine-tuning job status */
+export type FineTuningStatus =
+  | 'pending' | 'validating' | 'training' | 'completed' | 'failed' | 'cancelled';
+
+/** Fine-tuning hyperparameters */
+export interface IHyperparameters {
+  epochs: number;
+  batchSize: number;
+  learningRate: number;
+  warmupSteps: number;
+  loraRank?: number;
+  loraAlpha?: number;
+  loraDropout?: number;
+}
+
+/** Training metrics from a fine-tuning job */
+export interface ITrainingMetrics {
+  trainingLoss: number;
+  validationLoss: number;
+  perplexity?: number;
+  epochMetrics: Array<{ epoch: number; trainingLoss: number; validationLoss: number }>;
+}
+
+/** Fine-tuning job record */
+export interface IFineTuningJob {
+  id: string;
+  tenantId: string;
+  assistantId: string;
+  datasetId: string;
+  baseModelId: string;
+  customModelName: string;
+  bedrockJobArn?: string;
+  bedrockCustomModelArn?: string;
+  provisionedModelArn?: string;
+  status: FineTuningStatus;
+  hyperparameters: IHyperparameters;
+  trainingMetrics?: ITrainingMetrics;
+  errorMessage?: string;
+  iteration: number;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** RAFT iteration — one full cycle of test -> correct -> train -> re-test */
+export type RaftStatus =
+  | 'testing' | 'reviewing' | 'training' | 'deploying' | 'retesting' | 'completed';
+
+export interface IRaftIteration {
+  id: string;
+  tenantId: string;
+  assistantId: string;
+  iterationNumber: number;
+  testRunId: string;
+  datasetId?: string;
+  fineTuningJobId?: string;
+  ragImprovementIds?: string[];
+  baselineScore: number;
+  improvedScore?: number;
+  reformulatedPromptPct: number;
+  status: RaftStatus;
+  track?: 'rag' | 'finetune' | 'hybrid';
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Model comparison (A/B test results) */
+export interface IModelComparison {
+  id: string;
+  tenantId: string;
+  assistantId: string;
+  suiteId: string;
+  baseRunId: string;
+  challengerRunId: string;
+  baseModelId: string;
+  challengerModelId: string;
+  baseAvgScore: number;
+  challengerAvgScore: number;
+  scoreDelta: number;
+  perCategoryDeltas: Record<string, number>;
+  winRate: number;
+  createdAt: string;
+}

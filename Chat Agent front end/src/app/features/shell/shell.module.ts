@@ -71,6 +71,12 @@ const routes: Routes = [
         data: { minRole: 'admin' },
       },
       {
+        path: 'raft',
+        loadChildren: () => import('../raft/raft.module').then((m) => m.RaftModule),
+        canActivate: [RoleGuard],
+        data: { minRole: 'admin' },
+      },
+      {
         path: 'report-schedules',
         loadChildren: () => import('../report-schedules/report-schedules.module').then((m) => m.ReportSchedulesModule),
         canActivate: [RoleGuard],

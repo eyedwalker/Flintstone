@@ -4,6 +4,7 @@ import {
   AdminDeleteUserCommand,
   AdminGetUserCommand,
   AdminInitiateAuthCommand,
+  AdminResetUserPasswordCommand,
   AdminSetUserMFAPreferenceCommand,
   AssociateSoftwareTokenCommand,
   VerifySoftwareTokenCommand,
@@ -148,6 +149,53 @@ export async function setMfaPreference(
       PreferredMfa: enabled,
     },
   }));
+}
+
+/** Reset a user's password — sends them a new temporary password email */
+export async function resetUserPassword(username: string): Promise<void> {
+  await client.send(new AdminResetUserPasswordCommand({
+    UserPoolId: USER_POOL_ID,
+    Username: username,
+  }));
+}
+
+/** Resend the invite — creates a new temp password and emails it */
+export async function resendInvite(email: string, name: string): Promise<{ temporaryPassword: string }> {
+  // Delete and recreate the user to trigger a new invite email
+  // This is the Cognito-recommended approach for resending invites
+  try {
+    await client.send(new AdminDeleteUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: email,
+    }));
+  } catch { /* user may not exist */ }
+
+  const result = await createUser(email, name);
+  return { temporaryPassword: result.temporaryPassword };
+}
+
+/** Get Cognito status and last login for a user */
+export async function getUserStatus(username: string): Promise<{
+  status: string;
+  lastLogin?: string;
+  created?: string;
+  enabled: boolean;
+} | null> {
+  try {
+    const res = await client.send(new AdminGetUserCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: username,
+    }));
+    return {
+      status: res.UserStatus ?? 'UNKNOWN',
+      lastLogin: res.UserLastModifiedDate?.toISOString(),
+      created: res.UserCreateDate?.toISOString(),
+      enabled: res.Enabled ?? true,
+    };
+  } catch (e: any) {
+    if (e.name === 'UserNotFoundException') return null;
+    throw e;
+  }
 }
 
 function generateTempPassword(): string {

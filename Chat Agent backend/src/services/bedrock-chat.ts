@@ -33,6 +33,7 @@ export interface IActionGroupCall {
 /** Full result from invokeAgent including text and optional trace data */
 export interface IAgentResult {
   text: string;
+  sessionId?: string;
   actionGroupCalls?: IActionGroupCall[];
 }
 
@@ -202,6 +203,80 @@ export async function describeImage(
   const res = await runtimeClient.send(cmd);
   const parsed = JSON.parse(new TextDecoder().decode(res.body));
   return parsed.content?.[0]?.text ?? 'Unable to describe image.';
+}
+
+/**
+ * Fast KB-only path — bypasses the Bedrock Agent entirely.
+ * Uses RetrieveAndGenerate with Haiku for simple help/KB questions.
+ * ~2-3x faster than going through the full agent pipeline.
+ */
+export async function fastKbQuery(
+  knowledgeBaseId: string,
+  userMessage: string,
+  sessionId?: string,
+  systemPrompt?: string,
+): Promise<IAgentResult> {
+  const { BedrockAgentRuntimeClient, RetrieveAndGenerateCommand } = await import('@aws-sdk/client-bedrock-agent-runtime');
+  const ragClient = new BedrockAgentRuntimeClient({ region: REGION });
+
+  const cmd = new RetrieveAndGenerateCommand({
+    input: { text: userMessage },
+    retrieveAndGenerateConfiguration: {
+      type: 'KNOWLEDGE_BASE',
+      knowledgeBaseConfiguration: {
+        knowledgeBaseId,
+        modelArn: `arn:aws:bedrock:${REGION}::foundation-model/${HAIKU_MODEL}`,
+        generationConfiguration: {
+          ...(systemPrompt ? { promptTemplate: { textPromptTemplate: `${systemPrompt}\n\n$search_results$\n\nUser question: $query$` } } : {}),
+        },
+        retrievalConfiguration: {
+          vectorSearchConfiguration: {
+            numberOfResults: 5,
+          },
+        },
+      },
+    },
+    ...(sessionId ? { sessionId } : {}),
+  });
+
+  const res = await ragClient.send(cmd);
+  const text = res.output?.text ?? 'I couldn\'t find an answer to that question.';
+
+  return {
+    text,
+    sessionId: res.sessionId ?? sessionId ?? '',
+  };
+}
+
+/**
+ * Check if a message is a simple help/KB question (no reporting/analytics intent).
+ * Used to decide whether to use the fast KB path vs full agent.
+ */
+export function isSimpleHelpQuery(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  // Reporting keywords — need full agent with Snowflake
+  const reportingKeywords = [
+    'revenue', 'sales', 'report', 'chart', 'graph', 'analytics', 'data',
+    'show me', 'how many', 'total', 'average', 'trend', 'compare',
+    'top', 'bottom', 'rank', 'office', 'provider', 'monthly', 'weekly',
+    'quarterly', 'year', 'patient count', 'volume', 'billing', 'claims',
+    'collections', 'appointments count', 'schedule report', 'export',
+    'download', 'sql', 'query', 'table', 'column',
+  ];
+
+  // Front office keywords — need full agent with action groups
+  const frontOfficeKeywords = [
+    'book', 'schedule', 'appointment', 'cancel', 'reschedule',
+    'send sms', 'send text', 'send email', 'call', 'patient lookup',
+    'find patient', 'create patient',
+  ];
+
+  for (const kw of [...reportingKeywords, ...frontOfficeKeywords]) {
+    if (lower.includes(kw)) return false;
+  }
+
+  return true;
 }
 
 export async function invokeModel(

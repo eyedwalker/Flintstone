@@ -1,0 +1,435 @@
+.arch-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    margin: 4px 0 0;
+    color: rgba(0,0,0,0.55);
+    font-size: 1rem;
+  }
+}
+
+.tab-content {
+  padding: 24px 0;
+
+  h2 {
+    margin: 0 0 16px;
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+
+  h3 {
+    margin: 24px 0 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+}
+
+.overview-desc {
+  font-size: 1rem;
+  color: rgba(0,0,0,0.7);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+// Architecture Diagram
+.arch-diagram {
+  background: #fafbfc;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 32px 24px;
+  margin-bottom: 32px;
+}
+
+.diagram-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.diagram-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  min-width: 180px;
+  text-align: center;
+  border: 2px solid;
+
+  mat-icon { font-size: 28px; width: 28px; height: 28px; }
+  strong { font-size: 0.95rem; }
+  span { font-size: 0.8rem; opacity: 0.8; }
+
+  &.client   { background: #e3f2fd; border-color: #90caf9; color: #1565c0; }
+  &.cdn      { background: #fff3e0; border-color: #ffcc80; color: #e65100; }
+  &.gateway  { background: #f3e5f5; border-color: #ce93d8; color: #7b1fa2; }
+  &.compute  { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+  &.ai       { background: #fce4ec; border-color: #f48fb1; color: #c62828; }
+  &.data     { background: #e0f2f1; border-color: #80cbc4; color: #00695c; }
+}
+
+.arrow {
+  color: rgba(0,0,0,0.3);
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.diagram-connector {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+  color: rgba(0,0,0,0.3);
+
+  mat-icon { font-size: 32px; width: 32px; height: 32px; }
+}
+
+// Principles
+.principles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+
+  mat-card {
+    padding: 20px;
+
+    mat-icon { font-size: 32px; width: 32px; height: 32px; color: #1976d2; margin-bottom: 8px; }
+    h4 { margin: 0 0 8px; font-size: 1rem; }
+    p { margin: 0; font-size: 0.85rem; color: rgba(0,0,0,0.6); line-height: 1.5; }
+  }
+}
+
+// Tables
+.full-width-table {
+  width: 100%;
+  margin-bottom: 16px;
+
+  th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: rgba(0,0,0,0.6);
+  }
+
+  td {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+.needs-action {
+  color: #e65100;
+  font-weight: 600;
+}
+
+// Capacity Cards
+.capacity-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.capacity-card {
+  padding: 20px;
+  text-align: center;
+
+  &.highlight {
+    background: #1976d2;
+    color: white;
+  }
+}
+
+.capacity-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.capacity-label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+// Callout
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #fff8e1;
+  border-left: 4px solid #ffc107;
+  margin-top: 16px;
+
+  mat-icon { color: #f57f17; flex-shrink: 0; margin-top: 2px; }
+  div { font-size: 0.9rem; line-height: 1.5; }
+}
+
+// Security
+.security-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.security-card {
+  padding: 20px;
+
+  .security-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: #2e7d32;
+    margin-bottom: 8px;
+  }
+
+  h4 { margin: 0 0 8px; font-size: 1rem; }
+  p { margin: 0; font-size: 0.85rem; color: rgba(0,0,0,0.6); line-height: 1.5; }
+}
+
+// Data Flow
+.flow-section {
+  margin: 16px 0 24px;
+}
+
+.flow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: 20px;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 0;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 36px;
+    bottom: -12px;
+    width: 2px;
+    background: #e0e0e0;
+  }
+
+  &:last-child::before { display: none; }
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1976d2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong { font-size: 0.95rem; }
+  span { font-size: 0.85rem; color: rgba(0,0,0,0.6); }
+}
+
+// Feature / agent status chips
+::ng-deep .status-live, ::ng-deep .status-active { background-color: #e8f5e9 !important; color: #2e7d32 !important; }
+::ng-deep .status-beta { background-color: #fff3e0 !important; color: #e65100 !important; }
+::ng-deep .status-planned { background-color: #f3e5f5 !important; color: #7b1fa2 !important; }
+
+// Agent cards
+.agent-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.agent-card {
+  &.planned { opacity: 0.6; }
+
+  mat-card-header {
+    mat-icon[mat-card-avatar] {
+      font-size: 32px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e3f2fd;
+      border-radius: 8px;
+      color: #1565c0;
+    }
+  }
+
+  .agent-meta {
+    margin: 8px 0;
+    code {
+      font-size: 0.75rem;
+      color: rgba(0,0,0,0.45);
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  }
+
+  .capability-list {
+    margin: 4px 0 0;
+    padding-left: 20px;
+    li {
+      font-size: 0.85rem;
+      color: rgba(0,0,0,0.7);
+      line-height: 1.6;
+    }
+  }
+
+  mat-card-actions {
+    padding: 8px 16px;
+  }
+}
+
+.agent-status-active { color: #2e7d32; font-weight: 500; font-size: 0.75rem; }
+.agent-status-planned { color: #7b1fa2; font-weight: 500; font-size: 0.75rem; }
+
+// Live agent cards
+.live-agent {
+  cursor: pointer; transition: box-shadow 0.2s, border-color 0.2s;
+  border: 2px solid transparent;
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  &.selected { border-color: #1565c0; }
+}
+
+.agent-tool-badges {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.tool-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600;
+  background: #e3f2fd; color: #1565c0;
+  &.kb { background: #f3e5f5; color: #7b1fa2; }
+  .tool-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+
+.loading-wrap {
+  display: flex; align-items: center; gap: 8px; padding: 16px 0;
+  font-size: 0.85rem; color: rgba(0,0,0,0.5);
+}
+
+// Edit panel
+.edit-panel {
+  margin-top: 16px; padding: 20px; border: 2px solid #1565c0;
+  border-radius: 12px; background: #f8fbff;
+  h3 { margin: 0 0 16px; color: #1565c0; }
+}
+.full-width { width: 100%; }
+.edit-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+// Agent detail panel
+.agent-detail-panel {
+  margin-top: 16px; padding: 20px; border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px; background: #fafafa;
+  h3 { margin: 0 0 16px; }
+}
+.detail-section { margin-bottom: 16px; h4 { margin: 0 0 8px; font-size: 0.85rem; color: rgba(0,0,0,0.6); } }
+.instruction-preview {
+  background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;
+  padding: 12px; font-size: 0.8rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto;
+}
+
+.action-group-list { display: flex; flex-direction: column; gap: 8px; }
+.action-group-item {
+  padding: 10px 14px; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; background: #fff;
+}
+.ag-header {
+  display: flex; align-items: center; gap: 6px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #1565c0; }
+}
+.ag-state {
+  margin-left: auto; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  &.enabled { background: #e8f5e9; color: #2e7d32; }
+  &.disabled { background: #f5f5f5; color: rgba(0,0,0,0.4); }
+}
+.ag-meta { font-size: 0.75rem; color: rgba(0,0,0,0.5); margin-top: 4px; }
+
+.kb-item {
+  display: flex; align-items: center; gap: 6px; padding: 6px 0; font-size: 0.8rem;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; color: #7b1fa2; }
+}
+
+// Orchestrator toggle
+.orchestrator-toggle-section {
+  margin-bottom: 20px; padding: 16px 20px; border-radius: 12px;
+  border: 2px solid rgba(0,0,0,0.08); background: #fafafa;
+  h3 { display: flex; align-items: center; gap: 16px; margin: 0 0 8px; }
+}
+.toggle-desc {
+  font-size: 0.83rem; color: rgba(0,0,0,0.5); margin: 0;
+  &.active { color: #2e7d32; }
+}
+
+// Agent Registry
+.registry-list { display: flex; flex-direction: column; gap: 10px; }
+.registry-item {
+  padding: 12px 16px; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; background: #fff;
+}
+.registry-header {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  strong { font-size: 0.9rem; }
+}
+.priority-badge {
+  font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  background: #e3f2fd; color: #1565c0;
+}
+.agent-id-badge {
+  font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;
+  background: #f5f5f5; color: rgba(0,0,0,0.6);
+}
+.no-link-badge {
+  font-size: 0.65rem; color: #f57c00; font-weight: 600;
+}
+.registry-desc { font-size: 0.78rem; color: rgba(0,0,0,0.5); margin: 6px 0; }
+.registry-keywords { display: flex; flex-wrap: wrap; gap: 4px; }
+.keyword-chip {
+  font-size: 0.6rem; padding: 1px 6px; border-radius: 8px;
+  background: #f3e5f5; color: #7b1fa2;
+}
+.keyword-more { font-size: 0.6rem; color: rgba(0,0,0,0.4); padding: 1px 4px; }
+
+// Action group editor
+.add-ag-btn { margin-left: 12px; font-size: 0.75rem; }
+.ag-actions { margin-left: auto; display: flex; gap: 2px;
+  button { mat-icon { font-size: 16px; width: 16px; height: 16px; } }
+}
+.ag-editor {
+  margin-top: 12px; padding: 16px; border: 2px solid #1565c0; border-radius: 12px; background: #f8fbff;
+  h4 { margin: 0 0 12px; color: #1565c0; }
+}
+.schema-textarea { font-family: 'Courier New', monospace; font-size: 0.8rem; }

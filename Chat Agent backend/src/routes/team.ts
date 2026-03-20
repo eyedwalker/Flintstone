@@ -57,15 +57,33 @@ export async function handleTeam(
         'PK = :pk',
         { ':pk': `ORG#${orgId}` },
       );
-      return ok(members.map(m => ({
-        userId: m.userId,
-        role: m.role,
-        email: m.email,
-        name: m.name,
-        mfaEnabled: m.mfaEnabled ?? false,
-        invitedBy: m.invitedBy,
-        joinedAt: m.joinedAt,
-      })));
+
+      // Enrich with Cognito status (parallel lookups)
+      const enriched = await Promise.all(members.map(async (m) => {
+        let cognitoStatus = 'UNKNOWN';
+        let lastLogin: string | undefined;
+        try {
+          const status = await cognitoAdmin.getUserStatus(m.email);
+          if (status) {
+            cognitoStatus = status.status;
+            lastLogin = status.lastLogin;
+          }
+        } catch { /* non-critical */ }
+
+        return {
+          userId: m.userId,
+          role: m.role,
+          email: m.email,
+          name: m.name,
+          mfaEnabled: m.mfaEnabled ?? false,
+          invitedBy: m.invitedBy,
+          joinedAt: m.joinedAt,
+          cognitoStatus,
+          lastLogin,
+        };
+      }));
+
+      return ok(enriched);
     }
 
     // POST /team/invite — admin+
@@ -81,7 +99,7 @@ export async function handleTeam(
       }
 
       // Validate role
-      if (!ROLE_LEVEL[b.role]) return badRequest('Invalid role');
+      if (ROLE_LEVEL[b.role] === undefined) return badRequest('Invalid role');
 
       // Check if user already exists in Cognito
       let userId: string;
@@ -129,7 +147,7 @@ export async function handleTeam(
 
       const targetUserId = path.split('/').slice(-2)[0]; // extract userId from path
       const b = parseBody<{ role: TeamRole }>(JSON.stringify(body));
-      if (!b?.role || !ROLE_LEVEL[b.role]) return badRequest('Valid role required');
+      if (!b?.role || ROLE_LEVEL[b.role] === undefined) return badRequest('Valid role required');
 
       // Only owners can promote to owner or change owner roles
       if (b.role === 'owner' && !requireRole(ctx, 'owner')) {
@@ -199,6 +217,69 @@ export async function handleTeam(
       }, sourceIp);
 
       return noContent();
+    }
+
+    // POST /team/members/:userId/reset-password — admin+
+    if (method === 'POST' && path.includes('/members/') && path.endsWith('/reset-password')) {
+      if (!requireRole(ctx, 'admin')) return forbidden('Admin role required');
+
+      const targetUserId = path.split('/').slice(-2)[0];
+      const target = await ddb.getItem<ITeamMember>(
+        TEAM_TABLE, { PK: `ORG#${orgId}`, SK: `USER#${targetUserId}` }
+      );
+      if (!target) return notFound('Member not found');
+
+      // Only owners can reset other owners
+      if (target.role === 'owner' && !requireRole(ctx, 'owner')) {
+        return forbidden('Only owners can reset owner passwords');
+      }
+
+      await cognitoAdmin.resetUserPassword(target.email);
+
+      await audit.logAudit(orgId, ctx.userId, 'team.reset_password', {
+        targetUserId, targetEmail: target.email,
+      }, sourceIp);
+
+      return ok({ success: true, message: `Password reset email sent to ${target.email}` });
+    }
+
+    // POST /team/members/:userId/resend-invite — admin+
+    if (method === 'POST' && path.includes('/members/') && path.endsWith('/resend-invite')) {
+      if (!requireRole(ctx, 'admin')) return forbidden('Admin role required');
+
+      const targetUserId = path.split('/').slice(-2)[0];
+      const target = await ddb.getItem<ITeamMember>(
+        TEAM_TABLE, { PK: `ORG#${orgId}`, SK: `USER#${targetUserId}` }
+      );
+      if (!target) return notFound('Member not found');
+
+      const result = await cognitoAdmin.resendInvite(target.email, target.name);
+
+      // Update the userId in team member record (new Cognito user has new sub)
+      const newUser = await cognitoAdmin.findUserByEmail(target.email);
+      if (newUser && newUser.userId !== targetUserId) {
+        // Delete old record, create new one with updated userId
+        await ddb.deleteItem(TEAM_TABLE, { PK: `ORG#${orgId}`, SK: `USER#${targetUserId}` });
+        await ddb.putItem(TEAM_TABLE, {
+          PK: `ORG#${orgId}`,
+          SK: `USER#${newUser.userId}`,
+          userId: newUser.userId,
+          organizationId: orgId,
+          role: target.role,
+          email: target.email,
+          name: target.name,
+          mfaEnabled: false,
+          invitedBy: ctx.userId,
+          joinedAt: target.joinedAt,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      await audit.logAudit(orgId, ctx.userId, 'team.resend_invite', {
+        targetEmail: target.email,
+      }, sourceIp);
+
+      return ok({ success: true, message: `Invite resent to ${target.email}` });
     }
 
     // POST /team/transfer-ownership — owner only

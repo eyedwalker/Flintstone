@@ -1,10 +1,27 @@
-<div class="page-header">
-  <h1 class="page-title">Dashboard</h1>
-  <p class="page-subtitle">Overview of your AI assistants</p>
-</div>
-<div class="metrics-grid">
-  <bcc-metric-card label="Total Conversations" value="0" icon="forum" [trend]="0"></bcc-metric-card>
-  <bcc-metric-card label="Total Messages" value="0" icon="chat" [trend]="0" color="accent"></bcc-metric-card>
-  <bcc-metric-card label="Satisfaction Rate" value="0" unit="%" icon="thumb_up" [trend]="0" color="success"></bcc-metric-card>
-  <bcc-metric-card label="Active Assistants" value="0" icon="smart_toy" color="primary"></bcc-metric-card>
-</div>
+<!-- Tester view — demo widget only -->
+<ng-container *ngIf="isTester; else adminView">
+  <div class="tester-hero">
+    <mat-icon class="tester-hero-icon">smart_toy</mat-icon>
+    <h1 class="tester-hero-title">Encompass Assist Demo</h1>
+    <p class="tester-hero-subtitle" *ngIf="hasDemoWidget">
+      Click the chat icon in the bottom-right corner to start testing the assistant.
+    </p>
+    <p class="tester-hero-subtitle tester-no-widget" *ngIf="!hasDemoWidget">
+      No demo assistant is currently configured. Please contact an admin to set one up.
+    </p>
+  </div>
+</ng-container>
+
+<!-- Admin / standard view -->
+<ng-template #adminView>
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Overview of your AI assistants</p>
+  </div>
+  <div class="metrics-grid">
+    <bcc-metric-card label="Total Conversations" value="0" icon="forum" [trend]="0"></bcc-metric-card>
+    <bcc-metric-card label="Total Messages" value="0" icon="chat" [trend]="0" color="accent"></bcc-metric-card>
+    <bcc-metric-card label="Satisfaction Rate" value="0" unit="%" icon="thumb_up" [trend]="0" color="success"></bcc-metric-card>
+    <bcc-metric-card label="Active Assistants" value="0" icon="smart_toy" color="primary"></bcc-metric-card>
+  </div>
+</ng-template>

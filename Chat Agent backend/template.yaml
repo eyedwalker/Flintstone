@@ -57,6 +57,7 @@ Globals:
         REPORT_RUNS_TABLE: !Ref ReportRunsTable
         SNOWFLAKE_LAMBDA_ARN: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:snowflake-action-group-${Stage}"
         SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
+        VOICE_SESSIONS_TABLE: !Ref VoiceSessionsTable
         STRIPE_SECRET_KEY_PARAM: !Sub "/chat-agent/${Stage}/stripe/secret-key"
         FRONTEND_URL: ""
         ALLOWED_ORIGINS: ""  # Comma-separated list of allowed origins for CORS (empty = allow all)
@@ -456,6 +457,32 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  VoiceSessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "chat-agent-voice-sessions-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: tenantId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: tenantId-index
+          KeySchema:
+            - AttributeName: tenantId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
   WidgetPresetsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -549,6 +576,8 @@ Resources:
                   - !Sub "${ReportSchedulesTable.Arn}/index/*"
                   - !GetAtt ReportRunsTable.Arn
                   - !Sub "${ReportRunsTable.Arn}/index/*"
+                  - !GetAtt VoiceSessionsTable.Arn
+                  - !Sub "${VoiceSessionsTable.Arn}/index/*"
               - Sid: S3Access
                 Effect: Allow
                 Action:
@@ -857,6 +886,47 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /docs/openapi.yaml
             Method: GET
+            Auth:
+              Authorizer: NONE
+        # Voice/SMS webhooks — no JWT, Twilio signature auth
+        VoiceInboundEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/inbound
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        VoiceRespondEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/respond
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        VoiceOutboundTwimlEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/outbound-twiml
+            Method: GET
+            Auth:
+              Authorizer: NONE
+        VoiceSmsInboundEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/sms-inbound
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        VoiceStatusEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/status
+            Method: POST
             Auth:
               Authorizer: NONE
 

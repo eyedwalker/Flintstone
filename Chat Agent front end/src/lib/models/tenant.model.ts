@@ -1,8 +1,8 @@
 /** Team role hierarchy */
-export type TeamRole = 'owner' | 'admin' | 'editor' | 'viewer';
+export type TeamRole = 'owner' | 'admin' | 'editor' | 'viewer' | 'tester';
 
 export const ROLE_LEVEL: Record<TeamRole, number> = {
-  owner: 4, admin: 3, editor: 2, viewer: 1,
+  owner: 4, admin: 3, editor: 2, viewer: 1, tester: 0,
 };
 
 /** Team member record */
@@ -51,6 +51,15 @@ export interface ITenant {
   demoAssistantId?: string;
   demoAmeliaEnabled?: boolean;
   demoAmeliaScriptUrl?: string;
+  /** Eyefinity OAuth integration (for Front Office agent) */
+  eyefinityApiKey?: string;
+  eyefinityApiSecret?: string;
+  eyefinityTenantUid?: string;
+  eyefinityOauthHost?: string;
+  eyefinityApiBaseUrl?: string;
+  eyefinityApiPath?: string;
+  /** Feature flags */
+  useOrchestrator?: boolean;
   createdAt: string;
   updatedAt: string;
 }

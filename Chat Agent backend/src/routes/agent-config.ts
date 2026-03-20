@@ -65,6 +65,186 @@ export async function handleAgentConfig(
     return handleRevert(body, ctx);
   }
 
+  // ── Live Bedrock Agent Management ──────────────────────────────────────
+
+  // GET /agent-config/bedrock/agents — list all Bedrock agents in the account
+  if (rawPath === '/agent-config/bedrock/agents' && method === 'GET') {
+    const bedrockAgent = await import('../services/bedrock-agent');
+    const agents = await bedrockAgent.listAllAgents();
+    // Enrich with full details
+    const detailed = await Promise.all(agents.map(async (a) => {
+      try {
+        const details = await bedrockAgent.getAgentDetails(a.agentId);
+        const actionGroups = await bedrockAgent.listActionGroups(a.agentId);
+        const kbs = await bedrockAgent.listAgentKnowledgeBases(a.agentId);
+        return { ...details, actionGroups, knowledgeBases: kbs, toolCount: actionGroups.length };
+      } catch { return { ...a, actionGroups: [], knowledgeBases: [], toolCount: 0 }; }
+    }));
+    return ok(detailed);
+  }
+
+  // GET /agent-config/bedrock/agents/:agentId — get full agent details
+  if (rawPath.match(/^\/agent-config\/bedrock\/agents\/[A-Z0-9]+$/) && method === 'GET') {
+    const agentId = rawPath.split('/').pop()!;
+    const bedrockAgent = await import('../services/bedrock-agent');
+    const details = await bedrockAgent.getAgentDetails(agentId);
+    const actionGroups = await bedrockAgent.listActionGroups(agentId);
+    const kbs = await bedrockAgent.listAgentKnowledgeBases(agentId);
+    const aliases = await bedrockAgent.listAliases(agentId);
+    return ok({ ...details, actionGroups, knowledgeBases: kbs, aliases });
+  }
+
+  // PUT /agent-config/bedrock/agents/:agentId — update agent (model, instruction, name)
+  if (rawPath.match(/^\/agent-config\/bedrock\/agents\/[A-Z0-9]+$/) && method === 'PUT') {
+    const agentId = rawPath.split('/').pop()!;
+    const bedrockAgent = await import('../services/bedrock-agent');
+    const current = await bedrockAgent.getAgentDetails(agentId);
+    const agentRoleArn = process.env['BEDROCK_AGENT_ROLE_ARN'] ?? '';
+
+    await bedrockAgent.updateAgent(agentId,
+      (body['agentName'] as string) ?? current.agentName,
+      {
+        modelId: (body['foundationModel'] as string) ?? current.foundationModel,
+        systemPrompt: (body['instruction'] as string) ?? current.instruction,
+      },
+      agentRoleArn,
+    );
+
+    // Auto-prepare if requested
+    if (body['prepare'] !== false) {
+      await bedrockAgent.prepareAgent(agentId);
+    }
+
+    return ok(await bedrockAgent.getAgentDetails(agentId));
+  }
+
+  // GET /agent-config/bedrock/agents/:agentId/action-groups — list action groups
+  if (rawPath.match(/\/action-groups$/) && method === 'GET') {
+    const agentId = rawPath.split('/')[4];
+    const bedrockAgent = await import('../services/bedrock-agent');
+    const groups = await bedrockAgent.listActionGroups(agentId);
+    // Get details for each (includes API schema)
+    const detailed = await Promise.all(groups.map(g =>
+      bedrockAgent.getActionGroupDetails(agentId, g.actionGroupId)));
+    return ok(detailed);
+  }
+
+  // GET /agent-config/bedrock/agents/:agentId/action-groups/:groupId — get action group detail
+  if (rawPath.match(/\/action-groups\/[A-Z0-9]+$/) && method === 'GET') {
+    const parts = rawPath.split('/');
+    const agentId = parts[4];
+    const groupId = parts[6];
+    const bedrockAgent = await import('../services/bedrock-agent');
+    return ok(await bedrockAgent.getActionGroupDetails(agentId, groupId));
+  }
+
+  // POST /agent-config/bedrock/agents/:agentId/action-groups — create action group
+  if (rawPath.match(/\/action-groups$/) && method === 'POST') {
+    const agentId = rawPath.split('/')[4];
+    const bedrockAgent = await import('../services/bedrock-agent');
+    const result = await bedrockAgent.createActionGroup(
+      agentId,
+      body['name'] as string,
+      body['lambdaArn'] as string,
+      body['apiSchema'] as string,
+      body['description'] as string,
+    );
+    // Re-prepare the agent
+    await bedrockAgent.prepareAgent(agentId);
+    return ok(result);
+  }
+
+  // PUT /agent-config/bedrock/agents/:agentId/action-groups/:groupId — update action group
+  if (rawPath.match(/\/action-groups\/[A-Z0-9]+$/) && method === 'PUT') {
+    const parts = rawPath.split('/');
+    const agentId = parts[4];
+    const groupId = parts[6];
+    const bedrockAgent = await import('../services/bedrock-agent');
+    await bedrockAgent.updateActionGroup(agentId, groupId, {
+      name: body['name'] as string,
+      apiSchemaJson: body['apiSchema'] as string,
+      lambdaArn: body['lambdaArn'] as string,
+      state: body['state'] as any,
+      description: body['description'] as string,
+    });
+    await bedrockAgent.prepareAgent(agentId);
+    return ok({ success: true });
+  }
+
+  // DELETE /agent-config/bedrock/agents/:agentId/action-groups/:groupId
+  if (rawPath.match(/\/action-groups\/[A-Z0-9]+$/) && method === 'DELETE') {
+    const parts = rawPath.split('/');
+    const agentId = parts[4];
+    const groupId = parts[6];
+    const bedrockAgent = await import('../services/bedrock-agent');
+    await bedrockAgent.deleteActionGroup(agentId, groupId);
+    await bedrockAgent.prepareAgent(agentId);
+    return ok({ success: true });
+  }
+
+  // ── Agent Registry (DynamoDB-backed) ────────────────────────────────────
+
+  // GET /agent-config/registry — list registered agents for tenant
+  if (rawPath === '/agent-config/registry' && method === 'GET') {
+    const agentRegistry = await import('../services/agent-registry');
+    return ok(await agentRegistry.getAllAgents(ctx.organizationId));
+  }
+
+  // POST /agent-config/registry — register/update an agent
+  if (rawPath === '/agent-config/registry' && method === 'POST') {
+    const agentRegistry = await import('../services/agent-registry');
+    const agent = await agentRegistry.upsertAgent({
+      ...(body as any),
+      tenantId: ctx.organizationId,
+    });
+    return ok(agent);
+  }
+
+  // DELETE /agent-config/registry/:id — remove an agent from registry
+  if (rawPath.match(/^\/agent-config\/registry\/[a-z0-9-]+$/) && method === 'DELETE') {
+    const id = rawPath.split('/').pop()!;
+    const agentRegistry = await import('../services/agent-registry');
+    await agentRegistry.deleteAgentFromRegistry(id);
+    return ok({ success: true });
+  }
+
+  // POST /agent-config/registry/seed — seed defaults for tenant
+  if (rawPath === '/agent-config/registry/seed' && method === 'POST') {
+    const agentRegistry = await import('../services/agent-registry');
+    const count = await agentRegistry.seedDefaults(ctx.organizationId);
+    return ok({ seeded: count });
+  }
+
+  // ── Orchestrator Toggle ────────────────────────────────────────────────
+
+  // GET /agent-config/orchestrator — get orchestrator settings for tenant
+  if (rawPath === '/agent-config/orchestrator' && method === 'GET') {
+    const TENANTS_TABLE = process.env['TENANTS_TABLE'] ?? '';
+    const tenant = await ddb.getItem<{ useOrchestrator?: boolean }>(
+      TENANTS_TABLE, { id: ctx.organizationId },
+    );
+    return ok({ useOrchestrator: tenant?.useOrchestrator ?? false });
+  }
+
+  // PUT /agent-config/orchestrator — toggle orchestrator on/off
+  if (rawPath === '/agent-config/orchestrator' && method === 'PUT') {
+    const TENANTS_TABLE = process.env['TENANTS_TABLE'] ?? '';
+    const enabled = body['useOrchestrator'] === true;
+    await ddb.updateItem(TENANTS_TABLE, { id: ctx.organizationId }, {
+      useOrchestrator: enabled,
+      updatedAt: new Date().toISOString(),
+    });
+    return ok({ useOrchestrator: enabled });
+  }
+
+  // POST /agent-config/bedrock/agents/:agentId/prepare — re-prepare agent
+  if (rawPath.match(/\/prepare$/) && method === 'POST') {
+    const agentId = rawPath.split('/')[4];
+    const bedrockAgent = await import('../services/bedrock-agent');
+    await bedrockAgent.prepareAgent(agentId);
+    return ok(await bedrockAgent.getAgentDetails(agentId));
+  }
+
   return notFound('Route not found');
 }
 

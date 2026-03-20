@@ -4,6 +4,8 @@
   gap: 16px;
   margin-bottom: 20px;
 
+  &.secondary { margin-bottom: 20px; }
+
   @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 500px) { grid-template-columns: 1fr; }
 }
@@ -16,6 +18,8 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
+
+  &.small { padding: 14px 16px; }
 }
 
 .kpi-icon {
@@ -27,12 +31,54 @@
   justify-content: center;
   flex-shrink: 0;
   mat-icon { font-size: 22px; width: 22px; height: 22px; }
+
+  &.small { width: 36px; height: 36px; mat-icon { font-size: 18px; width: 18px; height: 18px; } }
 }
 
 .kpi-body { flex: 1; }
 .kpi-label { font-size: 0.78rem; color: rgba(0,0,0,0.5); margin: 0 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
 .kpi-value { font-size: 1.6rem; font-weight: 700; color: #1a2332; margin: 0 0 2px; }
-.kpi-trend { font-size: 0.75rem; color: #2e7d32; margin: 0; }
+.kpi-sublabel { font-size: 0.72rem; color: rgba(0,0,0,0.4); margin: 0; }
+
+// Daily trend chart
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 130px;
+  padding: 0 8px 24px;
+  overflow-x: auto;
+}
+.trend-bar-group {
+  flex: 1;
+  min-width: 20px;
+  max-width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+.trend-bar {
+  width: 100%;
+  max-width: 28px;
+  background: #006FB4;
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height 0.3s;
+}
+.trend-count {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(0,0,0,0.6);
+  margin-top: 2px;
+}
+.trend-date {
+  font-size: 0.6rem;
+  color: rgba(0,0,0,0.35);
+  position: absolute;
+  bottom: -18px;
+  white-space: nowrap;
+}
 
 .conversations-table {
   width: 100%;
@@ -45,12 +91,12 @@
     color: rgba(0,0,0,0.4);
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    padding: 0 0 10px;
+    padding: 0 8px 10px;
     border-bottom: 1px solid #f0f0f0;
   }
 
   td {
-    padding: 10px 0;
+    padding: 10px 8px;
     border-bottom: 1px solid #f8f8f8;
     vertical-align: middle;
     font-size: 0.875rem;
@@ -59,9 +105,94 @@
   tr:last-child td { border-bottom: none; }
 }
 
-.query-cell { color: #1a2332; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.date-cell { color: rgba(0,0,0,0.45); white-space: nowrap; padding-right: 20px; }
+.query-cell {
+  color: #1a2332;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.date-cell { color: rgba(0,0,0,0.45); white-space: nowrap; }
+.source-cell { .source-icon { font-size: 18px; width: 18px; height: 18px; color: rgba(0,0,0,0.4); } }
+.length-cell { color: rgba(0,0,0,0.5); font-size: 0.8rem; }
 .sat-cell { mat-icon { font-size: 20px; width: 20px; height: 20px; } }
+
+.inline-badge {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: #9c27b0;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.agent-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+// Intent breakdown
+.intent-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+}
+.intent-card {
+  padding: 14px; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; background: #fafafa;
+}
+.intent-header {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: rgba(0,0,0,0.5); }
+  .intent-name { font-size: 0.8rem; font-weight: 600; color: #1a2332; }
+}
+.intent-stats {
+  .intent-count { font-size: 1.4rem; font-weight: 700; color: #1a2332; }
+  .intent-pct { font-size: 0.75rem; color: rgba(0,0,0,0.4); margin-left: 4px; }
+}
+.intent-details {
+  display: flex; gap: 10px; margin-top: 4px; font-size: 0.72rem; color: rgba(0,0,0,0.45);
+}
+
+// RYG Scorecard
+.scorecard-section { margin-bottom: 20px; }
+.scorecard-legend {
+  font-size: 0.75rem; color: rgba(0,0,0,0.5); margin: -4px 0 12px;
+  .legend-dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; margin-left: 12px;
+    &.green { background: #2e7d32; }
+    &.yellow { background: #f9a825; }
+    &.red { background: #c62828; }
+  }
+}
+.scorecard-table {
+  width: 100%; border-collapse: collapse;
+  th {
+    text-align: left; font-size: 0.75rem; font-weight: 700; color: rgba(0,0,0,0.5);
+    text-transform: uppercase; padding: 0 8px 10px; border-bottom: 2px solid #eee;
+  }
+  td { padding: 12px 8px; border-bottom: 1px solid #f5f5f5; font-size: 0.875rem; }
+  .range-col { text-align: center; }
+  .kpi-name-cell { font-weight: 600; color: #1a2332; }
+  .current-cell { text-align: center; }
+  .range-cell { text-align: center; }
+}
+.ryg-badge {
+  display: inline-block; padding: 4px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem;
+  &.ryg-green { background: #e8f5e9; color: #2e7d32; }
+  &.ryg-yellow { background: #fff8e1; color: #f57f17; }
+  &.ryg-red { background: #fce4ec; color: #c62828; }
+}
+.range-bar {
+  display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;
+  &.green-bar { background: #2e7d32; color: #fff; }
+  &.yellow-bar { background: #f9a825; color: #fff; }
+  &.red-bar { background: #c62828; color: #fff; }
+}
 
 .info-banner {
   display: flex;

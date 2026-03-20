@@ -28,8 +28,8 @@ export class TeamComponent implements OnInit {
   // Role change
   changingRole: string | null = null;
 
-  readonly roles: TeamRole[] = ['viewer', 'editor', 'admin'];
-  readonly displayedColumns = ['name', 'email', 'role', 'mfa', 'joined', 'actions'];
+  readonly roles: TeamRole[] = ['tester', 'viewer', 'editor', 'admin'];
+  readonly displayedColumns = ['name', 'email', 'role', 'status', 'mfa', 'joined', 'actions'];
 
   constructor(
     private api: ApiService,
@@ -45,9 +45,9 @@ export class TeamComponent implements OnInit {
 
   async loadMembers(): Promise<void> {
     this.loading = true;
-    const res = await this.api.get<{ data: ITeamMember[] }>('/team/members');
-    if (res.success && res.data?.data) {
-      this.members = res.data.data;
+    const res = await this.api.get<ITeamMember[]>('/team/members');
+    if (res.success && res.data) {
+      this.members = res.data;
     }
     this.loading = false;
   }
@@ -115,6 +115,48 @@ export class TeamComponent implements OnInit {
     if (res.success && res.data?.data) {
       this.auditLog = res.data.data.items;
     }
+  }
+
+  async resetPassword(member: ITeamMember): Promise<void> {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Reset Password',
+        message: `Send a password reset email to ${member.name} (${member.email})?`,
+        confirmLabel: 'Reset Password',
+      },
+    });
+    const confirmed = await ref.afterClosed().toPromise();
+    if (!confirmed) return;
+
+    const res = await this.api.post(`/team/members/${member.userId}/reset-password`, {});
+    if (res.success) {
+      this.snackBar.open(`Password reset email sent to ${member.email}`, 'OK', { duration: 5000 });
+    } else {
+      this.snackBar.open(res.error ?? 'Failed to reset password', 'OK', { duration: 4000 });
+    }
+  }
+
+  async resendInvite(member: ITeamMember): Promise<void> {
+    const res = await this.api.post(`/team/members/${member.userId}/resend-invite`, {});
+    if (res.success) {
+      this.snackBar.open(`Invite resent to ${member.email}`, 'OK', { duration: 5000 });
+      await this.loadMembers();
+    } else {
+      this.snackBar.open(res.error ?? 'Failed to resend invite', 'OK', { duration: 4000 });
+    }
+  }
+
+  statusLabel(status: string): string {
+    switch (status) {
+      case 'CONFIRMED': return 'Active';
+      case 'FORCE_CHANGE_PASSWORD': return 'Pending';
+      case 'RESET_REQUIRED': return 'Reset Required';
+      default: return status;
+    }
+  }
+
+  isPending(member: any): boolean {
+    return member.cognitoStatus === 'FORCE_CHANGE_PASSWORD';
   }
 
   isCurrentUser(member: ITeamMember): boolean {

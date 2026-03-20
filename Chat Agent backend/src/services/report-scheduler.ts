@@ -436,10 +436,17 @@ async function invokeSnowflakeLambda(schedule: IReportSchedule): Promise<Record<
 
   const result = JSON.parse(new TextDecoder().decode(response.Payload));
 
-  // Parse the Bedrock action group response format
-  const body = result?.response?.actionGroup?.apiPath
-    ? JSON.parse(result.response.responseBody?.['application/json']?.body || '{}')
-    : JSON.parse(result?.body || '{}');
+  // Parse the Bedrock action group response format:
+  // { messageVersion, response: { actionGroup, apiPath, responseBody: { "application/json": { body: "{...}" } } } }
+  let body: Record<string, string>;
+  const responseBody = result?.response?.responseBody?.['application/json']?.body;
+  if (responseBody) {
+    body = JSON.parse(responseBody);
+  } else {
+    body = JSON.parse(result?.body || '{}');
+  }
+
+  console.log('Snowflake Lambda parsed result:', JSON.stringify(body).slice(0, 500));
 
   if (body.error) throw new Error(body.error);
   return body;

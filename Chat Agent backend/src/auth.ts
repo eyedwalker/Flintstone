@@ -5,13 +5,14 @@ import * as audit from './services/audit';
 const TEAM_MEMBERS_TABLE = process.env['TEAM_MEMBERS_TABLE'] ?? '';
 const TENANTS_TABLE = process.env['TENANTS_TABLE'] ?? '';
 
-export type TeamRole = 'owner' | 'admin' | 'editor' | 'viewer';
+export type TeamRole = 'owner' | 'admin' | 'editor' | 'viewer' | 'tester';
 
 export const ROLE_LEVEL: Record<TeamRole, number> = {
   owner: 4,
   admin: 3,
   editor: 2,
   viewer: 1,
+  tester: 0,
 };
 
 /** Maps node-user role strings to numeric access levels for KB content filtering */

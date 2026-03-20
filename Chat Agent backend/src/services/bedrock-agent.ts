@@ -10,6 +10,13 @@ import {
   AssociateAgentKnowledgeBaseCommand,
   DisassociateAgentKnowledgeBaseCommand,
   ListAgentsCommand,
+  ListAgentActionGroupsCommand,
+  GetAgentActionGroupCommand,
+  CreateAgentActionGroupCommand,
+  UpdateAgentActionGroupCommand,
+  DeleteAgentActionGroupCommand,
+  ListAgentKnowledgeBasesCommand,
+  ListAgentAliasesCommand,
 } from '@aws-sdk/client-bedrock-agent';
 
 const client = new BedrockAgentClient({ region: process.env['REGION'] ?? 'us-west-2' });
@@ -156,5 +163,206 @@ export async function disassociateKnowledgeBase(
 ): Promise<void> {
   await client.send(new DisassociateAgentKnowledgeBaseCommand({
     agentId, agentVersion, knowledgeBaseId,
+  }));
+}
+
+// ── Live Agent Inspection ─────────────────────────────────────────────────────
+
+/** Get full agent details from Bedrock (live, not cached) */
+export async function getAgentDetails(agentId: string): Promise<{
+  agentId: string;
+  agentName: string;
+  foundationModel: string;
+  instruction: string;
+  agentStatus: string;
+  idleSessionTTLInSeconds: number;
+  failureReasons?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}> {
+  const res = await client.send(new GetAgentCommand({ agentId }));
+  const a = res.agent!;
+  return {
+    agentId: a.agentId ?? '',
+    agentName: a.agentName ?? '',
+    foundationModel: a.foundationModel ?? '',
+    instruction: a.instruction ?? '',
+    agentStatus: a.agentStatus ?? '',
+    idleSessionTTLInSeconds: a.idleSessionTTLInSeconds ?? 600,
+    failureReasons: a.failureReasons,
+    createdAt: a.createdAt?.toISOString(),
+    updatedAt: a.updatedAt?.toISOString(),
+  };
+}
+
+/** List all agents in the account */
+export async function listAllAgents(): Promise<Array<{
+  agentId: string;
+  agentName: string;
+  agentStatus: string;
+  foundationModel?: string;
+  updatedAt?: string;
+}>> {
+  const agents: any[] = [];
+  let nextToken: string | undefined;
+  do {
+    const res = await client.send(new ListAgentsCommand({ nextToken }));
+    for (const a of res.agentSummaries ?? []) {
+      agents.push({
+        agentId: a.agentId,
+        agentName: a.agentName,
+        agentStatus: a.agentStatus,
+        updatedAt: a.updatedAt?.toISOString(),
+      });
+    }
+    nextToken = res.nextToken;
+  } while (nextToken);
+  return agents;
+}
+
+// ── Action Group Management ───────────────────────────────────────────────────
+
+/** List action groups for an agent */
+export async function listActionGroups(agentId: string): Promise<Array<{
+  actionGroupId: string;
+  actionGroupName: string;
+  actionGroupState: string;
+  updatedAt?: string;
+}>> {
+  const res = await client.send(new ListAgentActionGroupsCommand({
+    agentId,
+    agentVersion: 'DRAFT',
+  }));
+  return (res.actionGroupSummaries ?? []).map(ag => ({
+    actionGroupId: ag.actionGroupId ?? '',
+    actionGroupName: ag.actionGroupName ?? '',
+    actionGroupState: ag.actionGroupState ?? '',
+    updatedAt: ag.updatedAt?.toISOString(),
+  }));
+}
+
+/** Get action group details including API schema */
+export async function getActionGroupDetails(agentId: string, actionGroupId: string): Promise<{
+  actionGroupId: string;
+  actionGroupName: string;
+  actionGroupState: string;
+  description?: string;
+  apiSchema?: string;
+  lambdaArn?: string;
+}> {
+  const res = await client.send(new GetAgentActionGroupCommand({
+    agentId,
+    agentVersion: 'DRAFT',
+    actionGroupId,
+  }));
+  const ag = res.agentActionGroup!;
+  return {
+    actionGroupId: ag.actionGroupId ?? '',
+    actionGroupName: ag.actionGroupName ?? '',
+    actionGroupState: ag.actionGroupState ?? '',
+    description: ag.description,
+    apiSchema: (ag.apiSchema as any)?.payload,
+    lambdaArn: (ag.actionGroupExecutor as any)?.lambda,
+  };
+}
+
+/** Create a new action group on an agent */
+export async function createActionGroup(
+  agentId: string,
+  name: string,
+  lambdaArn: string,
+  apiSchemaJson: string,
+  description?: string,
+): Promise<{ actionGroupId: string }> {
+  const res = await client.send(new CreateAgentActionGroupCommand({
+    agentId,
+    agentVersion: 'DRAFT',
+    actionGroupName: name,
+    actionGroupExecutor: { lambda: lambdaArn },
+    apiSchema: { payload: apiSchemaJson },
+    ...(description && { description }),
+  }));
+  return { actionGroupId: res.agentActionGroup?.actionGroupId ?? '' };
+}
+
+/** Update an existing action group */
+export async function updateActionGroup(
+  agentId: string,
+  actionGroupId: string,
+  updates: {
+    name?: string;
+    apiSchemaJson?: string;
+    lambdaArn?: string;
+    state?: 'ENABLED' | 'DISABLED';
+    description?: string;
+  },
+): Promise<void> {
+  // Get current to merge
+  const current = await getActionGroupDetails(agentId, actionGroupId);
+
+  await client.send(new UpdateAgentActionGroupCommand({
+    agentId,
+    agentVersion: 'DRAFT',
+    actionGroupId,
+    actionGroupName: updates.name ?? current.actionGroupName,
+    actionGroupExecutor: { lambda: updates.lambdaArn ?? current.lambdaArn ?? '' },
+    apiSchema: { payload: updates.apiSchemaJson ?? current.apiSchema ?? '{}' },
+    ...(updates.state && { actionGroupState: updates.state }),
+    ...(updates.description && { description: updates.description }),
+  }));
+}
+
+/** Delete an action group */
+export async function deleteActionGroup(agentId: string, actionGroupId: string): Promise<void> {
+  // Must disable first
+  try {
+    await client.send(new UpdateAgentActionGroupCommand({
+      agentId,
+      agentVersion: 'DRAFT',
+      actionGroupId,
+      actionGroupName: (await getActionGroupDetails(agentId, actionGroupId)).actionGroupName,
+      actionGroupState: 'DISABLED',
+      actionGroupExecutor: { lambda: (await getActionGroupDetails(agentId, actionGroupId)).lambdaArn ?? '' },
+    }));
+  } catch { /* may already be disabled */ }
+
+  await client.send(new DeleteAgentActionGroupCommand({
+    agentId,
+    agentVersion: 'DRAFT',
+    actionGroupId,
+    skipResourceInUseCheck: true,
+  }));
+}
+
+// ── Knowledge Base Links (on agent) ───────────────────────────────────────────
+
+/** List knowledge bases associated with an agent */
+export async function listAgentKnowledgeBases(agentId: string): Promise<Array<{
+  knowledgeBaseId: string;
+  knowledgeBaseState: string;
+  description?: string;
+}>> {
+  const res = await client.send(new ListAgentKnowledgeBasesCommand({
+    agentId,
+    agentVersion: 'DRAFT',
+  }));
+  return (res.agentKnowledgeBaseSummaries ?? []).map(kb => ({
+    knowledgeBaseId: kb.knowledgeBaseId ?? '',
+    knowledgeBaseState: kb.knowledgeBaseState ?? '',
+    description: kb.description,
+  }));
+}
+
+/** List aliases for an agent */
+export async function listAliases(agentId: string): Promise<Array<{
+  agentAliasId: string;
+  agentAliasName: string;
+  agentAliasStatus: string;
+}>> {
+  const res = await client.send(new ListAgentAliasesCommand({ agentId }));
+  return (res.agentAliasSummaries ?? []).map(a => ({
+    agentAliasId: a.agentAliasId ?? '',
+    agentAliasName: a.agentAliasName ?? '',
+    agentAliasStatus: a.agentAliasStatus ?? '',
   }));
 }

@@ -87,6 +87,14 @@ export async function handleActionGroup(
         result = await handleGetProviders(tenantId, params);
         break;
 
+      case 'getStaff':
+        result = await handleGetStaff(tenantId, params);
+        break;
+
+      case 'getAppointmentTypes':
+        result = await handleGetAppointmentTypes(tenantId, params);
+        break;
+
       // ── Appointment Scheduling ──────────────────────────────────────────
       case 'getAvailableSlots':
         result = await handleGetAvailableSlots(tenantId, params);
@@ -96,6 +104,32 @@ export async function handleActionGroup(
         result = await handleBookAppointment(tenantId, params);
         break;
 
+      case 'getProviderAppointments':
+        result = await handleGetProviderAppointments(tenantId, params);
+        break;
+
+      case 'getPatientAppointments':
+        result = await handleGetPatientAppointments(tenantId, params);
+        break;
+
+      case 'confirmAppointment':
+        result = await handleConfirmAppointment(tenantId, params);
+        break;
+
+      // ── Patient ─────────────────────────────────────────────────────────
+      case 'createPatient':
+        result = await handleCreatePatient(tenantId, params);
+        break;
+
+      case 'getPatientOrders':
+        result = await handleGetPatientOrders(tenantId, params);
+        break;
+
+      // ── Orders ──────────────────────────────────────────────────────────
+      case 'getOrders':
+        result = await handleGetOrders(tenantId, params);
+        break;
+
       // ── Communication ───────────────────────────────────────────────────
       case 'sendSms':
         result = await handleSendSms(tenantId, params);
@@ -103,6 +137,10 @@ export async function handleActionGroup(
 
       case 'sendEmail':
         result = await handleSendEmail(tenantId, params);
+        break;
+
+      case 'makeCall':
+        result = await handleMakeCall(tenantId, params);
         break;
 
       // ── Report Scheduling ──────────────────────────────────────────────
@@ -142,6 +180,8 @@ async function handleSearchPatients(
     tenantId,
     params['phone'],
     params['name'],
+    params['dob'],
+    params['email'],
   );
 
   if (patients.length === 0) {
@@ -243,6 +283,66 @@ async function handleBookAppointment(
       ? `Appointment confirmed for ${result.date} at ${result.time} with ${result.providerName}.`
       : `Appointment request submitted — staff will confirm.`,
   });
+}
+
+async function handleGetStaff(tenantId: string, params: Record<string, string>): Promise<string> {
+  const staff = await integrations.getStaff(tenantId, params['officeId']);
+  return JSON.stringify({ staff, count: staff.length });
+}
+
+async function handleGetAppointmentTypes(tenantId: string, params: Record<string, string>): Promise<string> {
+  const officeId = params['officeId'];
+  if (!officeId) return JSON.stringify({ error: 'officeId is required' });
+  const types = await integrations.getOfficeAppointmentTypes(tenantId, officeId);
+  return JSON.stringify({ appointmentTypes: types, count: types.length });
+}
+
+async function handleGetProviderAppointments(tenantId: string, params: Record<string, string>): Promise<string> {
+  const providerId = params['providerId'];
+  if (!providerId) return JSON.stringify({ error: 'providerId is required' });
+  const appointments = await integrations.getProviderAppointments(tenantId, providerId);
+  return JSON.stringify({ appointments, count: appointments.length });
+}
+
+async function handleGetPatientAppointments(tenantId: string, params: Record<string, string>): Promise<string> {
+  const patientId = params['patientId'];
+  if (!patientId) return JSON.stringify({ error: 'patientId is required' });
+  const appointments = await integrations.getPatientAppointments(tenantId, patientId);
+  return JSON.stringify({ appointments, count: appointments.length });
+}
+
+async function handleConfirmAppointment(tenantId: string, params: Record<string, string>): Promise<string> {
+  const { providerId, appointmentId } = params;
+  if (!providerId || !appointmentId) return JSON.stringify({ error: 'providerId and appointmentId required' });
+  const confirmed = params['confirmed'] !== 'false';
+  const success = await integrations.confirmAppointment(tenantId, providerId, appointmentId, confirmed);
+  return JSON.stringify({ success, message: success ? 'Appointment confirmed.' : 'Failed to confirm.' });
+}
+
+async function handleCreatePatient(tenantId: string, params: Record<string, string>): Promise<string> {
+  const { firstName, lastName, dob, phone, email } = params;
+  if (!firstName || !lastName) return JSON.stringify({ error: 'firstName and lastName are required' });
+  const result = await integrations.createPatient(tenantId, { firstName, lastName, dob, phone, email });
+  return JSON.stringify(result ? { success: true, patient: result } : { success: false, error: 'Failed to create patient' });
+}
+
+async function handleGetPatientOrders(tenantId: string, params: Record<string, string>): Promise<string> {
+  const patientId = params['patientId'];
+  if (!patientId) return JSON.stringify({ error: 'patientId is required' });
+  const orders = await integrations.getPatientOrders(tenantId, patientId);
+  return JSON.stringify({ orders, count: orders.length });
+}
+
+async function handleGetOrders(tenantId: string, params: Record<string, string>): Promise<string> {
+  const orders = await integrations.getOrders(tenantId, params['fromDate'], params['toDate']);
+  return JSON.stringify({ orders, count: orders.length });
+}
+
+async function handleMakeCall(tenantId: string, params: Record<string, string>): Promise<string> {
+  const { to, message, voiceName } = params;
+  if (!to || !message) return JSON.stringify({ error: 'to and message are required' });
+  const result = await integrations.makeCall(tenantId, to, message, voiceName);
+  return JSON.stringify(result);
 }
 
 async function handleSendSms(

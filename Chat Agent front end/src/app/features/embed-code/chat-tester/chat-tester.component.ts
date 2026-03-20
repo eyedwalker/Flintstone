@@ -7,6 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ApiService } from '../../../core/services/api.service';
 import { ROLE_ACCESS_LEVELS, RoleLevelValue } from '../../../../lib/models/knowledge-base.model';
 
@@ -48,6 +49,7 @@ export class ChatTesterComponent implements AfterViewChecked {
   constructor(
     private api: ApiService,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngAfterViewChecked(): void {
@@ -105,6 +107,35 @@ export class ChatTesterComponent implements AfterViewChecked {
     }
   }
 
+  /** Convert markdown images, data URIs, and S3 chart URLs in text to <img> tags */
+  renderMessage(text: string): SafeHtml {
+    // Replace ![alt](url) markdown images (data URIs or image file URLs)
+    let html = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+      (match, alt, src) => {
+        if (/^data:image\//.test(src) || /\.(svg|png|jpg|jpeg|gif|webp)(\?.*)?$/i.test(src)) {
+          return `<img src="${src}" alt="${alt}" style="max-width:100%;border-radius:8px;margin:8px 0;">`;
+        }
+        return match;
+      });
+    // Replace raw base64 SVG data URIs
+    html = html.replace(/(data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+)/g,
+      (src) => `<img src="${src}" alt="Chart" style="max-width:100%;border-radius:8px;margin:8px 0;">`);
+    // Replace S3 chart URLs
+    html = html.replace(/(https:\/\/[a-z0-9.-]+\.s3\.[a-z0-9-]+\.amazonaws\.com\/[^\s"'<>]+\.svg)/gi,
+      (src) => `<img src="${src}" alt="Chart" style="max-width:100%;border-radius:8px;margin:8px 0;">`);
+    // Escape remaining HTML but preserve our img tags
+    const imgPlaceholders: string[] = [];
+    html = html.replace(/<img [^>]+>/g, (match) => { imgPlaceholders.push(match); return `%%IMG${imgPlaceholders.length - 1}%%`; });
+    html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    for (let i = 0; i < imgPlaceholders.length; i++) {
+      html = html.replace(`%%IMG${i}%%`, imgPlaceholders[i]);
+    }
+    // Basic markdown: **bold**, newlines
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\n/g, '<br>');
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
   // ── Report/chart helpers for extracting data from action group results ──
 
   private parseResult(call: IActionGroupCall): Record<string, unknown> | null {
@@ -114,6 +145,24 @@ export class ChatTesterComponent implements AfterViewChecked {
     } catch {
       return null;
     }
+  }
+
+  getActionGroupLabel(calls: IActionGroupCall[]): string {
+    const name = calls[0]?.actionGroupName ?? '';
+    if (name.includes('snowflake') || name.includes('Snowflake')) return 'Snowflake Analytics';
+    if (name.includes('front-office') || name.includes('Front')) return 'Front Office';
+    // Detect by apiPath patterns
+    const paths = calls.map(c => c.apiPath ?? '').join(' ');
+    if (/patient|office|provider|appointment|sms|email/i.test(paths)) return 'Front Office';
+    if (/query|chart|report|table|describe/i.test(paths)) return 'Snowflake Analytics';
+    return name || 'Agent Tools';
+  }
+
+  getActionGroupIcon(calls: IActionGroupCall[]): string {
+    const label = this.getActionGroupLabel(calls);
+    if (label === 'Snowflake Analytics') return 'ac_unit';
+    if (label === 'Front Office') return 'calendar_today';
+    return 'build';
   }
 
   getDownloadUrl(call: IActionGroupCall): string | null {

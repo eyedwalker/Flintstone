@@ -90,6 +90,33 @@ export const handler = async (
     }
   }
 
+  // ── Voice/SMS webhooks — no JWT, Twilio signature auth ──────────────────
+  if (rawPath.startsWith('/voice/')) {
+    // Parse URL-encoded body from Twilio
+    let voiceBody: Record<string, string> = {};
+    const ct = event.headers['content-type'] ?? '';
+    if (ct.includes('application/x-www-form-urlencoded') && event.body) {
+      const params = new URLSearchParams(event.body);
+      voiceBody = Object.fromEntries(params.entries());
+    } else {
+      voiceBody = body as Record<string, string>;
+    }
+
+    const host = event.headers['host'] ?? '';
+    const stage = event.rawPath.startsWith('/dev') ? '/dev' : event.rawPath.startsWith('/prod') ? '/prod' : '';
+    const baseUrl = `https://${host}${stage}`;
+
+    const { handleInboundCall, handleVoiceRespond, handleOutboundTwiml, handleSmsInbound, handleCallStatus } = await import('./routes/voice');
+
+    if (rawPath === '/voice/inbound' && method === 'POST') return handleInboundCall(voiceBody, baseUrl);
+    if (rawPath === '/voice/respond' && method === 'POST') return handleVoiceRespond(voiceBody, baseUrl);
+    if (rawPath === '/voice/outbound-twiml' && method === 'GET') {
+      return handleOutboundTwiml((event.queryStringParameters ?? {}) as Record<string, string>, baseUrl);
+    }
+    if (rawPath === '/voice/sms-inbound' && method === 'POST') return handleSmsInbound(voiceBody);
+    if (rawPath === '/voice/status' && method === 'POST') return handleCallStatus(voiceBody);
+  }
+
   // Public widget endpoints — authenticated via API key, no JWT required
   if (rawPath === '/widget/chat' && method === 'POST') {
     return handleWidgetChat(body, event.headers);
@@ -202,6 +229,10 @@ export const handler = async (
     }
     if (rawPath.startsWith('/agent-config')) {
       return handleAgentConfig(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/raft')) {
+      const { handleRaft } = await import('./routes/raft');
+      return handleRaft(method, rawPath, body, params, query, ctx);
     }
     return notFound('Route not found');
   } catch (e) {

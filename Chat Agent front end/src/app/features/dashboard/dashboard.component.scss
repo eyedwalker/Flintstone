@@ -2,3 +2,40 @@
 .page-title { font-size: 1.75rem; font-weight: 700; margin: 0 0 4px; color: #1a2332; }
 .page-subtitle { color: rgba(0,0,0,0.55); margin: 0; font-size: 0.9rem; }
 .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+
+/* Tester hero */
+.tester-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 60vh;
+  padding: 48px 24px;
+}
+
+.tester-hero-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #1976d2;
+  margin-bottom: 24px;
+}
+
+.tester-hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin: 0 0 12px;
+}
+
+.tester-hero-subtitle {
+  font-size: 1.1rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+  max-width: 420px;
+}
+
+.tester-no-widget {
+  color: #b71c1c;
+}

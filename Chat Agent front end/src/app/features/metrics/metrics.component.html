@@ -24,7 +24,7 @@
 
 <div *ngIf="!loading">
 
-  <!-- KPI cards -->
+  <!-- Primary KPI cards -->
   <div class="kpi-grid">
     <div class="kpi-card" *ngFor="let kpi of kpis">
       <div class="kpi-icon" [style.background]="kpi.color + '1a'" [style.color]="kpi.color">
@@ -33,7 +33,86 @@
       <div class="kpi-body">
         <p class="kpi-label">{{ kpi.label }}</p>
         <p class="kpi-value">{{ kpi.value }}</p>
-        <p class="kpi-trend" *ngIf="kpi.trend">{{ kpi.trend }} vs prev period</p>
+        <p class="kpi-sublabel" *ngIf="kpi.sublabel">{{ kpi.sublabel }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Channel & Quality KPI cards -->
+  <div class="kpi-grid secondary" *ngIf="channelKpis.length > 0">
+    <div class="kpi-card small" *ngFor="let kpi of channelKpis">
+      <div class="kpi-icon small" [style.background]="kpi.color + '1a'" [style.color]="kpi.color">
+        <mat-icon>{{ kpi.icon }}</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-label">{{ kpi.label }}</p>
+        <p class="kpi-value">{{ kpi.value }}</p>
+        <p class="kpi-sublabel" *ngIf="kpi.sublabel">{{ kpi.sublabel }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RYG Scorecard -->
+  <div class="section-card scorecard-section" *ngIf="scorecard.length > 0">
+    <h3 class="section-title"><mat-icon>assessment</mat-icon> Performance Scorecard (RYG)</h3>
+    <p class="scorecard-legend">
+      <span class="legend-dot green"></span> Scale rollout
+      <span class="legend-dot yellow"></span> Tune/monitor
+      <span class="legend-dot red"></span> Stop &amp; fix
+    </p>
+    <table class="scorecard-table">
+      <thead>
+        <tr>
+          <th>KPI</th>
+          <th>Current</th>
+          <th class="range-col green-col">Green</th>
+          <th class="range-col yellow-col">Yellow</th>
+          <th class="range-col red-col">Red</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of scorecard">
+          <td class="kpi-name-cell">{{ row.kpi }}</td>
+          <td class="current-cell">
+            <span class="ryg-badge" [class]="'ryg-' + row.status">{{ row.value }}</span>
+          </td>
+          <td class="range-cell"><span class="range-bar green-bar">{{ row.greenRange }}</span></td>
+          <td class="range-cell"><span class="range-bar yellow-bar">{{ row.yellowRange }}</span></td>
+          <td class="range-cell"><span class="range-bar red-bar">{{ row.redRange }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Intent Breakdown -->
+  <div class="section-card" *ngIf="intentMetrics.length > 0">
+    <h3 class="section-title"><mat-icon>category</mat-icon> Conversation Intent Breakdown</h3>
+    <div class="intent-grid">
+      <div class="intent-card" *ngFor="let im of intentMetrics">
+        <div class="intent-header">
+          <mat-icon>{{ getIntentIcon(im.intent) }}</mat-icon>
+          <span class="intent-name">{{ getIntentLabel(im.intent) }}</span>
+        </div>
+        <div class="intent-stats">
+          <span class="intent-count">{{ im.count }}</span>
+          <span class="intent-pct">({{ im.pct }}%)</span>
+        </div>
+        <div class="intent-details">
+          <span *ngIf="im.medianLatencyMs > 0">{{ (im.medianLatencyMs / 1000).toFixed(1) }}s median</span>
+          <span *ngIf="im.needMetRate !== null">{{ im.needMetRate }}% satisfied</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Trend -->
+  <div class="section-card" *ngIf="dailyTrend.length > 0">
+    <h3 class="section-title"><mat-icon>trending_up</mat-icon> Daily Conversation Volume</h3>
+    <div class="trend-chart">
+      <div class="trend-bar-group" *ngFor="let d of dailyTrend">
+        <div class="trend-bar" [style.height.px]="Math.max(4, (d.count / maxDailyCount) * 100)"></div>
+        <span class="trend-count">{{ d.count }}</span>
+        <span class="trend-date">{{ d.date | slice:-5 }}</span>
       </div>
     </div>
   </div>
@@ -52,32 +131,32 @@
       <thead>
         <tr>
           <th>Query</th>
+          <th>Source</th>
+          <th>Length</th>
           <th>Date</th>
           <th>Satisfied</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let c of recentConversations">
-          <td class="query-cell">{{ c.query }}</td>
+          <td class="query-cell">
+            {{ c.query }}
+            <mat-icon class="inline-badge" *ngIf="c.videoCited" matTooltip="Video cited">smart_display</mat-icon>
+            <span class="agent-badge" *ngIf="c.routedAgent">{{ c.routedAgent }}</span>
+          </td>
+          <td class="source-cell">
+            <mat-icon class="source-icon" [matTooltip]="c.source">{{ c.source === 'widget' ? 'widgets' : 'admin_panel_settings' }}</mat-icon>
+          </td>
+          <td class="length-cell">{{ c.responseLength | number }}</td>
           <td class="date-cell">{{ formatDate(c.ts) }}</td>
           <td class="sat-cell">
-            <mat-icon [style.color]="c.satisfied ? '#2e7d32' : '#b0bec5'">
-              {{ c.satisfied ? 'thumb_up' : 'remove' }}
+            <mat-icon [style.color]="getSatisfiedColor(c.satisfied)">
+              {{ getSatisfiedIcon(c.satisfied) }}
             </mat-icon>
           </td>
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <!-- Info banner -->
-  <div class="info-banner">
-    <mat-icon>info_outline</mat-icon>
-    <span>
-      Full analytics including per-node breakdowns, video citation reports, and guardrail logs
-      are available in the <strong>Dashboard</strong>. Metrics are stored in DynamoDB and updated
-      in real-time by the Lambda chat handler.
-    </span>
   </div>
 
 </div>

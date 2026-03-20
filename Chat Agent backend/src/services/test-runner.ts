@@ -7,10 +7,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as ddb from './dynamo';
 import { invokeAgent, invokeModel } from './bedrock-chat';
+import { classifyIntent } from '../routes/chat';
 
 const TEST_CASES_TABLE = process.env['TEST_CASES_TABLE'] ?? '';
 const TEST_RUNS_TABLE = process.env['TEST_RUNS_TABLE'] ?? '';
 const TEST_RESULTS_TABLE = process.env['TEST_RESULTS_TABLE'] ?? '';
+const METRICS_TABLE = process.env['METRICS_TABLE'] ?? '';
 const ASSISTANTS_TABLE = process.env['ASSISTANTS_TABLE'] ?? '';
 const ASSISTANT_KB_TABLE = process.env['ASSISTANT_KB_TABLE'] ?? '';
 const KNOWLEDGE_BASES_TABLE = process.env['KNOWLEDGE_BASES_TABLE'] ?? '';
@@ -150,6 +152,32 @@ export async function executeTestRun(
         createdAt: new Date().toISOString(),
       });
 
+      // Write metrics record for each turn (simulates real user conversations)
+      if (METRICS_TABLE) {
+        for (const turn of result.turns) {
+          try {
+            await ddb.putItem(METRICS_TABLE, {
+              id: uuidv4(),
+              assistantId,
+              tenantId,
+              sessionId: result.sessionId,
+              query: turn.userMessage,
+              responseLength: turn.actualResponse.length,
+              latencyMs: turn.latencyMs,
+              intent: classifyIntent(result.actionGroupCalls as any),
+              guardrailTriggered: false,
+              videoCited: /video|vimeo|youtube/i.test(turn.actualResponse),
+              satisfied: null,
+              source: 'test',
+              testRunId: runId,
+              testCategory: testCase.category,
+              aiScore: evaluation.overallScore,
+              createdAt: new Date().toISOString(),
+            });
+          } catch { /* non-critical */ }
+        }
+      }
+
       completedCases++;
       if (passed) passedCases++;
       else failedCases++;
@@ -235,10 +263,11 @@ async function executeTestCase(
   assistant: IAssistant,
   kbIds: string[],
   tenantId: string,
-): Promise<{ turns: ITurnResult[]; durationMs: number; sessionId: string }> {
+): Promise<{ turns: ITurnResult[]; durationMs: number; sessionId: string; actionGroupCalls?: unknown[] }> {
   const caseStart = Date.now();
   let sessionId = uuidv4();
   const turns: ITurnResult[] = [];
+  let allActionGroupCalls: unknown[] = [];
 
   // Build role filter if needed
   const roleFilter = testCase.roleLevel !== undefined && kbIds.length > 0
@@ -265,6 +294,7 @@ async function executeTestCase(
       roleFilter as any,
     );
     const reply = agentResult.text;
+    if (agentResult.actionGroupCalls) allActionGroupCalls.push(...agentResult.actionGroupCalls);
 
     const latencyMs = Date.now() - turnStart;
 
@@ -287,6 +317,7 @@ async function executeTestCase(
     turns,
     durationMs: Date.now() - caseStart,
     sessionId,
+    actionGroupCalls: allActionGroupCalls.length > 0 ? allActionGroupCalls : undefined,
   };
 }
 

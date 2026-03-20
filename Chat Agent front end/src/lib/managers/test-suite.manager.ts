@@ -7,6 +7,7 @@ import {
   IImprovement,
   IGenerateOptions,
   IUserReview,
+  ITrainerAnnotation,
 } from '../models/test-suite.model';
 import { IAccessorResult } from '../models/tenant.model';
 import { ApiService } from '../../app/core/services/api.service';
@@ -77,6 +78,10 @@ export class TestSuiteManager {
     return this.api.get<ITestRun>(`/test-runs/${runId}`);
   }
 
+  async listRuns(suiteId: string): Promise<IAccessorResult<ITestRun[]>> {
+    return this.api.get<ITestRun[]>(`/test-suites/${suiteId}/runs`);
+  }
+
   async getRunResults(runId: string): Promise<IAccessorResult<ITestResult[]>> {
     return this.api.get<ITestResult[]>(`/test-runs/${runId}/results`);
   }
@@ -97,5 +102,15 @@ export class TestSuiteManager {
 
   async applyImprovement(runId: string, improvementId: string): Promise<IAccessorResult<void>> {
     return this.api.post<void>(`/test-runs/${runId}/improvements/${improvementId}/apply`);
+  }
+
+  // ── RAFT Training Annotations ───────────────────────────────────────────────
+
+  async saveAnnotation(runId: string, resultId: string, annotation: ITrainerAnnotation): Promise<IAccessorResult<void>> {
+    return this.api.put<void>(`/test-runs/${runId}/results/${resultId}/annotation`, annotation);
+  }
+
+  async bulkApprove(runId: string, threshold: number = 80): Promise<IAccessorResult<{ approved: number; total: number }>> {
+    return this.api.post<{ approved: number; total: number }>(`/test-runs/${runId}/bulk-approve`, { threshold });
   }
 }

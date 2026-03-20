@@ -81,6 +81,70 @@
               [ngClass]="suite.lastRunStatus">
           {{ suite.lastRunStatus }}
         </span>
+        <button mat-stroked-button class="history-toggle" (click)="toggleRunHistory(suite, $event)">
+          <mat-icon>{{ expandedSuiteId === suite.id ? 'expand_less' : 'history' }}</mat-icon>
+          {{ expandedSuiteId === suite.id ? 'Hide' : 'Run History' }}
+        </button>
+      </div>
+
+      <!-- Run History (expandable) -->
+      <div class="run-history" *ngIf="expandedSuiteId === suite.id">
+        <div class="history-loading" *ngIf="loadingHistory">
+          <mat-spinner diameter="20"></mat-spinner> Loading runs...
+        </div>
+
+        <div *ngIf="!loadingHistory && suiteRuns.length === 0" class="no-runs">
+          No runs yet. Click the play button to run this suite.
+        </div>
+
+        <!-- Score trend mini-chart -->
+        <div class="score-trend" *ngIf="suiteRuns.length > 1">
+          <div class="trend-bars">
+            <div class="trend-bar-item" *ngFor="let run of suiteRuns.slice(0, 10).reverse()">
+              <div class="trend-bar"
+                   [style.height.%]="run.avgScore"
+                   [class.score-high]="run.avgScore >= 80"
+                   [class.score-medium]="run.avgScore >= 60 && run.avgScore < 80"
+                   [class.score-low]="run.avgScore < 60">
+              </div>
+              <span class="trend-label">{{ run.avgScore | number:'1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="runs-table" *ngIf="suiteRuns.length > 0">
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Passed</th>
+              <th>Failed</th>
+              <th>Errors</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let run of suiteRuns; let i = index">
+              <td class="run-num">#{{ suiteRuns.length - i }}</td>
+              <td><span class="status-chip" [ngClass]="run.status">{{ run.status }}</span></td>
+              <td class="score-cell" [class]="getScoreColor(run.avgScore)">
+                {{ run.avgScore | number:'1.0-0' }}
+              </td>
+              <td class="passed-cell">{{ run.passedCases }}</td>
+              <td class="failed-cell">{{ run.failedCases }}</td>
+              <td>{{ run.errorCases || 0 }}</td>
+              <td class="date-cell">{{ run.createdAt | date:'short' }}</td>
+              <td>
+                <button mat-icon-button matTooltip="View Results"
+                        (click)="viewRunResults(run.id, $event)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

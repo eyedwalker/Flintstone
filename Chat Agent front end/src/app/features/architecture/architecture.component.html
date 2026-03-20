@@ -1,0 +1,808 @@
+<div class="arch-page">
+  <div class="page-header">
+    <h1>System Architecture</h1>
+    <p class="subtitle">Serverless AI Chat Platform — AWS Reference Architecture</p>
+  </div>
+
+  <mat-tab-group animationDuration="200ms">
+
+    <!-- ═══ Tab 0: Agent Registry ═══ -->
+    <mat-tab label="Agents">
+      <div class="tab-content">
+        <h2>Multi-Agent Architecture</h2>
+        <p class="overview-desc">
+          Specialist agents handle different domains. The orchestrator routes messages to the right agent
+          based on intent, with a security layer scanning every message before it reaches any agent.
+        </p>
+
+        <!-- Orchestrator Flow Diagram -->
+        <div class="arch-diagram">
+          <div class="diagram-row">
+            <div class="diagram-box client">
+              <mat-icon>chat</mat-icon>
+              <strong>User Message</strong>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box gateway">
+              <mat-icon>shield</mat-icon>
+              <strong>Security Agent</strong>
+              <span>PII Redaction</span>
+              <span>Injection Blocking</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box compute">
+              <mat-icon>route</mat-icon>
+              <strong>Orchestrator</strong>
+              <span>Intent Classification</span>
+              <span>Session Affinity</span>
+            </div>
+          </div>
+
+          <div class="diagram-connector">
+            <mat-icon>arrow_downward</mat-icon>
+          </div>
+
+          <div class="diagram-row">
+            <div class="diagram-box ai" *ngFor="let agent of agents" [style.opacity]="agent.status === 'planned' ? 0.5 : 1">
+              <mat-icon>{{ agent.icon }}</mat-icon>
+              <strong>{{ agent.name }}</strong>
+              <span>{{ agent.toolCount }} tools</span>
+              <span [class]="'agent-status-' + agent.status">{{ agent.status | uppercase }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orchestrator Toggle -->
+        <div class="orchestrator-toggle-section">
+          <h3>
+            Multi-Agent Orchestrator
+            <mat-slide-toggle
+              [checked]="useOrchestrator"
+              (change)="toggleOrchestrator()"
+              [disabled]="loadingOrchestrator"
+              color="primary">
+              {{ useOrchestrator ? 'Enabled' : 'Disabled' }}
+            </mat-slide-toggle>
+          </h3>
+          <p class="toggle-desc" *ngIf="!useOrchestrator">
+            Currently OFF — all messages go directly to the default agent. Enable to route messages
+            through the security agent and orchestrator for multi-agent support.
+          </p>
+          <p class="toggle-desc active" *ngIf="useOrchestrator">
+            ACTIVE — messages are scanned by the security agent, then routed to the best specialist agent
+            based on intent keywords and session affinity.
+          </p>
+        </div>
+
+        <!-- Orchestrator Layers -->
+        <h3>Orchestrator Layers</h3>
+        <div class="security-grid">
+          <mat-card *ngFor="let layer of orchestratorLayers" class="security-card">
+            <mat-icon class="security-icon">{{ layer.icon }}</mat-icon>
+            <h4>{{ layer.layer }}</h4>
+            <p>{{ layer.description }}</p>
+            <mat-chip-set>
+              <mat-chip [class]="layer.status === 'Built' ? 'status-live' : 'status-beta'">{{ layer.status }}</mat-chip>
+            </mat-chip-set>
+          </mat-card>
+        </div>
+
+        <!-- Agent Registry -->
+        <h3>
+          Agent Registry
+          <button mat-icon-button (click)="loadRegistry()" matTooltip="Refresh">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <button mat-stroked-button (click)="seedRegistry()" *ngIf="registeredAgents.length === 0">
+            <mat-icon>add</mat-icon> Seed Defaults
+          </button>
+        </h3>
+
+        <div class="registry-list" *ngIf="registeredAgents.length > 0">
+          <div class="registry-item" *ngFor="let ra of registeredAgents">
+            <div class="registry-header">
+              <mat-slide-toggle [checked]="ra.enabled" (change)="toggleAgentEnabled(ra)" color="primary">
+              </mat-slide-toggle>
+              <strong>{{ ra.name }}</strong>
+              <span class="priority-badge">Priority: {{ ra.priority }}</span>
+              <code class="agent-id-badge" *ngIf="ra.bedrockAgentId">{{ ra.bedrockAgentId }}</code>
+              <span class="no-link-badge" *ngIf="!ra.bedrockAgentId">Not linked to Bedrock</span>
+            </div>
+            <div class="registry-desc">{{ ra.description | slice:0:120 }}...</div>
+            <div class="registry-keywords">
+              <span class="keyword-chip" *ngFor="let kw of ra.routingKeywords?.slice(0, 8)">{{ kw }}</span>
+              <span class="keyword-more" *ngIf="ra.routingKeywords?.length > 8">+{{ ra.routingKeywords.length - 8 }} more</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Bedrock Agents -->
+        <h3>
+          Live Bedrock Agents
+          <button mat-icon-button (click)="loadLiveAgents()" matTooltip="Refresh from AWS">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </h3>
+
+        <div class="loading-wrap" *ngIf="loadingAgents">
+          <mat-spinner diameter="24"></mat-spinner> Loading from Bedrock...
+        </div>
+
+        <div class="agent-cards" *ngIf="!loadingAgents">
+          <mat-card *ngFor="let agent of liveAgents" class="agent-card live-agent"
+                    [class.selected]="selectedAgent?.agentId === agent.agentId"
+                    (click)="selectAgent(agent)">
+            <mat-card-header>
+              <mat-icon mat-card-avatar [style.color]="getStatusColor(agent.agentStatus)">
+                {{ getStatusIcon(agent.agentStatus) }}
+              </mat-icon>
+              <mat-card-title>{{ agent.agentName }}</mat-card-title>
+              <mat-card-subtitle>{{ agent.foundationModel }} &middot; {{ agent.agentStatus }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="agent-meta">
+                <code>ID: {{ agent.agentId }}</code>
+              </div>
+              <div class="agent-tool-badges">
+                <span class="tool-badge" *ngFor="let ag of agent.actionGroups">
+                  <mat-icon class="tool-icon">extension</mat-icon> {{ ag.actionGroupName }}
+                </span>
+                <span class="tool-badge kb" *ngFor="let kb of agent.knowledgeBases">
+                  <mat-icon class="tool-icon">menu_book</mat-icon> {{ kb.knowledgeBaseId }}
+                </span>
+              </div>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-stroked-button (click)="startEditAgent(); $event.stopPropagation()"
+                      *ngIf="selectedAgent?.agentId === agent.agentId">
+                <mat-icon>edit</mat-icon> Edit
+              </button>
+              <button mat-stroked-button (click)="prepareAgent(agent.agentId); $event.stopPropagation()">
+                <mat-icon>refresh</mat-icon> Re-prepare
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+
+        <!-- Agent Edit Panel -->
+        <div class="edit-panel" *ngIf="editingAgent && selectedAgent">
+          <h3>Edit Agent: {{ selectedAgent.agentName }}</h3>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Agent Name</mat-label>
+            <input matInput [(ngModel)]="editName">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Foundation Model</mat-label>
+            <mat-select [(value)]="editModel">
+              <mat-option value="us.anthropic.claude-sonnet-4-6">Claude Sonnet 4.6</mat-option>
+              <mat-option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5</mat-option>
+              <mat-option value="us.anthropic.claude-sonnet-4-5-20250929-v1:0">Claude Sonnet 4.5</mat-option>
+              <mat-option value="us.meta.llama3-1-8b-instruct-v1:0">Llama 3.1 8B</mat-option>
+              <mat-option value="us.meta.llama3-1-70b-instruct-v1:0">Llama 3.1 70B</mat-option>
+              <mat-option value="amazon.nova-pro-v1:0">Amazon Nova Pro</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>System Instruction</mat-label>
+            <textarea matInput [(ngModel)]="editInstruction" rows="10"></textarea>
+          </mat-form-field>
+          <div class="edit-actions">
+            <button mat-flat-button color="primary" (click)="saveAgent()">
+              <mat-icon>save</mat-icon> Save & Re-prepare
+            </button>
+            <button mat-stroked-button (click)="cancelEditAgent()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Selected Agent Detail -->
+        <div class="agent-detail-panel" *ngIf="selectedAgent && !editingAgent">
+          <h3>{{ selectedAgent.agentName }} — Details</h3>
+
+          <div class="detail-section">
+            <h4>System Instruction</h4>
+            <pre class="instruction-preview">{{ selectedAgent.instruction }}</pre>
+          </div>
+
+          <div class="detail-section">
+            <h4>
+              Action Groups ({{ selectedAgent.actionGroups?.length ?? 0 }})
+              <button mat-stroked-button class="add-ag-btn" (click)="startCreateActionGroup()">
+                <mat-icon>add</mat-icon> Add Action Group
+              </button>
+            </h4>
+            <div class="action-group-list" *ngIf="selectedAgent.actionGroups?.length">
+              <div class="action-group-item" *ngFor="let ag of selectedAgent.actionGroups">
+                <div class="ag-header">
+                  <mat-icon>extension</mat-icon>
+                  <strong>{{ ag.actionGroupName }}</strong>
+                  <span class="ag-state" [class]="ag.actionGroupState === 'ENABLED' ? 'enabled' : 'disabled'">
+                    {{ ag.actionGroupState }}
+                  </span>
+                  <div class="ag-actions">
+                    <button mat-icon-button matTooltip="Edit" (click)="startEditActionGroup(ag)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button matTooltip="Delete" color="warn" (click)="deleteActionGroup(ag)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <div class="ag-meta" *ngIf="ag.description">{{ ag.description }}</div>
+                <div class="ag-meta" *ngIf="ag.lambdaArn">
+                  <code>Lambda: ...{{ ag.lambdaArn | slice:-40 }}</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Group Editor -->
+            <div class="ag-editor" *ngIf="editingActionGroup">
+              <h4>{{ agEditId ? 'Edit' : 'Create' }} Action Group</h4>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Action Group Name</mat-label>
+                <input matInput [(ngModel)]="agEditName" placeholder="e.g., patient-operations">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Description</mat-label>
+                <input matInput [(ngModel)]="agEditDescription" placeholder="What this action group does">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Lambda Function ARN</mat-label>
+                <input matInput [(ngModel)]="agEditLambdaArn">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>OpenAPI Schema (JSON)</mat-label>
+                <textarea matInput [(ngModel)]="agEditSchema" rows="12" class="schema-textarea"></textarea>
+              </mat-form-field>
+              <div class="edit-actions">
+                <button mat-flat-button color="primary" (click)="saveActionGroup()" [disabled]="agSaving || !agEditName">
+                  <mat-spinner *ngIf="agSaving" diameter="18"></mat-spinner>
+                  {{ agEditId ? 'Update' : 'Create' }} & Re-prepare
+                </button>
+                <button mat-stroked-button (click)="cancelEditActionGroup()">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selectedAgent.knowledgeBases?.length">
+            <h4>Knowledge Bases ({{ selectedAgent.knowledgeBases.length }})</h4>
+            <div *ngFor="let kb of selectedAgent.knowledgeBases" class="kb-item">
+              <mat-icon>menu_book</mat-icon>
+              <span>{{ kb.knowledgeBaseId }}</span>
+              <span class="ag-state" [class]="kb.knowledgeBaseState === 'ENABLED' ? 'enabled' : 'disabled'">
+                {{ kb.knowledgeBaseState }}
+              </span>
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selectedAgent.aliases?.length">
+            <h4>Aliases</h4>
+            <div *ngFor="let alias of selectedAgent.aliases" class="kb-item">
+              <mat-icon>label</mat-icon>
+              <span>{{ alias.agentAliasName }} ({{ alias.agentAliasId }})</span>
+              <span class="ag-state enabled">{{ alias.agentAliasStatus }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 1: System Overview ═══ -->
+    <mat-tab label="Overview">
+      <div class="tab-content">
+        <h2>Architecture Overview</h2>
+        <p class="overview-desc">
+          Fully serverless, event-driven architecture on AWS. Zero servers to manage,
+          automatic scaling, pay-per-use billing, and infrastructure defined as code.
+        </p>
+
+        <div class="arch-diagram">
+          <div class="diagram-row">
+            <div class="diagram-box client">
+              <mat-icon>devices</mat-icon>
+              <strong>Client Layer</strong>
+              <span>Angular 17 SPA</span>
+              <span>Embeddable JS Widget</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box cdn">
+              <mat-icon>cloud</mat-icon>
+              <strong>CDN / Edge</strong>
+              <span>CloudFront</span>
+              <span>S3 Static Hosting</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box gateway">
+              <mat-icon>api</mat-icon>
+              <strong>API Gateway</strong>
+              <span>HTTP API</span>
+              <span>Cognito JWT Auth</span>
+            </div>
+          </div>
+
+          <div class="diagram-connector">
+            <mat-icon>arrow_downward</mat-icon>
+          </div>
+
+          <div class="diagram-row">
+            <div class="diagram-box compute">
+              <mat-icon>memory</mat-icon>
+              <strong>Compute</strong>
+              <span>Lambda (API, 30s)</span>
+              <span>Lambda (Provision, 5m)</span>
+              <span>Lambda (Test Runner, 15m)</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box ai">
+              <mat-icon>psychology</mat-icon>
+              <strong>AI / ML</strong>
+              <span>Bedrock Agents</span>
+              <span>Claude Haiku / Sonnet</span>
+              <span>Titan Embeddings</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box data">
+              <mat-icon>storage</mat-icon>
+              <strong>Data Layer</strong>
+              <span>DynamoDB (18 tables)</span>
+              <span>S3 (content + vectors)</span>
+              <span>Knowledge Bases</span>
+            </div>
+          </div>
+        </div>
+
+        <h3>Key Design Principles</h3>
+        <div class="principles-grid">
+          <mat-card>
+            <mat-icon>auto_awesome</mat-icon>
+            <h4>Fully Serverless</h4>
+            <p>No EC2, no ECS, no containers. Lambda + DynamoDB + S3 = zero server management.</p>
+          </mat-card>
+          <mat-card>
+            <mat-icon>trending_up</mat-icon>
+            <h4>Auto-Scaling</h4>
+            <p>Every service scales automatically. DynamoDB on-demand, Lambda concurrency, CloudFront edge caching.</p>
+          </mat-card>
+          <mat-card>
+            <mat-icon>code</mat-icon>
+            <h4>Infrastructure as Code</h4>
+            <p>Entire stack in a single SAM template.yaml — reproducible, auditable, version-controlled.</p>
+          </mat-card>
+          <mat-card>
+            <mat-icon>security</mat-icon>
+            <h4>Security by Default</h4>
+            <p>Cognito auth, RBAC, tenant isolation, encrypted at rest and in transit, AI guardrails.</p>
+          </mat-card>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 2: Tech Stack ═══ -->
+    <mat-tab label="Tech Stack">
+      <div class="tab-content">
+        <h2>Technology Stack</h2>
+        <table mat-table [dataSource]="techStack" class="full-width-table">
+          <ng-container matColumnDef="service">
+            <th mat-header-cell *matHeaderCellDef>Service</th>
+            <td mat-cell *matCellDef="let row">{{ row.service }}</td>
+          </ng-container>
+          <ng-container matColumnDef="purpose">
+            <th mat-header-cell *matHeaderCellDef>Purpose</th>
+            <td mat-cell *matCellDef="let row">{{ row.purpose }}</td>
+          </ng-container>
+          <ng-container matColumnDef="config">
+            <th mat-header-cell *matHeaderCellDef>Configuration</th>
+            <td mat-cell *matCellDef="let row">{{ row.config }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="techColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: techColumns;"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 3: Scaling & Capacity ═══ -->
+    <mat-tab label="Scaling & Capacity">
+      <div class="tab-content">
+        <h2>Capacity Estimates — 8,000 Encompass Workstations</h2>
+
+        <div class="capacity-cards">
+          <mat-card class="capacity-card highlight">
+            <div class="capacity-number">8,000</div>
+            <div class="capacity-label">Total Workstations</div>
+          </mat-card>
+          <mat-card class="capacity-card">
+            <div class="capacity-number">800 – 1,200</div>
+            <div class="capacity-label">Concurrent Users (10-15%)</div>
+          </mat-card>
+          <mat-card class="capacity-card">
+            <div class="capacity-number">80 – 120</div>
+            <div class="capacity-label">Concurrent Chatters</div>
+          </mat-card>
+          <mat-card class="capacity-card">
+            <div class="capacity-number">~50-80</div>
+            <div class="capacity-label">Peak API req/sec</div>
+          </mat-card>
+        </div>
+
+        <h3>Detailed Breakdown</h3>
+        <table mat-table [dataSource]="capacityRows" class="full-width-table">
+          <ng-container matColumnDef="metric">
+            <th mat-header-cell *matHeaderCellDef>Metric</th>
+            <td mat-cell *matCellDef="let row">{{ row.metric }}</td>
+          </ng-container>
+          <ng-container matColumnDef="value">
+            <th mat-header-cell *matHeaderCellDef>Value</th>
+            <td mat-cell *matCellDef="let row"><strong>{{ row.value }}</strong></td>
+          </ng-container>
+          <ng-container matColumnDef="notes">
+            <th mat-header-cell *matHeaderCellDef>Notes</th>
+            <td mat-cell *matCellDef="let row">{{ row.notes }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="capacityColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: capacityColumns;"></tr>
+        </table>
+
+        <h3>AWS Service Limits</h3>
+        <table mat-table [dataSource]="serviceLimits" class="full-width-table">
+          <ng-container matColumnDef="service">
+            <th mat-header-cell *matHeaderCellDef>Service</th>
+            <td mat-cell *matCellDef="let row">{{ row.service }}</td>
+          </ng-container>
+          <ng-container matColumnDef="limit">
+            <th mat-header-cell *matHeaderCellDef>Limit</th>
+            <td mat-cell *matCellDef="let row">{{ row.limit }}</td>
+          </ng-container>
+          <ng-container matColumnDef="current">
+            <th mat-header-cell *matHeaderCellDef>Current</th>
+            <td mat-cell *matCellDef="let row">{{ row.current }}</td>
+          </ng-container>
+          <ng-container matColumnDef="recommended">
+            <th mat-header-cell *matHeaderCellDef>Recommended</th>
+            <td mat-cell *matCellDef="let row">
+              <span [class.needs-action]="row.recommended.includes('request')">{{ row.recommended }}</span>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="limitsColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: limitsColumns;"></tr>
+        </table>
+
+        <mat-card class="callout">
+          <mat-icon>info</mat-icon>
+          <div>
+            <strong>Bedrock limits are soft limits.</strong> Submit a Service Quotas request in the AWS Console
+            to increase invocation rates for Claude Haiku and Sonnet models. Typical turnaround: 1-3 business days.
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 4: Security ═══ -->
+    <mat-tab label="Security">
+      <div class="tab-content">
+        <h2>Security Architecture</h2>
+
+        <div class="security-grid">
+          <mat-card *ngFor="let s of securityItems" class="security-card">
+            <mat-icon [class]="'security-icon'">{{ s.icon }}</mat-icon>
+            <h4>{{ s.title }}</h4>
+            <p>{{ s.detail }}</p>
+          </mat-card>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 5: Agent & LLM Architecture ═══ -->
+    <mat-tab label="Agent & LLMs">
+      <div class="tab-content">
+        <h2>Agent Architecture — Encompass Larry</h2>
+        <p class="overview-desc">
+          Bedrock Agent with extended thinking, multi-tool orchestration, and RAG knowledge retrieval.
+          The agent autonomously selects tools, writes SQL, generates reports, and schedules delivery.
+        </p>
+
+        <div class="arch-diagram">
+          <div class="diagram-row">
+            <div class="diagram-box client">
+              <mat-icon>chat</mat-icon>
+              <strong>User Query</strong>
+              <span>"Show me revenue by month and email it weekly"</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box ai">
+              <mat-icon>psychology</mat-icon>
+              <strong>Bedrock Agent</strong>
+              <span>Claude Sonnet 4.6</span>
+              <span>Extended Thinking</span>
+              <span>Tool Selection</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box compute">
+              <mat-icon>build</mat-icon>
+              <strong>Action Groups</strong>
+              <span>10 Snowflake tools</span>
+              <span>+ schedule_report</span>
+              <span>+ Knowledge Base RAG</span>
+            </div>
+          </div>
+
+          <div class="diagram-connector">
+            <mat-icon>arrow_downward</mat-icon>
+          </div>
+
+          <div class="diagram-row">
+            <div class="diagram-box data">
+              <mat-icon>storage</mat-icon>
+              <strong>Snowflake</strong>
+              <span>DEV_ANALYTICS</span>
+              <span>118 views + 74 tables</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box cdn">
+              <mat-icon>insert_chart</mat-icon>
+              <strong>Reports & Charts</strong>
+              <span>Excel / CSV / SVG</span>
+              <span>reports.wubba.ai</span>
+            </div>
+            <mat-icon class="arrow">arrow_forward</mat-icon>
+            <div class="diagram-box gateway">
+              <mat-icon>email</mat-icon>
+              <strong>Delivery</strong>
+              <span>SES Email</span>
+              <span>Twilio SMS</span>
+              <span>EventBridge Scheduler</span>
+            </div>
+          </div>
+        </div>
+
+        <h3>LLM Models</h3>
+        <table mat-table [dataSource]="llmModels" class="full-width-table">
+          <ng-container matColumnDef="model">
+            <th mat-header-cell *matHeaderCellDef>Model</th>
+            <td mat-cell *matCellDef="let row"><strong>{{ row.model }}</strong></td>
+          </ng-container>
+          <ng-container matColumnDef="provider">
+            <th mat-header-cell *matHeaderCellDef>Provider</th>
+            <td mat-cell *matCellDef="let row">{{ row.provider }}</td>
+          </ng-container>
+          <ng-container matColumnDef="usage">
+            <th mat-header-cell *matHeaderCellDef>Usage</th>
+            <td mat-cell *matCellDef="let row">{{ row.usage }}</td>
+          </ng-container>
+          <ng-container matColumnDef="thinking">
+            <th mat-header-cell *matHeaderCellDef>Thinking</th>
+            <td mat-cell *matCellDef="let row">{{ row.thinking }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="llmColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: llmColumns;"></tr>
+        </table>
+
+        <h3>Agent Tool Inventory</h3>
+        <table mat-table [dataSource]="agentTools" class="full-width-table">
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Category</th>
+            <td mat-cell *matCellDef="let row"><strong>{{ row.category }}</strong></td>
+          </ng-container>
+          <ng-container matColumnDef="tools">
+            <th mat-header-cell *matHeaderCellDef>Tools</th>
+            <td mat-cell *matCellDef="let row"><code>{{ row.tools }}</code></td>
+          </ng-container>
+          <ng-container matColumnDef="source">
+            <th mat-header-cell *matHeaderCellDef>Source</th>
+            <td mat-cell *matCellDef="let row">{{ row.source }}</td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let row">{{ row.description }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="toolColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: toolColumns;"></tr>
+        </table>
+
+        <h3>Data Stores</h3>
+        <table mat-table [dataSource]="dataStores" class="full-width-table">
+          <ng-container matColumnDef="store">
+            <th mat-header-cell *matHeaderCellDef>Store</th>
+            <td mat-cell *matCellDef="let row"><strong>{{ row.store }}</strong></td>
+          </ng-container>
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let row">{{ row.type }}</td>
+          </ng-container>
+          <ng-container matColumnDef="content">
+            <th mat-header-cell *matHeaderCellDef>Content</th>
+            <td mat-cell *matCellDef="let row">{{ row.content }}</td>
+          </ng-container>
+          <ng-container matColumnDef="retention">
+            <th mat-header-cell *matHeaderCellDef>Retention</th>
+            <td mat-cell *matCellDef="let row">{{ row.retention }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="dataColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: dataColumns;"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 6: Data Flow ═══ -->
+    <mat-tab label="Data Flow">
+      <div class="tab-content">
+        <h2>Request Lifecycle</h2>
+
+        <div class="flow-section">
+          <h3>Admin Configurator (Authenticated)</h3>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <strong>Angular SPA</strong>
+                <span>User signs in via Cognito, receives JWT tokens</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <strong>API Gateway</strong>
+                <span>Validates JWT, extracts user identity, routes to Lambda</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <strong>Lambda (API)</strong>
+                <span>Checks RBAC role, processes request, queries DynamoDB</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <strong>DynamoDB</strong>
+                <span>Returns tenant-scoped data (filtered by organizationId)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="flow-section">
+          <h3>Chat Widget (Public, API Key Auth)</h3>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <strong>Embedded Widget</strong>
+                <span>JS loaded on host page, sends API key + message</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <strong>API Gateway</strong>
+                <span>No JWT required — widget endpoints bypass Cognito auth</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <strong>Lambda (API)</strong>
+                <span>Validates API key, looks up assistant config, invokes Bedrock Agent</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <strong>Bedrock Agent</strong>
+                <span>Retrieves from Knowledge Base, generates response via Claude model</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <strong>Response</strong>
+                <span>Streamed back through API Gateway to widget in real-time</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="flow-section">
+          <h3>Scheduled Report Delivery</h3>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <strong>EventBridge Scheduler</strong>
+                <span>Fires cron trigger at scheduled time (timezone-aware)</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <strong>Provision Lambda</strong>
+                <span>Reads schedule from DynamoDB, creates run record</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <strong>Snowflake Lambda</strong>
+                <span>Executes SQL, generates Excel/CSV, uploads to S3</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <strong>SES / Twilio</strong>
+                <span>Delivers secure download link via email/SMS (no PHI in message body)</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <strong>Recipient</strong>
+                <span>Clicks link → reports.wubba.ai CDN → S3 download (7-day retention)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="flow-section">
+          <h3>Screen Context (Widget URL Matching)</h3>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <strong>Widget Init</strong>
+                <span>On page load, widget sends current URL + API key</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <strong>Lambda</strong>
+                <span>Matches URL against screen mapping regex patterns</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <strong>Response</strong>
+                <span>Returns contextual videos, help articles, and trending questions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ═══ Tab 6: Feature Matrix ═══ -->
+    <mat-tab label="Features">
+      <div class="tab-content">
+        <h2>Feature Matrix</h2>
+        <table mat-table [dataSource]="features" class="full-width-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Feature</th>
+            <td mat-cell *matCellDef="let row"><strong>{{ row.name }}</strong></td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let row">{{ row.description }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip-set>
+                <mat-chip [class]="'status-' + row.status">{{ row.status | uppercase }}</mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="featureColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: featureColumns;"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

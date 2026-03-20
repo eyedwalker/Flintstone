@@ -262,6 +262,7 @@ export async function processChatJob(job: {
   assistantId: string; tenantId: string; userQuery: string;
 }): Promise<void> {
   try {
+    const startMs = Date.now();
     const agentResult = await bedrockChat.invokeAgent(
       job.agentId,
       job.agentAliasId,
@@ -270,12 +271,16 @@ export async function processChatJob(job: {
       job.roleFilter,
       job.tenantId,
     );
+    const latencyMs = Date.now() - startMs;
 
     const reply = agentResult.text;
 
     // Write metrics
     let metricId: string | undefined;
     try {
+      const { classifyIntent } = await import('./chat');
+      const intent = classifyIntent(agentResult.actionGroupCalls);
+
       metricId = uuidv4();
       await ddb.putItem(METRICS_TABLE, {
         id: metricId,
@@ -284,6 +289,8 @@ export async function processChatJob(job: {
         sessionId: job.sessionId,
         query: job.userQuery,
         responseLength: reply.length,
+        latencyMs,
+        intent,
         guardrailTriggered: false,
         videoCited: /video|vimeo|youtube/i.test(reply),
         satisfied: null,

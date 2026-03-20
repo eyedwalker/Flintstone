@@ -1,0 +1,359 @@
+openapi: 3.0.3
+info:
+  title: Front Office Agent Actions
+  description: Action group for the Encompass Assist Front Office agent — appointments, patient lookup, SMS, and email.
+  version: "1.0.0"
+
+paths:
+  /searchPatients:
+    post:
+      operationId: searchPatients
+      summary: Search for a patient by phone number or name.
+      description: Look up patient records in Eyefinity by phone number, name, or both. Returns matching patients for verification.
+      responses:
+        "200":
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  found:
+                    type: boolean
+                    description: Whether patients were found
+                  patients:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+      parameters:
+        - name: phone
+          in: query
+          description: Patient phone number (any format — digits will be extracted)
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Patient full name (first and last)
+          schema:
+            type: string
+
+  /getOffices:
+    post:
+      operationId: getOffices
+      summary: List available office locations.
+      description: Get all office locations for this practice.
+      responses:
+        "200":
+          description: List of offices.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+
+  /getProviders:
+    post:
+      operationId: getProviders
+      summary: List doctors and providers at a specific office.
+      description: Get available providers (doctors, optometrists) at a given office location.
+      responses:
+        "200":
+          description: List of providers.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+      parameters:
+        - name: officeId
+          in: query
+          required: true
+          description: The office ID to get providers for
+          schema:
+            type: string
+
+  /getAvailableSlots:
+    post:
+      operationId: getAvailableSlots
+      summary: Find available appointment time slots.
+      description: Search for open appointment slots for a specific provider at a specific office on or near a given date.
+      responses:
+        "200":
+          description: Available slots.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                  slots:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        time:
+                          type: string
+      parameters:
+        - name: officeId
+          in: query
+          required: true
+          description: The office ID
+          schema:
+            type: string
+        - name: providerId
+          in: query
+          required: true
+          description: The provider or doctor ID
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          description: Target date in YYYY-MM-DD format
+          schema:
+            type: string
+        - name: preferredTime
+          in: query
+          description: Time preference such as morning or afternoon
+          schema:
+            type: string
+
+  /bookAppointment:
+    post:
+      operationId: bookAppointment
+      summary: Book an appointment for a patient.
+      description: Create a new appointment in Eyefinity. Requires office, provider, date, and time.
+      responses:
+        "200":
+          description: Booking result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  booked:
+                    type: boolean
+                  appointment:
+                    type: object
+                    properties:
+                      appointmentId:
+                        type: string
+                      date:
+                        type: string
+                      time:
+                        type: string
+      parameters:
+        - name: patientId
+          in: query
+          description: Patient ID from search results (optional for new patients)
+          schema:
+            type: string
+        - name: officeId
+          in: query
+          required: true
+          description: Office ID where the appointment will be
+          schema:
+            type: string
+        - name: providerId
+          in: query
+          required: true
+          description: Provider or doctor ID
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          description: Appointment date in YYYY-MM-DD format
+          schema:
+            type: string
+        - name: time
+          in: query
+          required: true
+          description: Appointment time such as 14:30 or 2:30 PM
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Appointment type such as Eye Exam or Contact Lens Fitting
+          schema:
+            type: string
+        - name: notes
+          in: query
+          description: Additional notes for the appointment
+          schema:
+            type: string
+
+  /sendSms:
+    post:
+      operationId: sendSms
+      summary: Send an SMS text message to a phone number.
+      description: Send a text message to a patient phone number for reminders, confirmations, or directions.
+      responses:
+        "200":
+          description: SMS send result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  messageId:
+                    type: string
+      parameters:
+        - name: to
+          in: query
+          required: true
+          description: Recipient phone number
+          schema:
+            type: string
+        - name: message
+          in: query
+          required: true
+          description: The text message content
+          schema:
+            type: string
+
+  /sendEmail:
+    post:
+      operationId: sendEmail
+      summary: Send an email to a patient or staff member.
+      description: Send an email for appointment confirmations, forms, or longer communications.
+      responses:
+        "200":
+          description: Email send result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  messageId:
+                    type: string
+      parameters:
+        - name: to
+          in: query
+          required: true
+          description: Recipient email address
+          schema:
+            type: string
+        - name: subject
+          in: query
+          required: true
+          description: Email subject line
+          schema:
+            type: string
+        - name: body
+          in: query
+          required: true
+          description: Email body text
+          schema:
+            type: string
+
+  /scheduleReport:
+    post:
+      operationId: scheduleReport
+      summary: Schedule a recurring report to be generated and delivered via email or SMS.
+      description: |
+        Create a scheduled report that runs automatically on a daily, weekly, or monthly basis.
+        The report is generated from a SQL query against the Snowflake analytics database and
+        delivered as a secure download link via email and/or SMS. Only SELECT queries are allowed.
+      responses:
+        "200":
+          description: Schedule creation result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  scheduleId:
+                    type: string
+                  message:
+                    type: string
+      parameters:
+        - name: reportTitle
+          in: query
+          required: true
+          description: Human-readable name for the report (e.g., "Weekly Revenue Summary")
+          schema:
+            type: string
+        - name: frequency
+          in: query
+          required: true
+          description: How often to run — daily, weekly, or monthly
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+        - name: sql
+          in: query
+          required: true
+          description: The SELECT SQL query to run against Snowflake for the report data
+          schema:
+            type: string
+        - name: emailRecipients
+          in: query
+          description: Comma-separated email addresses to deliver the report to
+          schema:
+            type: string
+        - name: smsRecipients
+          in: query
+          description: Comma-separated phone numbers to send download link via SMS
+          schema:
+            type: string
+        - name: dayOfWeek
+          in: query
+          description: For weekly schedules — which day (monday, tuesday, etc.)
+          schema:
+            type: string
+        - name: dayOfMonth
+          in: query
+          description: For monthly schedules — day of month (1-28)
+          schema:
+            type: string
+        - name: time
+          in: query
+          description: Time of day to run in HH:MM format (default 08:00)
+          schema:
+            type: string
+        - name: timezone
+          in: query
+          description: Timezone for the schedule (default America/Los_Angeles)
+          schema:
+            type: string
+        - name: format
+          in: query
+          description: Report file format — excel or csv (default excel)
+          schema:
+            type: string
+            enum: [excel, csv]

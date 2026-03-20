@@ -66,9 +66,10 @@ interface ITestResult {
   testCaseId: string;
   tenantId: string;
   status: string;
-  turns: unknown[];
-  aiEvaluation: unknown;
+  turns: Array<{ actualResponse: string; [k: string]: unknown }>;
+  aiEvaluation: { overallScore: number; metrics: Record<string, number>; reasoning: string; issues: string[] };
   userReview?: unknown;
+  trainerAnnotation?: { corrections: unknown[]; trainingStatus: string; annotatedBy: string; annotatedAt: string };
   durationMs: number;
   sessionId: string;
   createdAt: string;
@@ -169,6 +170,15 @@ export async function handleTestSuites(
     // Extract suiteId from path like /test-suites/:suiteId/cases/...
     const suiteIdMatch = path.match(/\/test-suites\/([^/]+)\//);
     const suiteId = suiteIdMatch?.[1];
+
+    // GET /test-suites/:suiteId/runs — list ALL runs for this suite
+    if (method === 'GET' && suiteId && path.endsWith('/runs')) {
+      const runs = await ddb.queryItems<ITestRun>(
+        TEST_RUNS_TABLE, 'suiteId = :s', { ':s': suiteId }, undefined, 'suiteId-index',
+      );
+      runs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return ok(runs);
+    }
 
     // GET /test-suites/:suiteId/latest-run — find most recent run for this suite
     if (method === 'GET' && suiteId && path.endsWith('/latest-run')) {
@@ -385,6 +395,73 @@ export async function handleTestRuns(
         },
       });
       return ok({ success: true });
+    }
+
+    // PUT /test-runs/:runId/results/:resultId/annotation — save trainer correction
+    if (method === 'PUT' && id && path.includes('/annotation')) {
+      const resultIdMatch = path.match(/\/results\/([^/]+)\/annotation/);
+      const resultId = resultIdMatch?.[1];
+      if (!resultId) return badRequest('resultId required');
+
+      const result = await ddb.getItem<ITestResult>(TEST_RESULTS_TABLE, { id: resultId });
+      if (!result || result.tenantId !== tenantId) return notFound();
+
+      const corrections = body['corrections'] as Array<{
+        turnIndex: number;
+        idealResponse: string;
+        correctionNotes?: string;
+        retrievalContext?: string;
+      }>;
+      const trainingStatus = (body['trainingStatus'] as string) || 'corrected';
+
+      await ddb.updateItem(TEST_RESULTS_TABLE, { id: resultId }, {
+        trainerAnnotation: {
+          corrections: corrections || [],
+          trainingStatus,
+          annotatedBy: ctx.userId,
+          annotatedAt: new Date().toISOString(),
+        },
+      });
+      return ok({ success: true });
+    }
+
+    // POST /test-runs/:runId/bulk-approve — approve all results above score threshold
+    if (method === 'POST' && id && path.endsWith('/bulk-approve')) {
+      const threshold = (body['threshold'] as number) ?? 80;
+      const run = await ddb.getItem<ITestRun>(TEST_RUNS_TABLE, { id });
+      if (!run || run.tenantId !== tenantId) return notFound();
+
+      const results = await ddb.queryItems<ITestResult>(
+        TEST_RESULTS_TABLE, 'runId = :r', { ':r': id }, undefined, 'runId-index',
+      );
+
+      let approved = 0;
+      for (const r of results) {
+        if (r.aiEvaluation?.overallScore >= threshold && !r.trainerAnnotation) {
+          // Auto-approve: use the actual response as the ideal response (it scored high enough)
+          const corrections = r.turns.map((t: any, i: number) => ({
+            turnIndex: i,
+            idealResponse: t.actualResponse,
+          }));
+          await ddb.updateItem(TEST_RESULTS_TABLE, { id: r.id }, {
+            trainerAnnotation: {
+              corrections,
+              trainingStatus: 'approved',
+              annotatedBy: ctx.userId,
+              annotatedAt: new Date().toISOString(),
+            },
+          });
+          approved++;
+        }
+      }
+
+      // Update run with approval count
+      await ddb.updateItem(TEST_RUNS_TABLE, { id }, {
+        approvedForTraining: approved,
+        updatedAt: new Date().toISOString(),
+      });
+
+      return ok({ approved, total: results.length });
     }
 
     // POST /test-runs/:runId/analyze — trigger AI improvement analysis

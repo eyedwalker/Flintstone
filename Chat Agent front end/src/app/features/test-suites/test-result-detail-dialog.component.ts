@@ -5,6 +5,9 @@ import { TestSuiteManager } from '../../../lib/managers/test-suite.manager';
 import {
   ITestResult,
   IUserReview,
+  ITrainerAnnotation,
+  ITrainerCorrection,
+  TrainingStatus,
   REVIEW_TAGS,
   ReviewTag,
 } from '../../../lib/models/test-suite.model';
@@ -64,6 +67,24 @@ export interface IResultDetailData {
                   <span class="assertion-type">{{ a.type }}</span>
                   <span class="assertion-detail">{{ a.detail }}</span>
                 </div>
+              </div>
+
+              <!-- Trainer Correction -->
+              <div class="trainer-correction">
+                <div class="message-label correction-label">
+                  <mat-icon class="small-icon">school</mat-icon> Ideal Response (Training)
+                </div>
+                <textarea class="correction-textarea"
+                          rows="4"
+                          [value]="getCorrection(i)?.idealResponse ?? turn.actualResponse"
+                          (input)="updateCorrection(i, $event)"
+                          placeholder="Edit to provide the ideal response for training..."></textarea>
+                <mat-form-field appearance="outline" class="correction-notes">
+                  <mat-label>Correction Notes</mat-label>
+                  <input matInput [value]="getCorrection(i)?.correctionNotes ?? ''"
+                         (input)="updateCorrectionNotes(i, $event)"
+                         placeholder="Why was this corrected?">
+                </mat-form-field>
               </div>
             </div>
           </div>
@@ -129,6 +150,22 @@ export interface IResultDetailData {
                   [disabled]="saving || review.rating === 0">
             <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
             {{ result.userReview ? 'Update Review' : 'Submit Review' }}
+          </button>
+
+          <mat-divider></mat-divider>
+
+          <h3>Training Status</h3>
+          <div class="training-status-controls">
+            <mat-button-toggle-group [(value)]="trainingStatus">
+              <mat-button-toggle value="approved">Approved</mat-button-toggle>
+              <mat-button-toggle value="corrected">Corrected</mat-button-toggle>
+              <mat-button-toggle value="excluded">Excluded</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+          <button mat-flat-button color="accent" (click)="saveAnnotation()"
+                  [disabled]="savingAnnotation" class="save-annotation-btn">
+            <mat-spinner *ngIf="savingAnnotation" diameter="18"></mat-spinner>
+            Save Training Data
           </button>
         </div>
 
@@ -199,6 +236,23 @@ export interface IResultDetailData {
     .status-passed { color: #2e7d32; }
     .status-failed { color: #c62828; }
     .status-error { color: #e65100; }
+
+    .trainer-correction {
+      margin-top: 8px; padding: 8px; border: 1px dashed #1565c0; border-radius: 8px; background: #f3f8ff;
+    }
+    .correction-label {
+      display: flex; align-items: center; gap: 4px; color: #1565c0;
+      .small-icon { font-size: 14px; width: 14px; height: 14px; }
+    }
+    .correction-textarea {
+      width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 6px; font-family: inherit; font-size: 0.85rem; resize: vertical;
+      margin-top: 4px;
+    }
+    .correction-notes { width: 100%; margin-top: 4px; }
+
+    .training-status-controls { margin-bottom: 12px; }
+    .save-annotation-btn { width: 100%; }
   `],
 })
 export class TestResultDetailDialogComponent {
@@ -208,7 +262,12 @@ export class TestResultDetailDialogComponent {
   selectedTags = new Set<ReviewTag>();
   reviewTags = REVIEW_TAGS;
   saving = false;
+  savingAnnotation = false;
   updated = false;
+
+  // Trainer correction state
+  corrections: Map<number, ITrainerCorrection> = new Map();
+  trainingStatus: TrainingStatus = 'unreviewed';
 
   constructor(
     public dialogRef: MatDialogRef<TestResultDetailDialogComponent>,
@@ -224,6 +283,14 @@ export class TestResultDetailDialogComponent {
       this.review.rating = this.result.userReview.rating;
       this.review.feedback = this.result.userReview.feedback;
       this.result.userReview.tags.forEach(t => this.selectedTags.add(t as ReviewTag));
+    }
+
+    // Pre-fill trainer corrections if they exist
+    if (this.result.trainerAnnotation) {
+      this.trainingStatus = this.result.trainerAnnotation.trainingStatus;
+      this.result.trainerAnnotation.corrections.forEach(c =>
+        this.corrections.set(c.turnIndex, c),
+      );
     }
   }
 
@@ -280,6 +347,57 @@ export class TestResultDetailDialogComponent {
       this.snackBar.open('Review saved', '', { duration: 2000 });
     } else {
       this.snackBar.open('Failed to save review', 'Dismiss', { duration: 5000 });
+    }
+  }
+
+  // ── Trainer Correction Methods ──────────────────────────────────────────
+
+  getCorrection(turnIndex: number): ITrainerCorrection | undefined {
+    return this.corrections.get(turnIndex);
+  }
+
+  updateCorrection(turnIndex: number, event: Event): void {
+    const value = (event.target as HTMLTextAreaElement).value;
+    const existing = this.corrections.get(turnIndex);
+    this.corrections.set(turnIndex, {
+      ...(existing ?? { turnIndex }),
+      turnIndex,
+      idealResponse: value,
+    });
+  }
+
+  updateCorrectionNotes(turnIndex: number, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    const existing = this.corrections.get(turnIndex);
+    if (existing) {
+      existing.correctionNotes = value;
+    } else {
+      this.corrections.set(turnIndex, {
+        turnIndex,
+        idealResponse: this.result.turns[turnIndex]?.actualResponse ?? '',
+        correctionNotes: value,
+      });
+    }
+  }
+
+  async saveAnnotation(): Promise<void> {
+    this.savingAnnotation = true;
+    const annotation: ITrainerAnnotation = {
+      corrections: [...this.corrections.values()],
+      trainingStatus: this.trainingStatus,
+      annotatedBy: '',
+      annotatedAt: new Date().toISOString(),
+    };
+
+    const res = await this.tsManager.saveAnnotation(this.runId, this.result.id, annotation);
+    this.savingAnnotation = false;
+
+    if (res.success) {
+      this.result.trainerAnnotation = annotation;
+      this.updated = true;
+      this.snackBar.open('Training data saved', '', { duration: 2000 });
+    } else {
+      this.snackBar.open('Failed to save training data', 'Dismiss', { duration: 5000 });
     }
   }
 }

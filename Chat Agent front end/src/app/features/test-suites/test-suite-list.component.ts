@@ -24,6 +24,11 @@ export class TestSuiteListComponent implements OnInit, OnDestroy {
   activeRunSuiteId = '';
   private pollTimer: any;
 
+  // Run history
+  expandedSuiteId = '';
+  suiteRuns: ITestRun[] = [];
+  loadingHistory = false;
+
   constructor(
     private tsManager: TestSuiteManager,
     private assistantManager: AssistantManager,
@@ -174,5 +179,23 @@ export class TestSuiteListComponent implements OnInit, OnDestroy {
     if (score >= 80) return 'score-high';
     if (score >= 60) return 'score-medium';
     return 'score-low';
+  }
+
+  async toggleRunHistory(suite: ITestSuite, event: Event): Promise<void> {
+    event.stopPropagation();
+    if (this.expandedSuiteId === suite.id) {
+      this.expandedSuiteId = '';
+      return;
+    }
+    this.expandedSuiteId = suite.id;
+    this.loadingHistory = true;
+    const res = await this.tsManager.listRuns(suite.id);
+    this.suiteRuns = res.data ?? [];
+    this.loadingHistory = false;
+  }
+
+  viewRunResults(runId: string, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/test-suites', 'runs', runId]);
   }
 }

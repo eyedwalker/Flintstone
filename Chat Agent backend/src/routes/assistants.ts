@@ -75,9 +75,8 @@ export async function handleAssistants(
       return ok(items);
     }
 
-    // GET /assistants/:id — viewer+ (but not sub-paths like /knowledge-bases)
+    // GET /assistants/:id — any authenticated user (testers need this for demo widget)
     if (method === 'GET' && id && !path.includes('/knowledge-bases')) {
-      if (!requireRole(ctx, 'viewer')) return forbidden('Insufficient role');
       const item = await ddb.getItem<IAssistant>(TABLE, { id });
       if (!item) return notFound('Assistant not found');
       if (!assertOwnership(item.tenantId, tenantId)) return forbidden();
