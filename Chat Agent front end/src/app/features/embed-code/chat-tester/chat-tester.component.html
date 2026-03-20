@@ -57,6 +57,11 @@
       </div>
     </div>
     <div class="chat-input-row">
+      <button mat-icon-button type="button" class="support-btn"
+        (click)="requestSupport()" [disabled]="chatLoading"
+        matTooltip="Request human support">
+        <mat-icon>support_agent</mat-icon>
+      </button>
       <mat-form-field appearance="outline" class="chat-field">
         <input matInput [(ngModel)]="chatInput" (keydown)="onChatKeydown($event)"
           placeholder="Type a message..." [disabled]="chatLoading" autocomplete="off">

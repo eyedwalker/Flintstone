@@ -199,16 +199,29 @@ async function transferToLiveAgent(tenantId: string, params: Record<string, stri
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function getEscalationConfig(tenantId: string): Promise<IEscalationConfig | null> {
-  // Find assistant for this tenant to get escalation config
+  // Find ANY assistant for this tenant that has escalation configured
   const assistants = await ddb.queryItems<any>(
     ASSISTANTS_TABLE, 'tenantId = :t', { ':t': tenantId }, undefined, 'tenantId-index',
   );
   if (!assistants.length) return null;
 
-  const config = await ddb.getItem<IEscalationConfig>(
-    ESCALATION_TABLE, { assistantId: assistants[0].id },
-  );
-  return config;
+  // Check each assistant for escalation config
+  for (const assistant of assistants) {
+    const config = await ddb.getItem<IEscalationConfig>(
+      ESCALATION_TABLE, { assistantId: assistant.id },
+    );
+    if (config && config.enabled) return config;
+  }
+
+  // Fallback: return first config even if not enabled
+  for (const assistant of assistants) {
+    const config = await ddb.getItem<IEscalationConfig>(
+      ESCALATION_TABLE, { assistantId: assistant.id },
+    );
+    if (config) return config;
+  }
+
+  return null;
 }
 
 async function getSalesforceToken(config: IEscalationConfig) {

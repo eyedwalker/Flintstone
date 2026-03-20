@@ -32,23 +32,25 @@ export interface IAgentDefinition {
 
 const DEFAULT_REGISTRY: Omit<IAgentDefinition, 'tenantId'>[] = [
   {
-    id: 'analytics',
-    name: 'Encompass Larry',
+    id: 'escalation',
+    name: 'Support Escalation',
     description:
-      'Analytics and knowledge base agent. Handles Snowflake data queries, charts, reports, ' +
-      'and VSP knowledge base lookups about Encompass practice management.',
+      'Support escalation agent. Handles frustrated users, creates Salesforce cases, ' +
+      'checks case status, transfers to live agents (Amelia), and follows up on open cases.',
     type: 'bedrock-agent',
-    bedrockAgentId: 'KBAQR27COL',
+    bedrockAgentId: 'WIE61RPMPV',
     bedrockAgentAliasId: 'TSTALIASID',
-    capabilities: ['snowflake-analytics', 'knowledge-base', 'reports', 'charts'],
+    capabilities: ['salesforce-cases', 'live-agent-transfer', 'conversation-summary'],
     routingKeywords: [
-      'report', 'chart', 'graph', 'query', 'data', 'analytics', 'revenue',
-      'patients', 'billing', 'invoice', 'claims', 'trend', 'metric',
-      'how do i', 'how to', 'what is', 'knowledge base', 'help with',
-      'encompass', 'vsp', 'eligibility', 'authorization',
+      'talk to someone', 'speak to a person', 'real person', 'live agent',
+      'transfer me', 'connect me', 'escalate', 'escalation',
+      'frustrated', 'not working', 'broken', 'unacceptable',
+      'manager', 'supervisor', 'complaint',
+      'support case', 'support ticket', 'case status', 'ticket status',
+      'create a case', 'open a ticket', 'file a complaint',
     ],
     enabled: true,
-    priority: 1,
+    priority: 1, // Highest priority — escalation intent wins over everything
   },
   {
     id: 'front-office',
@@ -61,32 +63,33 @@ const DEFAULT_REGISTRY: Omit<IAgentDefinition, 'tenantId'>[] = [
     bedrockAgentAliasId: 'TSTALIASID',
     capabilities: ['appointments', 'sms', 'email', 'patient-lookup', 'voice'],
     routingKeywords: [
-      'appointment', 'schedule', 'book', 'cancel', 'reschedule',
-      'sms', 'text message', 'email', 'send', 'contact',
-      'patient lookup', 'find patient', 'slot', 'available',
-      'reminder', 'confirm', 'provider', 'doctor', 'office',
+      'appointment', 'schedule an', 'book an', 'cancel appointment', 'reschedule',
+      'sms', 'text message', 'send email', 'send a text', 'contact patient',
+      'find patient', 'patient lookup', 'search patient',
+      'available slots', 'open slots', 'next available',
+      'reminder', 'confirm appointment', 'eye exam',
     ],
     enabled: true,
-    priority: 2,
+    priority: 2, // Second priority — explicit front office actions
   },
   {
-    id: 'escalation',
-    name: 'Support Escalation',
+    id: 'analytics',
+    name: 'Encompass Larry',
     description:
-      'Support escalation agent. Handles frustrated users, creates Salesforce cases, ' +
-      'checks case status, transfers to live agents (Amelia), and follows up on open cases.',
+      'Analytics and knowledge base agent. Handles Snowflake data queries, charts, reports, ' +
+      'and VSP knowledge base lookups about Encompass practice management.',
     type: 'bedrock-agent',
-    bedrockAgentId: 'WIE61RPMPV',
+    bedrockAgentId: 'KBAQR27COL',
     bedrockAgentAliasId: 'TSTALIASID',
-    capabilities: ['salesforce-cases', 'live-agent-transfer', 'conversation-summary'],
+    capabilities: ['snowflake-analytics', 'knowledge-base', 'reports', 'charts'],
     routingKeywords: [
-      'talk to someone', 'speak to a person', 'human', 'agent', 'help me',
-      'frustrated', 'not working', 'broken', 'escalate', 'manager',
-      'supervisor', 'complaint', 'support case', 'ticket', 'case status',
-      'follow up', 'live agent', 'transfer me', 'real person',
+      'report', 'chart', 'graph', 'analytics', 'revenue', 'sales',
+      'billing', 'invoice', 'trend', 'metric', 'dashboard',
+      'knowledge base', 'encompass', 'vsp', 'eligibility', 'authorization',
+      'show me', 'how many', 'total', 'average', 'compare',
     ],
     enabled: true,
-    priority: 3,
+    priority: 3, // Lowest — Larry is the default fallback for everything else
   },
 ];
 

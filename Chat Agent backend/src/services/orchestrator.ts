@@ -159,17 +159,24 @@ function matchByKeywords(
 
   for (const agent of agents) {
     let score = 0;
+    const matched: string[] = [];
     for (const keyword of agent.routingKeywords) {
       if (lower.includes(keyword.toLowerCase())) {
         score++;
+        matched.push(keyword);
       }
     }
-    if (score > bestScore) {
+    console.log(`[Orchestrator] ${agent.name}: score=${score} priority=${agent.priority} matched=[${matched.join(', ')}]`);
+    // Higher score wins. On tie, lower priority number wins (escalation=1 beats larry=3)
+    if (score > bestScore || (score === bestScore && score > 0 && agent.priority < (bestAgent?.priority ?? 999))) {
       bestScore = score;
       bestAgent = agent;
     }
   }
 
+  if (bestAgent) {
+    console.log(`[Orchestrator] Winner: ${bestAgent.name} (score=${bestScore})`);
+  }
   return bestAgent;
 }
 

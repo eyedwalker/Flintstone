@@ -100,6 +100,11 @@ export class ChatTesterComponent implements AfterViewChecked {
     this.chatSessionId = '';
   }
 
+  requestSupport(): void {
+    this.chatInput = 'I need to talk to a real person, please create a support case for me';
+    this.sendChatMessage();
+  }
+
   onChatKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
