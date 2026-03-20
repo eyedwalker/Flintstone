@@ -1,0 +1,1 @@
+{"note": "Full Amelia OpenAPI spec saved separately due to size. Key endpoints: POST /api/v1/oauth/token, POST /api/v1/conversations/connect, POST /api/v1/conversations/{id}/say, POST /api/v1/conversations/{id}/poll, POST /api/v1/conversations/{id}/close. Base URL: https://eyefinity.partners.amelia.com/AmeliaRest"}

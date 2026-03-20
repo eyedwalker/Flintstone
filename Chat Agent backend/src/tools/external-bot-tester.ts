@@ -15,7 +15,11 @@
  *     --questions "how do I add a patient,what is family checkout,how to invoice"
  */
 
-import { chromium, Browser, Page } from 'playwright';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import playwright from 'playwright';
+const chromium = playwright.chromium;
+type Page = any;
 import * as fs from 'fs';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
@@ -30,6 +34,12 @@ interface ITestConfig {
   delayBetween?: number;          // Delay between messages (ms, default 2000)
   maxMessages?: number;           // Max messages to send (default all)
   evaluate?: boolean;             // Run LLM-as-judge evaluation (default true)
+  // Login credentials (for apps behind auth)
+  login?: {
+    officeId?: string;
+    username?: string;
+    password?: string;
+  };
   // Amelia widget selectors (auto-detected, override if needed)
   selectors?: {
     input?: string;
@@ -40,9 +50,9 @@ interface ITestConfig {
 }
 
 const DEFAULT_SELECTORS = {
-  // Amelia widget selectors based on the screenshot
-  input: 'input[placeholder="Type message here"], textarea[placeholder="Type message here"]',
-  sendButton: 'button.send-button, button[aria-label="Send"], .amelia-send-btn, button:has(svg)',
+  // Amelia widget selectors
+  input: 'input[placeholder="Type message here"], textarea[placeholder="Type message here"], input[placeholder*="message" i], textarea[placeholder*="message" i]',
+  sendButton: 'button.send-button, button[aria-label="Send"], .amelia-send-btn',
   responseContainer: '.amelia-chat-messages, .chat-messages, .message-list',
   lastResponse: '.amelia-message:last-child .message-text, .bot-message:last-child, .assistant-message:last-child',
 };
@@ -116,9 +126,15 @@ async function runExternalBotTest(config: ITestConfig): Promise<ITestRunSummary>
   try {
     page = await browser.newPage();
 
-    // Navigate to the page with the widget
+    // Navigate to the page
     console.log(`   Navigating to ${config.url}...`);
     await page.goto(config.url, { waitUntil: 'networkidle', timeout: 60000 });
+
+    // Login if credentials provided
+    if (config.login?.username) {
+      console.log(`   Logging in as ${config.login.username}...`);
+      await loginToEncompass(page, config.login);
+    }
 
     // Wait for the Amelia widget to load
     console.log(`   Waiting for Amelia widget...`);
@@ -155,7 +171,7 @@ async function runExternalBotTest(config: ITestConfig): Promise<ITestRunSummary>
         if (!result.error && result.botResponse) {
           try {
             result.evaluation = await evaluateResponse(result.question, result.expectedBehavior, result.botResponse);
-            console.log(`     Score: ${result.evaluation.overallScore}/100 — "${result.question.slice(0, 40)}..."`);
+            console.log(`     Score: ${result.evaluation!.overallScore}/100 — "${result.question.slice(0, 40)}..."`);
           } catch (e) {
             console.log(`     Eval failed: ${e}`);
           }
@@ -207,59 +223,291 @@ async function runExternalBotTest(config: ITestConfig): Promise<ITestRunSummary>
   return summary;
 }
 
+// ── Login ─────────────────────────────────────────────────────────────────────
+
+async function loginToEncompass(page: Page, login: { officeId?: string; username?: string; password?: string }): Promise<void> {
+  try {
+    // Fill Office ID (input#practiceLocationId)
+    if (login.officeId) {
+      await page.waitForSelector('#practiceLocationId', { timeout: 10000 });
+      await page.click('#practiceLocationId');
+      await page.fill('#practiceLocationId', login.officeId);
+      await page.waitForTimeout(500);
+      // Tab to next field
+      await page.press('#practiceLocationId', 'Tab');
+      await page.waitForTimeout(500);
+      console.log(`     Office ID: ${login.officeId}`);
+    }
+
+    // Fill Username — use keyboard typing since fill() may conflict with data-bind
+    if (login.username) {
+      // The tab from office ID should have focused username. If not, click it.
+      try {
+        const userField = page.locator('input[name="username"], input[name="practiceLocationId"] ~ div input, #username');
+        if (await userField.first().isVisible({ timeout: 3000 })) {
+          await userField.first().click();
+        }
+      } catch {
+        // Already focused from tab
+      }
+      await page.waitForTimeout(300);
+      // Select all existing text and replace
+      await page.keyboard.press('Control+a');
+      await page.keyboard.type(login.username, { delay: 50 });
+      await page.waitForTimeout(500);
+      console.log(`     Username: ${login.username}`);
+      // Tab past "Remember Username" checkbox into password
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(200);
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(200);
+    }
+
+    // Fill Password
+    if (login.password) {
+      // Click the password field directly
+      try {
+        await page.click('#password', { timeout: 3000 });
+      } catch {
+        // Already focused from tabs
+      }
+      await page.waitForTimeout(300);
+      await page.keyboard.press('Control+a');
+      await page.keyboard.type(login.password, { delay: 30 });
+      await page.waitForTimeout(500);
+      console.log(`     Password: ****`);
+    }
+
+    // Take screenshot before clicking login
+    await page.screenshot({ path: '/tmp/amelia-before-login.png' });
+    console.log(`     Screenshot: /tmp/amelia-before-login.png`);
+
+    // Click Login button
+    const loginBtn = page.locator('button:has-text("Login"), input[type="submit"], button[type="submit"], .btn-primary:has-text("Login")');
+    await loginBtn.first().click();
+    console.log(`     Clicked Login...`);
+
+    // Wait for navigation / page load after login
+    await page.waitForLoadState('networkidle', { timeout: 30000 });
+    await page.waitForTimeout(3000);
+
+    // Check if we're still on the login page (login failed)
+    const url = page.url();
+    if (url.includes('login')) {
+      await page.screenshot({ path: '/tmp/amelia-login-failed.png' });
+      console.log(`     ⚠️  May still be on login page. Screenshot: /tmp/amelia-login-failed.png`);
+      await page.waitForTimeout(5000);
+    }
+
+    console.log(`     ✅ Logged in. Current URL: ${page.url()}`);
+
+    // Dismiss any popups/modals (e.g., "HEAVY EDT-19343" notification)
+    await page.waitForTimeout(2000);
+    try {
+      // Try clicking "Done", "Close", "X", or "OK" buttons on any popups
+      const dismissBtns = [
+        'button:has-text("Done")',
+        'button:has-text("OK")',
+        'button:has-text("Close")',
+        '.modal button.btn-primary',
+        'button.close',
+        '[aria-label="Close"]',
+      ];
+      for (const sel of dismissBtns) {
+        const btn = page.locator(sel).first();
+        if (await btn.isVisible({ timeout: 1000 })) {
+          await btn.click();
+          console.log(`     Dismissed popup (${sel})`);
+          await page.waitForTimeout(1000);
+          break;
+        }
+      }
+    } catch { /* no popup to dismiss */ }
+
+    // Click the Amelia chat bubble to open the widget
+    await page.waitForTimeout(3000);
+
+    // Try multiple approaches to find and click the Amelia launcher
+    let chatOpened = false;
+
+    // Approach 1: Look for Amelia-specific elements
+    const ameliaSelectors = [
+      '#amelia-chat-button',
+      '#amelia-launcher',
+      '[id*="amelia" i]',
+      '[class*="amelia" i]',
+      '[class*="Amelia" i]',
+      'div[class*="launcher"]',
+      'button[class*="launcher"]',
+    ];
+
+    for (const sel of ameliaSelectors) {
+      try {
+        const el = page.locator(sel).first();
+        if (await el.isVisible({ timeout: 1000 })) {
+          await el.click();
+          console.log(`     Opened Amelia via: ${sel}`);
+          chatOpened = true;
+          break;
+        }
+      } catch { /* try next */ }
+    }
+
+    // Approach 2: Find the floating chat icon by looking at all elements in bottom-right
+    if (!chatOpened) {
+      try {
+        chatOpened = await page.evaluate(() => {
+          const doc = (globalThis as any).document;
+          // Look for fixed/absolute positioned elements near bottom-right
+          const all = doc.querySelectorAll('*');
+          for (const el of all) {
+            const style = (globalThis as any).getComputedStyle(el);
+            const rect = el.getBoundingClientRect();
+            if ((style.position === 'fixed' || style.position === 'absolute') &&
+                rect.bottom > (globalThis as any).innerHeight - 100 &&
+                rect.right > (globalThis as any).innerWidth - 100 &&
+                rect.width < 80 && rect.height < 80 &&
+                rect.width > 30) {
+              el.click();
+              return true;
+            }
+          }
+          return false;
+        });
+        if (chatOpened) console.log(`     Opened Amelia via position detection`);
+      } catch { /* continue */ }
+    }
+
+    // Approach 3: Click at the bottom-right corner coordinates
+    if (!chatOpened) {
+      try {
+        const viewport = page.viewportSize();
+        if (viewport) {
+          // Click where the chat bubble typically sits (bottom-right, ~40px from edges)
+          await page.mouse.click(viewport.width - 40, viewport.height - 40);
+          console.log(`     Clicked bottom-right corner (${viewport.width - 40}, ${viewport.height - 40})`);
+          chatOpened = true;
+        }
+      } catch { /* continue */ }
+    }
+
+    await page.waitForTimeout(2000);
+
+    if (!chatOpened) {
+      console.log(`     ⚠️  Could not find Amelia chat bubble`);
+    }
+
+    await page.screenshot({ path: '/tmp/amelia-after-login.png' });
+    console.log(`     Screenshot: /tmp/amelia-after-login.png`);
+  } catch (err) {
+    console.error(`     ❌ Login failed:`, err);
+    await page.screenshot({ path: '/tmp/amelia-login-error.png' });
+    throw err;
+  }
+}
+
 // ── Widget Interaction ────────────────────────────────────────────────────────
 
 async function waitForWidget(page: Page, config: ITestConfig): Promise<void> {
-  const selectors = config.selectors ?? DEFAULT_SELECTORS;
+  const selectors = { ...DEFAULT_SELECTORS, ...(config.selectors ?? {}) };
 
-  // Try multiple strategies to find the widget
-  const strategies = [
-    // Strategy 1: Look for Amelia iframe
-    async () => {
-      const frame = page.frameLocator('iframe[src*="amelia"], iframe[src*="Amelia"]');
-      const input = frame.locator(selectors.input);
-      if (await input.count() > 0) {
-        console.log('   Found Amelia in iframe');
-        return true;
+  console.log('   Trying to find chat input...');
+
+  // Strategy 1: Direct DOM (most common)
+  try {
+    await page.waitForSelector(selectors.input, { timeout: 5000 });
+    console.log('   Found input in main DOM');
+    return;
+  } catch { console.log('   Not in main DOM'); }
+
+  // Strategy 2: Check ALL iframes
+  try {
+    const frames = page.frames();
+    console.log(`   Checking ${frames.length} frames...`);
+    for (const frame of frames) {
+      try {
+        const input = await frame.$(selectors.input);
+        if (input) {
+          console.log(`   Found input in frame: ${frame.url()}`);
+          // Store the frame reference for later use
+          (page as any)._ameliaFrame = frame;
+          return;
+        }
+      } catch { /* continue */ }
+    }
+  } catch { console.log('   Frame search failed'); }
+
+  // Strategy 3: Look for Amelia iframe specifically
+  try {
+    const iframeCount = await page.locator('iframe').count();
+    console.log(`   Found ${iframeCount} iframes on page`);
+    for (let i = 0; i < iframeCount; i++) {
+      const iframe = page.locator('iframe').nth(i);
+      const src = await iframe.getAttribute('src') ?? '';
+      const id = await iframe.getAttribute('id') ?? '';
+      const cls = await iframe.getAttribute('class') ?? '';
+      console.log(`   iframe[${i}]: src="${src.slice(0, 60)}" id="${id}" class="${cls}"`);
+
+      try {
+        const frame = page.frameLocator(`iframe >> nth=${i}`);
+        const input = frame.locator('input[placeholder*="message" i], textarea[placeholder*="message" i], input[type="text"]');
+        const count = await input.count();
+        if (count > 0) {
+          console.log(`   Found ${count} inputs in iframe[${i}]`);
+          (page as any)._ameliaFrameIndex = i;
+          return;
+        }
+      } catch { /* continue */ }
+    }
+  } catch (e) { console.log(`   iframe scan error: ${e}`); }
+
+  // Strategy 4: Shadow DOM
+  try {
+    const found = await page.evaluate(() => {
+      const doc = (globalThis as any).document;
+      const els = doc.querySelectorAll('*');
+      for (const el of els) {
+        if (el.shadowRoot) {
+          const input = el.shadowRoot.querySelector('input[placeholder*="message" i], textarea');
+          if (input) return true;
+        }
       }
       return false;
-    },
-    // Strategy 2: Direct DOM
-    async () => {
-      await page.waitForSelector(selectors.input, { timeout: 15000 });
-      return true;
-    },
-    // Strategy 3: Shadow DOM
-    async () => {
-      const found = await page.evaluate(() => {
-        const els = document.querySelectorAll('*');
-        for (const el of els) {
-          if (el.shadowRoot) {
-            const input = el.shadowRoot.querySelector('input[placeholder*="message"], textarea[placeholder*="message"]');
-            if (input) return true;
-          }
-        }
-        return false;
-      });
-      if (found) console.log('   Found Amelia in shadow DOM');
-      return found;
-    },
-    // Strategy 4: Wait longer and try any input
-    async () => {
-      await page.waitForTimeout(5000);
-      const inputs = await page.locator('input[placeholder*="message"], input[placeholder*="Message"], textarea[placeholder*="message"]').count();
-      return inputs > 0;
-    },
-  ];
+    });
+    if (found) {
+      console.log('   Found in shadow DOM');
+      return;
+    }
+  } catch { /* continue */ }
 
-  for (const strategy of strategies) {
-    try {
-      if (await strategy()) return;
-    } catch { /* try next */ }
-  }
+  // Strategy 5: Wait longer and try again
+  console.log('   Waiting 5s and retrying...');
+  await page.waitForTimeout(5000);
+  try {
+    await page.waitForSelector(selectors.input, { timeout: 5000 });
+    console.log('   Found after wait');
+    return;
+  } catch { /* fall through */ }
 
-  // Last resort: take screenshot and throw
+  // Last resort
   await page.screenshot({ path: '/tmp/amelia-not-found.png' });
+
+  // Dump all inputs on the page for debugging
+  const allInputs = await page.evaluate(() => {
+    const doc = (globalThis as any).document;
+    const inputs = doc.querySelectorAll('input, textarea');
+    return Array.from(inputs).map((el: any) => ({
+      tag: el.tagName,
+      type: el.type,
+      placeholder: el.placeholder,
+      id: el.id,
+      name: el.name,
+      className: el.className?.substring?.(0, 50),
+      visible: el.offsetParent !== null,
+    }));
+  });
+  console.log('   All inputs on page:', JSON.stringify(allInputs, null, 2));
+
   throw new Error('Could not find Amelia widget. Screenshot saved to /tmp/amelia-not-found.png');
 }
 
@@ -269,7 +517,7 @@ async function sendAndCapture(
   expectedBehavior: string | undefined,
   config: ITestConfig,
 ): Promise<IExternalTestResult> {
-  const selectors = config.selectors ?? DEFAULT_SELECTORS;
+  const selectors = { ...DEFAULT_SELECTORS, ...(config.selectors ?? {}) };
   const timeout = config.timeout ?? 30000;
   const startTime = Date.now();
 
@@ -334,15 +582,15 @@ async function clickSend(page: Page, selectors: typeof DEFAULT_SELECTORS): Promi
 
 async function countBotMessages(page: Page): Promise<number> {
   return page.evaluate(() => {
-    // Count all bot/assistant message elements
-    const selectors = [
+    const doc = (globalThis as any).document;
+    const sels = [
       '.bot-message', '.assistant-message', '.amelia-message',
       '[class*="bot"]', '[class*="assistant"]',
       '.message-bubble:not(.user)', '.chat-bubble:not(.user)',
     ];
     let max = 0;
-    for (const sel of selectors) {
-      const count = document.querySelectorAll(sel).length;
+    for (const sel of sels) {
+      const count = doc.querySelectorAll(sel).length;
       if (count > max) max = count;
     }
     return max;
@@ -356,28 +604,25 @@ async function waitForNewResponse(page: Page, beforeCount: number, timeout: numb
     await page.waitForTimeout(1000);
 
     // Check for new bot messages
-    const text = await page.evaluate((prevCount) => {
-      // Try various selectors to find bot messages
-      const selectors = [
+    const text = await page.evaluate((prevCount: number) => {
+      const doc = (globalThis as any).document;
+      const sels = [
         '.bot-message', '.assistant-message', '.amelia-message',
         '[class*="message-text"]', '.message-content',
         '.chat-bubble:not(.user-message)',
       ];
 
-      for (const sel of selectors) {
-        const msgs = document.querySelectorAll(sel);
+      for (const sel of sels) {
+        const msgs = doc.querySelectorAll(sel);
         if (msgs.length > prevCount) {
-          // Get the last message text
           const last = msgs[msgs.length - 1];
           return last.textContent?.trim() ?? '';
         }
       }
 
-      // Fallback: get all text content from the message area
-      const container = document.querySelector('.chat-messages, .message-list, .amelia-chat');
+      const container = doc.querySelector('.chat-messages, .message-list, .amelia-chat');
       if (container) {
-        const allText = container.textContent ?? '';
-        return allText.trim();
+        return container.textContent?.trim() ?? null;
       }
 
       return null;
@@ -389,12 +634,13 @@ async function waitForNewResponse(page: Page, beforeCount: number, timeout: numb
 
       // Re-capture to get the complete text
       const finalText = await page.evaluate(() => {
-        const selectors = [
+        const doc = (globalThis as any).document;
+        const sels = [
           '.bot-message:last-child', '.assistant-message:last-child',
           '.amelia-message:last-child', '[class*="message-text"]:last-child',
         ];
-        for (const sel of selectors) {
-          const el = document.querySelector(sel);
+        for (const sel of sels) {
+          const el = doc.querySelector(sel);
           if (el) return el.textContent?.trim() ?? '';
         }
         return '';
@@ -491,6 +737,11 @@ async function main() {
     delayBetween: parseInt(getArg(args, '--delay') ?? '2000'),
     maxMessages: getArg(args, '--max') ? parseInt(getArg(args, '--max')!) : undefined,
     evaluate: !args.includes('--no-eval'),
+    login: (getArg(args, '--username') || getArg(args, '--office-id')) ? {
+      officeId: getArg(args, '--office-id'),
+      username: getArg(args, '--username'),
+      password: getArg(args, '--password'),
+    } : undefined,
   };
 
   if (!config.url) {
