@@ -35,8 +35,10 @@ interface ITestResult {
 
 async function main() {
   const args = process.argv.slice(2);
-  const clientId = getArg(args, '--client-id') ?? '';
-  const clientSecret = getArg(args, '--client-secret') ?? '';
+  const username = getArg(args, '--username') ?? '';
+  const password = getArg(args, '--password') ?? '';
+  const clientId = getArg(args, '--client-id');
+  const clientSecret = getArg(args, '--client-secret');
   const baseUrl = getArg(args, '--base-url') ?? 'https://eyefinity.partners.amelia.com/AmeliaRest';
   const domainCode = getArg(args, '--domain');
   const questionsArg = getArg(args, '--questions');
@@ -44,19 +46,29 @@ async function main() {
   const outputFile = getArg(args, '--output') ?? '/tmp/amelia-test-results.json';
   const skipEval = args.includes('--no-eval');
 
-  if (!clientId || !clientSecret) {
+  if (!username && !clientId) {
     console.log(`
 Usage: npx ts-node --skip-project src/tools/test-amelia.ts [options]
 
+Auth (pick one):
+  --username <user>       Amelia username (same as web login)
+  --password <pass>       Amelia password
+  --client-id <id>        Amelia OAuth client ID (alternative)
+  --client-secret <sec>   Amelia OAuth client secret
+
 Options:
-  --client-id <id>        Amelia OAuth client ID (required)
-  --client-secret <sec>   Amelia OAuth client secret (required)
   --base-url <url>        Amelia API base URL (default: eyefinity.partners.amelia.com)
   --domain <code>         Amelia domain code
   --questions <q1,q2>     Comma-separated test questions
   --suite-id <id>         Load from existing test suite
   --output <file>         Output file (default: /tmp/amelia-test-results.json)
   --no-eval               Skip LLM-as-judge evaluation
+
+Example:
+  npx ts-node --skip-project src/tools/test-amelia.ts \\
+    --username "your-amelia-username" \\
+    --password "your-password" \\
+    --questions "how do I add a patient,what is family checkout"
 `);
     process.exit(1);
   }
@@ -84,13 +96,17 @@ Options:
 
   // Authenticate
   console.log('   Authenticating...');
-  const config: ameliaClient.IAmeliaConfig = { baseUrl, clientId, clientSecret, domainCode };
-  const token = await ameliaClient.authenticate(config);
-  console.log('   ✅ Authenticated\n');
+  const config: ameliaClient.IAmeliaConfig = {
+    baseUrl,
+    ...(username ? { username, password } : { clientId: clientId!, clientSecret: clientSecret! }),
+    domainCode,
+  };
+  const auth = await ameliaClient.authenticate(config);
+  console.log(`   ✅ Authenticated (${auth.authMode})\n`);
 
   // Create conversation
   console.log('   Creating conversation...');
-  const session = await ameliaClient.createConversation(token, config);
+  const session = await ameliaClient.createConversation(auth, config);
   console.log(`   ✅ Session: ${session.conversationId}\n`);
 
   // Get welcome message

@@ -18,8 +18,12 @@ const DEFAULT_BASE_URL = 'https://eyefinity.partners.amelia.com/AmeliaRest';
 
 export interface IAmeliaConfig {
   baseUrl?: string;
-  clientId: string;
-  clientSecret: string;
+  // Username/password auth (primary)
+  username?: string;
+  password?: string;
+  // OAuth client credentials auth (alternative)
+  clientId?: string;
+  clientSecret?: string;
   domainCode?: string;
 }
 
@@ -27,6 +31,7 @@ export interface IAmeliaSession {
   conversationId: string;
   token: string;
   baseUrl: string;
+  authMode: 'token' | 'bearer';
 }
 
 export interface IAmeliaMessage {
@@ -39,32 +44,99 @@ export interface IAmeliaMessage {
 
 // ── Authentication ────────────────────────────────────────────────────────────
 
-export async function authenticate(config: IAmeliaConfig): Promise<string> {
+export async function authenticate(config: IAmeliaConfig): Promise<{ token: string; authMode: 'token' | 'bearer' }> {
   const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
 
-  const res = await fetch(`${baseUrl}/api/v1/oauth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-    }).toString(),
-  });
+  // Method 1: Username/password login (returns X-Amelia-Rest-Token)
+  if (config.username && config.password) {
+    // Try /api/v1/auth/login first (Amelia 7.x)
+    const loginUrls = [
+      `${baseUrl}/api/v1/auth/login`,
+      `${baseUrl}/api/v1/login`,
+      `${baseUrl}/api/v1/sessions/login`,
+    ];
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Amelia auth failed: ${res.status} ${text}`);
+    for (const loginUrl of loginUrls) {
+      try {
+        const res = await fetch(loginUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: config.username,
+            password: config.password,
+          }),
+        });
+
+        if (res.status === 404) continue; // Try next URL
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Amelia login failed at ${loginUrl}: ${res.status} ${text}`);
+        }
+
+        const data = await res.json() as any;
+        console.log(`[Amelia] Login response keys:`, Object.keys(data));
+
+        // Token could be in various places
+        const token = data.token ?? data.sessionToken ?? data.accessToken
+          ?? data['X-Amelia-Rest-Token'] ?? data.access_token ?? '';
+
+        if (token) return { token, authMode: 'token' as const };
+
+        // Check response headers
+        const headerToken = res.headers.get('X-Amelia-Rest-Token') ?? '';
+        if (headerToken) return { token: headerToken, authMode: 'token' as const };
+
+        // If response has an id/sessionId, that might be the token
+        if (data.id) return { token: data.id, authMode: 'token' as const };
+
+        console.log(`[Amelia] Full login response:`, JSON.stringify(data).slice(0, 500));
+        throw new Error('No token found in login response');
+      } catch (err) {
+        if (String(err).includes('404')) continue;
+        throw err;
+      }
+    }
+
+    throw new Error('Could not find a working Amelia login endpoint');
   }
 
-  const data = await res.json() as { access_token: string };
-  return data.access_token;
+  // Method 2: OAuth client credentials (returns Bearer token)
+  if (config.clientId && config.clientSecret) {
+    const res = await fetch(`${baseUrl}/api/v1/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+      }).toString(),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Amelia OAuth failed: ${res.status} ${text}`);
+    }
+
+    const data = await res.json() as { access_token: string };
+    return { token: data.access_token, authMode: 'bearer' };
+  }
+
+  throw new Error('Amelia auth requires either username/password or clientId/clientSecret');
+}
+
+/** Build the auth header based on auth mode */
+function authHeader(token: string, authMode: 'token' | 'bearer'): Record<string, string> {
+  if (authMode === 'bearer') {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  return { 'X-Amelia-Rest-Token': token };
 }
 
 // ── Conversation Management ───────────────────────────────────────────────────
 
 export async function createConversation(
-  token: string,
+  auth: { token: string; authMode: 'token' | 'bearer' },
   config: IAmeliaConfig,
 ): Promise<IAmeliaSession> {
   const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
@@ -72,7 +144,7 @@ export async function createConversation(
   const res = await fetch(`${baseUrl}/api/v1/conversations/connect`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      ...authHeader(auth.token, auth.authMode),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -92,7 +164,7 @@ export async function createConversation(
     throw new Error('No conversationId returned from Amelia connect');
   }
 
-  return { conversationId, token, baseUrl };
+  return { conversationId, token: auth.token, baseUrl, authMode: auth.authMode };
 }
 
 // ── Send & Receive ────────────────────────────────────────────────────────────
@@ -105,7 +177,7 @@ export async function sendMessage(
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${session.token}` },
+    headers: authHeader(session.token, session.authMode),
   });
 
   if (!res.ok) {
@@ -127,7 +199,7 @@ export async function pollResponse(
       `${session.baseUrl}/api/v1/conversations/${session.conversationId}/${endpoint}`,
       {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.token}` },
+        headers: authHeader(session.token, session.authMode),
       },
     );
 
@@ -163,7 +235,7 @@ export async function closeConversation(session: IAmeliaSession): Promise<void> 
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.token}`,
+          ...authHeader(session.token, session.authMode),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -199,8 +271,8 @@ export async function testConversation(
   config: IAmeliaConfig,
   questions: string[],
 ): Promise<Array<{ question: string; response: string; responseTimeMs: number; error?: string }>> {
-  const token = await authenticate(config);
-  const session = await createConversation(token, config);
+  const auth = await authenticate(config);
+  const session = await createConversation(auth, config);
   const results: Array<{ question: string; response: string; responseTimeMs: number; error?: string }> = [];
 
   // Get welcome message first
