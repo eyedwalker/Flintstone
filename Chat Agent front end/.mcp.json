@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "amelia": {
+      "command": "npx",
+      "args": [
+        "ts-node",
+        "--skip-project",
+        "/Users/daviwa2@vsp.com/CascadeProjects/Chat Agent backend/src/mcp/amelia-server.ts"
+      ],
+      "env": {
+        "AMELIA_USERNAME": "daviwa2@vsp.com",
+        "AMELIA_PASSWORD": "Y5zr1MNNk6vNj4@0",
+        "AMELIA_DOMAIN": "eyefinitysandbox",
+        "AMELIA_BASE_URL": "https://eyefinity.partners.amelia.com/AmeliaRest"
+      }
+    }
+  }
+}
