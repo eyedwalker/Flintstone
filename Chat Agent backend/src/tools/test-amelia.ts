@@ -157,7 +157,7 @@ Example:
       if (!result.error && result.ameliaResponse) {
         try {
           result.evaluation = await evaluateResponse(result.question, result.expectedBehavior, result.ameliaResponse);
-          console.log(`     ${result.evaluation.overallScore}/100 — "${result.question.slice(0, 40)}"`);
+          console.log(`     ${result.evaluation!.overallScore}/100 — "${result.question.slice(0, 40)}"`);
         } catch (e) {
           console.log(`     Eval failed: ${e}`);
         }
