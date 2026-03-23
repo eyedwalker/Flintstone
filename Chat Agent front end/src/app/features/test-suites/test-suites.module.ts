@@ -6,6 +6,8 @@ import { TestCaseEditorComponent } from './test-case-editor.component';
 import { TestRunViewerComponent } from './test-run-viewer.component';
 import { TestResultDetailDialogComponent } from './test-result-detail-dialog.component';
 import { TestImprovementsDialogComponent } from './test-improvements-dialog.component';
+import { ExternalBotConfigDialogComponent } from './external-bot-config-dialog.component';
+import { BotComparisonDialogComponent } from './bot-comparison-dialog.component';
 
 const routes: Routes = [
   { path: '', component: TestSuiteListComponent },
@@ -20,6 +22,8 @@ const routes: Routes = [
     TestRunViewerComponent,
     TestResultDetailDialogComponent,
     TestImprovementsDialogComponent,
+    ExternalBotConfigDialogComponent,
+    BotComparisonDialogComponent,
   ],
   imports: [SharedModule, RouterModule.forChild(routes)],
 })

@@ -3,6 +3,9 @@
     <div class="top-bar-left">
       <button mat-icon-button (click)="goBack()"><mat-icon>arrow_back</mat-icon></button>
       <h2>Test Run Results</h2>
+      <span class="bot-badge" *ngIf="run" [ngClass]="run.externalBot ? 'amelia' : 'bedrock'">
+        {{ run.externalBot ? 'Amelia' : 'Bedrock' }}
+      </span>
       <span class="run-status" *ngIf="run" [ngClass]="run.status">{{ run.status }}</span>
     </div>
     <button mat-raised-button color="accent" (click)="analyzeAndImprove()"

@@ -8,6 +8,8 @@ import {
   IGenerateOptions,
   IUserReview,
   ITrainerAnnotation,
+  IExternalBotConfig,
+  IExternalBotQuickResult,
 } from '../models/test-suite.model';
 import { IAccessorResult } from '../models/tenant.model';
 import { ApiService } from '../../app/core/services/api.service';
@@ -112,5 +114,31 @@ export class TestSuiteManager {
 
   async bulkApprove(runId: string, threshold: number = 80): Promise<IAccessorResult<{ approved: number; total: number }>> {
     return this.api.post<{ approved: number; total: number }>(`/test-runs/${runId}/bulk-approve`, { threshold });
+  }
+
+  // ── External Bot Testing ────────────────────────────────────────────────────
+
+  async getExternalBotConfig(): Promise<IAccessorResult<IExternalBotConfig>> {
+    return this.api.get<IExternalBotConfig>('/external-bot/config');
+  }
+
+  async saveExternalBotConfig(config: IExternalBotConfig): Promise<IAccessorResult<void>> {
+    return this.api.put<void>('/external-bot/config', config);
+  }
+
+  async quickTestExternalBot(questions: string[], config?: Partial<IExternalBotConfig>): Promise<IAccessorResult<{
+    jobId: string;
+    status: string;
+    totalQuestions: number;
+  }>> {
+    return this.api.post('/external-bot/test', { questions, ...config });
+  }
+
+  async pollQuickTest(jobId: string): Promise<IAccessorResult<Record<string, unknown>>> {
+    return this.api.get<Record<string, unknown>>(`/external-bot/test/${jobId}`);
+  }
+
+  async startExternalBotRun(suiteId: string): Promise<IAccessorResult<{ runId: string; totalCases: number; externalBot: string }>> {
+    return this.api.post(`/external-bot/run/${suiteId}`);
   }
 }

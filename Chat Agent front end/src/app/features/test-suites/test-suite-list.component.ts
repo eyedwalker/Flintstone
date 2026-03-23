@@ -4,9 +4,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { TestSuiteManager } from '../../../lib/managers/test-suite.manager';
 import { AssistantManager } from '../../../lib/managers/assistant.manager';
-import { ITestSuite, ITestRun } from '../../../lib/models/test-suite.model';
+import { ITestSuite, ITestRun, IExternalBotConfig } from '../../../lib/models/test-suite.model';
 import { IAssistant } from '../../../lib/models/tenant.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ExternalBotConfigDialogComponent } from './external-bot-config-dialog.component';
+import { BotComparisonDialogComponent } from './bot-comparison-dialog.component';
 
 @Component({
   selector: 'bcc-test-suite-list',
@@ -179,6 +181,70 @@ export class TestSuiteListComponent implements OnInit, OnDestroy {
     if (score >= 80) return 'score-high';
     if (score >= 60) return 'score-medium';
     return 'score-low';
+  }
+
+  // ── External Bot (Amelia) Testing ──────────────────────────────────────
+
+  async startAmeliaRun(suite: ITestSuite, event: Event): Promise<void> {
+    event.stopPropagation();
+
+    if (suite.testCaseCount === 0) {
+      this.snackBar.open('Add test cases before running', '', { duration: 3000 });
+      return;
+    }
+
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Run Against Amelia',
+        message: `Run ${suite.testCaseCount} test cases for "${suite.name}" against the Amelia chatbot? This tests the external bot using the same suite.`,
+        confirmText: 'Run Amelia Test',
+        confirmColor: 'accent',
+      },
+    });
+
+    const confirmed = await ref.afterClosed().toPromise();
+    if (!confirmed) return;
+
+    const res = await this.tsManager.startExternalBotRun(suite.id);
+    if (res.success && res.data) {
+      this.activeRunSuiteId = suite.id;
+      this.snackBar.open('Amelia test run started', '', { duration: 2000 });
+      this.startPolling(res.data.runId);
+    } else {
+      this.snackBar.open(`Failed: ${res.error}`, 'Dismiss', { duration: 5000 });
+    }
+  }
+
+  openAmeliaConfig(): void {
+    this.dialog.open(ExternalBotConfigDialogComponent, {
+      width: '500px',
+    });
+  }
+
+  async compareBots(suite: ITestSuite, event: Event): Promise<void> {
+    event.stopPropagation();
+
+    // Load all runs for this suite
+    const res = await this.tsManager.listRuns(suite.id);
+    if (!res.success || !res.data) {
+      this.snackBar.open('Could not load runs', '', { duration: 3000 });
+      return;
+    }
+
+    const runs = res.data;
+    const bedrockRun = runs.find(r => !r.externalBot && r.status === 'completed');
+    const ameliaRun = runs.find(r => r.externalBot === 'amelia' && r.status === 'completed');
+
+    if (!bedrockRun && !ameliaRun) {
+      this.snackBar.open('Run the suite against both Bedrock and Amelia first', '', { duration: 3000 });
+      return;
+    }
+
+    this.dialog.open(BotComparisonDialogComponent, {
+      width: '1100px',
+      maxHeight: '90vh',
+      data: { suite, bedrockRun, ameliaRun },
+    });
   }
 
   async toggleRunHistory(suite: ITestSuite, event: Event): Promise<void> {

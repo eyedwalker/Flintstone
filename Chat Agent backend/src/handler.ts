@@ -19,6 +19,7 @@ import { handleAttachments, handleWidgetAttachmentUrl, handleWidgetAttachmentCon
 import { handleWidgetPresets } from './routes/widget-presets';
 import { handleScreenMappings, handleWidgetScreenContext } from './routes/screen-mappings';
 import { handleTestSuites, handleTestRuns } from './routes/test-suites';
+import { handleExternalBot } from './routes/external-bot';
 import { handleReportSchedules } from './routes/report-schedules';
 import { handleAgentConfig } from './routes/agent-config';
 
@@ -231,6 +232,9 @@ export const handler = async (
     }
     if (rawPath.startsWith('/test-runs')) {
       return handleTestRuns(method, rawPath, body, params, query, ctx);
+    }
+    if (rawPath.startsWith('/external-bot')) {
+      return handleExternalBot(method, rawPath, body, params, query, ctx);
     }
     if (rawPath.startsWith('/report-schedules')) {
       return handleReportSchedules(method, rawPath, body, params, query, ctx);
@@ -580,6 +584,45 @@ export const testRunnerHandler = async (
       });
     } catch (e) {
       console.error('Async test generation failed:', e);
+    }
+    return { statusCode: 200, body: 'ok' };
+  }
+
+  // Handle external bot quick test (async Lambda invoke from /external-bot/test)
+  if (anyEvent._externalBotQuickTest) {
+    const { jobId, tenantId, questions, config } = anyEvent._externalBotQuickTest;
+    const QT_RUNS_TABLE = process.env['TEST_RUNS_TABLE'] ?? '';
+    try {
+      console.log(`Starting external bot quick test ${jobId}: ${questions.length} questions`);
+      const { executeExternalBotQuickTest } = await import('./routes/external-bot');
+      await executeExternalBotQuickTest(jobId, tenantId, questions, config);
+      console.log(`External bot quick test ${jobId} completed`);
+    } catch (e) {
+      console.error('External bot quick test failed:', e);
+      await ddb.updateItem(QT_RUNS_TABLE, { id: jobId }, {
+        status: 'failed',
+        quickTestError: String(e).slice(0, 500),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    return { statusCode: 200, body: 'ok' };
+  }
+
+  // Handle external bot test run (async Lambda invoke from /external-bot/run/:suiteId)
+  if (anyEvent._externalBotRun) {
+    const { runId, suiteId, assistantId, tenantId } = anyEvent._externalBotRun;
+    const EBR_RUNS_TABLE = process.env['TEST_RUNS_TABLE'] ?? '';
+    try {
+      console.log(`Starting external bot test run ${runId} for suite ${suiteId}`);
+      const { executeExternalBotRun } = await import('./routes/external-bot');
+      await executeExternalBotRun(runId, suiteId, assistantId, tenantId);
+      console.log(`External bot test run ${runId} completed`);
+    } catch (e) {
+      console.error('External bot test run failed:', e);
+      await ddb.updateItem(EBR_RUNS_TABLE, { id: runId }, {
+        status: 'failed',
+        updatedAt: new Date().toISOString(),
+      });
     }
     return { statusCode: 200, body: 'ok' };
   }

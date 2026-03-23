@@ -60,8 +60,8 @@ async function ameliaFetch(path: string, options: RequestInit = {}): Promise<any
     },
   });
 
-  if (res.status === 410) {
-    // Session expired — re-auth and retry
+  if (res.status === 410 || res.status === 403) {
+    // Session/token expired — re-auth and retry
     authToken = null;
     const newToken = await ensureAuth();
     const retry = await fetch(`${BASE_URL}${path}`, {
@@ -283,6 +283,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       // ── Auth ─────────────────────────────────────────────────────────
       case 'amelia_login': {
+        authToken = null; // Force re-auth
         const token = await ensureAuth();
         return { content: [{ type: 'text', text: JSON.stringify({ success: true, tokenPrefix: token.slice(0, 8) + '...' }) }] };
       }
@@ -295,7 +296,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           method: 'POST',
           body: JSON.stringify({ deliveryMode: 'POLLING', domain }),
         });
-        const convId = data.conversationId ?? data.sessionId ?? '';
+        // sessionId (UUID) is needed for /say, /poll, /close — NOT conversationId (short code)
+        const convId = data.sessionId ?? data.conversationId ?? '';
         activeConversations.set(convName, convId);
 
         // Poll for welcome message

@@ -89,6 +89,8 @@ export interface ITestRun {
   modelId?: string;
   iterationId?: string;
   approvedForTraining?: number;
+  /** Set to 'amelia' when this run tested an external bot instead of Bedrock */
+  externalBot?: string;
   startedAt?: string;
   completedAt?: string;
   createdAt: string;
@@ -152,7 +154,27 @@ export interface ITestResult {
   trainerAnnotation?: ITrainerAnnotation;
   durationMs: number;
   sessionId: string;
+  /** Set to 'amelia' when this result is from an external bot test */
+  externalBot?: string;
   createdAt: string;
+}
+
+/** External bot (Amelia) connection configuration */
+export interface IExternalBotConfig {
+  baseUrl: string;
+  username?: string;
+  password?: string;
+  clientId?: string;
+  clientSecret?: string;
+  domainCode?: string;
+}
+
+/** Quick ad-hoc test result from external bot */
+export interface IExternalBotQuickResult {
+  question: string;
+  response: string;
+  responseTimeMs: number;
+  error?: string;
 }
 
 /** Improvement suggestion types */

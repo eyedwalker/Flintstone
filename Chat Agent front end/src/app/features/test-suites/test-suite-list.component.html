@@ -8,15 +8,23 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <button mat-raised-button color="primary" (click)="createSuite()" [disabled]="!selectedAssistantId">
-      <mat-icon>add</mat-icon> Create Suite
-    </button>
+    <div class="top-bar-right">
+      <button mat-stroked-button (click)="openAmeliaConfig()" matTooltip="Amelia connection settings">
+        <mat-icon>settings</mat-icon> Amelia Config
+      </button>
+      <button mat-raised-button color="primary" (click)="createSuite()" [disabled]="!selectedAssistantId">
+        <mat-icon>add</mat-icon> Create Suite
+      </button>
+    </div>
   </div>
 
   <!-- Active run progress -->
   <div class="run-progress" *ngIf="activeRun && (activeRun.status === 'running' || activeRun.status === 'queued')">
     <div class="run-progress-header">
       <mat-icon class="spin">sync</mat-icon>
+      <span class="bot-badge" [ngClass]="activeRun.externalBot ? 'amelia' : 'bedrock'">
+        {{ activeRun.externalBot ? 'Amelia' : 'Bedrock' }}
+      </span>
       <span>Running test suite... {{ activeRun.completedCases }}/{{ activeRun.totalCases }} cases</span>
       <span class="run-stats">
         <span class="stat passed">{{ activeRun.passedCases }} passed</span>
@@ -55,11 +63,24 @@
                   class="view-results-btn">
             <mat-icon>assessment</mat-icon> View Results
           </button>
+          <button mat-stroked-button
+                  *ngIf="suite.lastRunStatus === 'completed'"
+                  (click)="compareBots(suite, $event)"
+                  class="view-results-btn"
+                  matTooltip="Compare Bedrock vs Amelia results">
+            <mat-icon>compare_arrows</mat-icon> Compare
+          </button>
           <button mat-icon-button
                   (click)="startRun(suite, $event)"
                   [disabled]="activeRun?.status === 'running'"
-                  matTooltip="Run test suite">
+                  matTooltip="Run against Bedrock assistant">
             <mat-icon>play_arrow</mat-icon>
+          </button>
+          <button mat-icon-button color="accent"
+                  (click)="startAmeliaRun(suite, $event)"
+                  [disabled]="activeRun?.status === 'running'"
+                  matTooltip="Run against Amelia (external bot)">
+            <mat-icon>smart_toy</mat-icon>
           </button>
           <button mat-icon-button
                   (click)="deleteSuite(suite, $event)"
@@ -116,6 +137,7 @@
           <thead>
             <tr>
               <th>Run</th>
+              <th>Bot</th>
               <th>Status</th>
               <th>Score</th>
               <th>Passed</th>
@@ -128,6 +150,11 @@
           <tbody>
             <tr *ngFor="let run of suiteRuns; let i = index">
               <td class="run-num">#{{ suiteRuns.length - i }}</td>
+              <td>
+                <span class="bot-badge" [ngClass]="run.externalBot ? 'amelia' : 'bedrock'">
+                  {{ run.externalBot ? 'Amelia' : 'Bedrock' }}
+                </span>
+              </td>
               <td><span class="status-chip" [ngClass]="run.status">{{ run.status }}</span></td>
               <td class="score-cell" [class]="getScoreColor(run.avgScore)">
                 {{ run.avgScore | number:'1.0-0' }}
