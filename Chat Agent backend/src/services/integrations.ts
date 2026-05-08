@@ -483,12 +483,17 @@ export async function getAvailableSlots(
   const startDate = date ?? new Date().toISOString().split('T')[0];
   const end = endDate ?? (() => { const d = new Date(startDate); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0]; })();
 
-  // Try Schedule Manager API first (new, preferred)
+  // Try Schedule Manager API first (new, preferred). The v2 swagger marks
+  // IncludeNiceTimes and RestrictServiceItemSlots as required body fields —
+  // omitting them returns 400 and we silently fall back to the legacy
+  // path, which can't serve "any provider" requests.
   try {
     const body: Record<string, any> = {
       StartDate: startDate,
       EndDate: end,
-      AppointmentDuration: duration ?? 30,
+      AppointmentDuration: duration ?? 0,
+      IncludeNiceTimes: true,
+      RestrictServiceItemSlots: false,
     };
     if (providerId) body['ResourceIds'] = [providerId];
 
@@ -518,7 +523,11 @@ export async function getAvailableSlots(
       }
       return slots;
     }
-    console.warn(`[ScheduleManager] returned ${res.status}, falling back to legacy`);
+    // Surface the real error so CloudWatch shows whether this is auth, schema,
+    // or empty schedule — not a generic "fell back to legacy".
+    let errBody = '';
+    try { errBody = (await res.text()).slice(0, 500); } catch { /* ignore */ }
+    console.warn(`[ScheduleManager] ${res.status} for office=${officeId} provider=${providerId ?? 'any'}: ${errBody}`);
   } catch (err) {
     console.warn('[ScheduleManager] Failed, falling back to legacy:', err);
   }

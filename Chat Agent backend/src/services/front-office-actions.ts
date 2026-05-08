@@ -240,7 +240,7 @@ async function handleGetAvailableSlots(
   }
 
   const slots = await integrations.getAvailableSlots(
-    tenantId, officeId, providerId, date, preferredTime,
+    tenantId, officeId, providerId, date, undefined, preferredTime,
   );
 
   if (slots.length === 0) {
