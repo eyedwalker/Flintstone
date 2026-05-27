@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Nova Sonic 2 Bridge — ECS Fargate service + ALB.
+  WebSocket endpoint that bridges Twilio Media Streams to Bedrock Nova Sonic 2.
+  Deploy this separately from the SAM stack since SAM is Lambda-centric.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC the service runs in
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two public subnets for the ALB (Twilio needs HTTPS reachability)
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two private subnets for the Fargate tasks
+  ContainerImage:
+    Type: String
+    Description: ECR image URI for the bridge (e.g. 123.dkr.ecr.us-west-2.amazonaws.com/nova-sonic-bridge:latest)
+  CertificateArn:
+    Type: String
+    Description: ACM cert for the public ALB (wildcard ok)
+  ChatAgentBackendUrl:
+    Type: String
+    Description: Base URL of the Chat Agent backend HttpApi (used by tool-bridge)
+  VoiceGatewayServiceToken:
+    Type: String
+    NoEcho: true
+    Description: Bearer token presented to /voice/tool-* endpoints
+  BedrockRegion:
+    Type: String
+    Default: us-east-1
+    Description: Region with Nova Sonic 2 model access
+  NovaSonicModelId:
+    Type: String
+    Default: amazon.nova-2-sonic-v1:0
+  DesiredCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+
+Resources:
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub nova-sonic-${Stage}
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/nova-sonic-${Stage}
+      RetentionInDays: 14
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BedrockNovaSonic
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:InvokeModelWithBidirectionalStream
+                Resource:
+                  - !Sub arn:aws:bedrock:${BedrockRegion}::foundation-model/${NovaSonicModelId}
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Public HTTPS ingress for Nova Sonic ALB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  ServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Fargate tasks; only ALB can reach the container
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub nova-sonic-${Stage}
+      Scheme: internet-facing
+      Type: application
+      Subnets: !Ref SubnetIds
+      SecurityGroups: [!Ref AlbSecurityGroup]
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub nova-sonic-${Stage}
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      # WebSocket connections live for the call duration. Configure
+      # idle timeout high enough to not kill calls mid-conversation.
+      TargetGroupAttributes:
+        - { Key: deregistration_delay.timeout_seconds, Value: '30' }
+        - { Key: stickiness.enabled, Value: 'false' }
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Port: 443
+      Protocol: HTTPS
+      Certificates: [{ CertificateArn: !Ref CertificateArn }]
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  TaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub nova-sonic-${Stage}
+      Cpu: '512'        # 0.5 vCPU — adjust if call volume grows
+      Memory: '1024'    # 1 GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: bridge
+          Image: !Ref ContainerImage
+          PortMappings: [{ ContainerPort: 8080, Protocol: tcp }]
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: bridge
+          Environment:
+            - { Name: PORT, Value: '8080' }
+            - { Name: AWS_REGION, Value: !Ref BedrockRegion }
+            - { Name: AWS_BEDROCK_NOVA_SONIC_MODEL_ID, Value: !Ref NovaSonicModelId }
+            - { Name: CHAT_AGENT_BACKEND_URL, Value: !Ref ChatAgentBackendUrl }
+            - { Name: VOICE_GATEWAY_SERVICE_TOKEN, Value: !Ref VoiceGatewayServiceToken }
+            - { Name: NOVA_SONIC_SESSION_TIMEOUT_S, Value: '470' }
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: HttpsListener
+    Properties:
+      ServiceName: !Sub nova-sonic-${Stage}
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDef
+      DesiredCount: !Ref DesiredCount
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups: [!Ref ServiceSecurityGroup]
+      LoadBalancers:
+        - ContainerName: bridge
+          ContainerPort: 8080
+          TargetGroupArn: !Ref TargetGroup
+
+Outputs:
+  AlbDnsName:
+    Description: Point your Twilio webhook at wss://${this}/stream (after DNS + cert)
+    Value: !GetAtt Alb.DNSName

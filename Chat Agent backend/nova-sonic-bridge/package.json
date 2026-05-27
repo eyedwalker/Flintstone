@@ -1,0 +1,26 @@
+{
+  "name": "nova-sonic-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Twilio Media Streams ↔ Bedrock Nova Sonic 2 bidirectional bridge. Runs on ECS Fargate.",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "test": "jest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.787.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.11",
+    "@types/ws": "^8.5.13",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}

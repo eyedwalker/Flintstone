@@ -14,6 +14,28 @@ Parameters:
     Type: String
     Default: wubba-data-sources
     Description: Existing S3 bucket for knowledge base content
+  VoiceGatewayServiceToken:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: >
+      Bearer token the Nova Sonic voice bridge presents to /voice/tool-schemas
+      and /voice/tool-execute. Leave empty in stages where the bridge is not
+      yet deployed — the endpoints will reject all requests with 401.
+  NovaSonicEnabledNumbers:
+    Type: String
+    Default: ""
+    Description: >
+      Comma-separated E.164 numbers (e.g. "+15806336937,+15551234567") that
+      should route to the Nova Sonic streaming bridge instead of TwiML
+      Say/Gather. Empty list disables streaming entirely.
+  NovaSonicStreamUrl:
+    Type: String
+    Default: ""
+    Description: >
+      WebSocket URL of the Nova Sonic bridge (wss://nova-sonic.../stream).
+      Required when NovaSonicEnabledNumbers is set — if missing the inbound
+      handler logs a warning and falls back to Say/Gather for safety.
 
 Globals:
   Function:
@@ -58,6 +80,9 @@ Globals:
         SNOWFLAKE_LAMBDA_ARN: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:snowflake-action-group-${Stage}"
         SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
         VOICE_SESSIONS_TABLE: !Ref VoiceSessionsTable
+        VOICE_GATEWAY_SERVICE_TOKEN: !Ref VoiceGatewayServiceToken
+        NOVA_SONIC_ENABLED_NUMBERS: !Ref NovaSonicEnabledNumbers
+        NOVA_SONIC_STREAM_URL: !Ref NovaSonicStreamUrl
         STRIPE_SECRET_KEY_PARAM: !Sub "/chat-agent/${Stage}/stripe/secret-key"
         FRONTEND_URL: ""
         ALLOWED_ORIGINS: ""  # Comma-separated list of allowed origins for CORS (empty = allow all)
@@ -590,6 +615,15 @@ Resources:
                   - !Sub "arn:aws:s3:::${ContentBucketName}/*"
                   - !Sub "arn:aws:s3:::snowflake-eyecare-reports-${Stage}"
                   - !Sub "arn:aws:s3:::snowflake-eyecare-reports-${Stage}/*"
+                  - !Sub "arn:aws:s3:::chat-agent-hipaa-${Stage}"
+                  - !Sub "arn:aws:s3:::chat-agent-hipaa-${Stage}/*"
+              - Sid: TranscribeAccess
+                Effect: Allow
+                Action:
+                  - transcribe:StartTranscriptionJob
+                  - transcribe:GetTranscriptionJob
+                  - transcribe:ListTranscriptionJobs
+                Resource: "*"
               - Sid: BedrockAccess
                 Effect: Allow
                 Action:
@@ -929,6 +963,97 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
+        # Service-token endpoints for the Nova Sonic voice bridge.
+        # Auth: NONE at the gateway; the route handler verifies a Bearer token
+        # against VOICE_GATEWAY_SERVICE_TOKEN with a constant-time compare.
+        VoiceToolSchemasEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/tool-schemas
+            Method: GET
+            Auth:
+              Authorizer: NONE
+        VoiceToolExecuteEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/tool-execute
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        # Call event log — bridge posts lifecycle events here.
+        # Auth NONE at gateway; handler verifies VOICE_GATEWAY_SERVICE_TOKEN.
+        VoiceCallEventEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/call-event
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        # Twilio recording status webhook.
+        VoiceRecordingStatusEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/recording-status
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        # Transcript delivery from the Transcribe job-completion Lambda.
+        # Auth NONE at gateway; handler verifies VOICE_GATEWAY_SERVICE_TOKEN.
+        VoiceTranscriptReadyEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/transcript-ready
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        # JWT-authenticated voice monitoring (admin UIs).
+        VoiceActiveCallsEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/active-calls
+            Method: GET
+        VoiceCallDetailEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/call/{callSid}
+            Method: GET
+        VoiceReanalyzeCallEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /voice/call/{callSid}/reanalyze
+            Method: POST
+
+  # Fires on EventBridge "Transcribe Job State Change" events for jobs whose
+  # name starts with "voice-". Reads the transcript JSON from S3 and writes
+  # it onto the call record, which triggers a re-analysis.
+  TranscribeCompletionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "chat-agent-transcribe-completion-${Stage}"
+      CodeUri: ./
+      Handler: dist/transcribe-handler.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 60
+      MemorySize: 512
+      Events:
+        TranscribeJobChange:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source: ["aws.transcribe"]
+              detail-type: ["Transcribe Job State Change"]
+              detail:
+                TranscriptionJobStatus: ["COMPLETED", "FAILED"]
+                TranscriptionJobName:
+                  - prefix: "voice-"
 
   ProvisionFunction:
     Type: AWS::Serverless::Function
@@ -939,8 +1064,8 @@ Resources:
       CodeUri: ./
       Handler: dist/handler.provisionHandler
       Role: !GetAtt LambdaExecutionRole.Arn
-      Timeout: 300
-      MemorySize: 512
+      Timeout: 600
+      MemorySize: 2048
       Events:
         ProvisionEvent:
           Type: HttpApi

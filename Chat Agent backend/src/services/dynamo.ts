@@ -51,6 +51,26 @@ export async function deleteItem(table: string, key: Record<string, string>): Pr
   await ddb.send(new DeleteCommand({ TableName: table, Key: key }));
 }
 
+/**
+ * Append one or more items to a List attribute. Safe under concurrent writes
+ * (DynamoDB serializes the SET expression atomically per item). Falls back to
+ * creating the list if the attribute doesn't exist yet (`if_not_exists`).
+ */
+export async function appendListAttribute(
+  table: string,
+  key: Record<string, string>,
+  attribute: string,
+  values: unknown[],
+): Promise<void> {
+  await ddb.send(new UpdateCommand({
+    TableName: table,
+    Key: key,
+    UpdateExpression: 'SET #a = list_append(if_not_exists(#a, :empty), :v)',
+    ExpressionAttributeNames: { '#a': attribute },
+    ExpressionAttributeValues: { ':v': values, ':empty': [] },
+  }));
+}
+
 export async function queryItems<T>(
   table: string,
   keyCondition: string,

@@ -11,6 +11,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import * as ddb from './dynamo';
+import * as smsOptOut from './sms-opt-out';
 
 const REGION = process.env['REGION'] ?? 'us-west-2';
 const TENANTS_TABLE = process.env['TENANTS_TABLE'] ?? '';
@@ -46,6 +47,23 @@ interface IEyefinityConfig {
 
 const configCache = new Map<string, { config: IEyefinityConfig; expiresAt: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
+
+/**
+ * Resolves the office transfer phone for a tenant.
+ * Lookup order: tenant DDB record → DEFAULT_OFFICE_PHONE env → legacy literal.
+ * The legacy literal is a last-resort safety net so existing single-tenant
+ * deployments keep working; it logs a warning so the gap is visible.
+ */
+const LEGACY_OFFICE_PHONE = '+15806336937';
+
+export async function getOfficePhone(tenantId: string): Promise<string> {
+  const tenant = await ddb.getItem<{ officePhone?: string }>(TENANTS_TABLE, { id: tenantId });
+  if (tenant?.officePhone) return tenant.officePhone;
+  const envPhone = process.env['DEFAULT_OFFICE_PHONE'];
+  if (envPhone) return envPhone;
+  console.warn(`[Tenant] No officePhone configured for ${tenantId}; using legacy default`);
+  return LEGACY_OFFICE_PHONE;
+}
 
 async function getEyefinityConfig(tenantId: string): Promise<IEyefinityConfig> {
   const cached = configCache.get(tenantId);
@@ -702,6 +720,11 @@ export async function sendSms(
   to: string,
   message: string,
 ): Promise<ISmsResult> {
+  if (await smsOptOut.isOptedOut(tenantId, to)) {
+    console.warn(`[SMS] Blocked send to opted-out recipient: ${to}`);
+    return { success: false, error: 'Recipient has opted out of SMS' };
+  }
+
   let accountSid: string, authToken: string, fromNumber: string;
   try {
     const prefix = `/chat-agent/${tenantId}/twilio`;
@@ -792,12 +815,22 @@ export interface ICallResult {
  * Initiate an outbound voice call via Twilio.
  * Uses TwiML to speak a message to the recipient.
  */
+export interface IMakeCallOptions {
+  voiceName?: string;
+  /** Pass to use Nova Sonic streaming bridge instead of TwiML <Say>. */
+  twiml?: string;
+}
+
 export async function makeCall(
   tenantId: string,
   to: string,
   message: string,
-  voiceName?: string,
+  voiceNameOrOptions?: string | IMakeCallOptions,
 ): Promise<ICallResult> {
+  const opts: IMakeCallOptions = typeof voiceNameOrOptions === 'string'
+    ? { voiceName: voiceNameOrOptions }
+    : (voiceNameOrOptions ?? {});
+
   let accountSid: string, authToken: string, fromNumber: string;
   try {
     const prefix = `/chat-agent/${tenantId}/twilio`;
@@ -814,8 +847,10 @@ export async function makeCall(
     return { success: false, error: 'Twilio credentials not configured' };
   }
 
-  const voice = voiceName ?? 'Polly.Joanna';
-  const twiml = `<Response><Say voice="${voice}">${escapeXml(message)}</Say></Response>`;
+  // Streaming-bridge callers pass full TwiML; everyone else gets a one-shot Say.
+  const voice = opts.voiceName ?? 'Polly.Joanna';
+  const twiml = opts.twiml
+    ?? `<Response><Say voice="${voice}">${escapeXml(message)}</Say></Response>`;
 
   try {
     const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
@@ -850,4 +885,83 @@ export async function makeCall(
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * Redirect an in-progress call to dial the office, bridging the caller to a human.
+ * Used by the `transferToHuman` voice tool from the Nova Sonic bridge — the
+ * bridge has the streaming WebSocket open, but Twilio still owns the PSTN leg,
+ * so we POST to Twilio's Update Call endpoint with new TwiML.
+ *
+ * Twilio terminates our stream as soon as it picks up the new TwiML, so the
+ * bridge doesn't need to (and shouldn't) call sessionEnd before this fires —
+ * but the bridge's WebSocket close handler will clean up either way.
+ */
+export interface IRedirectResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function redirectCallToOffice(
+  tenantId: string,
+  callSid: string,
+  introMessage?: string,
+): Promise<IRedirectResult> {
+  if (!callSid) return { success: false, error: 'callSid is required' };
+
+  let accountSid: string, authToken: string;
+  try {
+    const prefix = `/chat-agent/${tenantId}/twilio`;
+    [accountSid, authToken] = await Promise.all([
+      getParam(`${prefix}/account-sid`),
+      getParam(`${prefix}/auth-token`),
+    ]);
+  } catch {
+    return { success: false, error: 'Twilio credentials not configured' };
+  }
+  if (!accountSid || !authToken) {
+    return { success: false, error: 'Twilio credentials not configured' };
+  }
+
+  const officePhone = await getOfficePhone(tenantId);
+  const intro = introMessage ?? 'Connecting you with a team member now. One moment please.';
+  // Voicemail fallback: if office doesn't pick up, record a voicemail and
+  // pipe it through the standard recording-status webhook with type=voicemail
+  // so it gets transcribed + flagged to staff.
+  const webhookBase = process.env['TWILIO_WEBHOOK_BASE_URL']?.replace(/\/$/, '') ?? '';
+  const recordAttrs = ['maxLength="120"', 'playBeep="true"'];
+  if (webhookBase) {
+    recordAttrs.push(`recordingStatusCallback="${escapeXml(webhookBase)}/voice/recording-status?type=voicemail"`);
+    recordAttrs.push('recordingStatusCallbackEvent="completed"');
+  }
+  const newTwiml =
+    `<Response>` +
+      `<Say voice="Polly.Joanna-Neural">${escapeXml(intro)}</Say>` +
+      `<Dial timeout="30"><Number>${escapeXml(officePhone)}</Number></Dial>` +
+      `<Say voice="Polly.Joanna-Neural">I'm sorry, no one is available right now. Please leave a message after the beep.</Say>` +
+      `<Record ${recordAttrs.join(' ')}/>` +
+      `<Say voice="Polly.Joanna-Neural">Thank you for your message. Goodbye!</Say>` +
+      `<Hangup/>` +
+    `</Response>`;
+
+  try {
+    const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+    const body = new URLSearchParams({ Twiml: newTwiml });
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls/${callSid}.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+      },
+    );
+    if (res.ok) return { success: true };
+    const errData = await res.json() as { message?: string };
+    return { success: false, error: errData.message ?? `Twilio error: ${res.status}` };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
 }

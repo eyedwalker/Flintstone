@@ -24,11 +24,14 @@
     "@aws-sdk/client-scheduler": "^3.1009.0",
     "@aws-sdk/client-ses": "^3.1009.0",
     "@aws-sdk/client-ssm": "^3.1009.0",
+    "@aws-sdk/client-transcribe": "^3.787.0",
     "@aws-sdk/lib-dynamodb": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
+    "mammoth": "^1.8.0",
     "stripe": "^17.7.0",
     "uuid": "^11.1.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

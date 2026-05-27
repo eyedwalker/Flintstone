@@ -115,7 +115,37 @@ export const handler = async (
     const stage = event.rawPath.startsWith('/dev') ? '/dev' : event.rawPath.startsWith('/prod') ? '/prod' : '';
     const baseUrl = `https://${host}${stage}`;
 
-    const { handleInboundCall, handleVoiceRespond, handleOutboundTwiml, handleSmsInbound, handleCallStatus } = await import('./routes/voice');
+    const {
+      handleInboundCall, handleVoiceRespond, handleOutboundTwiml,
+      handleSmsInbound, handleCallStatus,
+      handleToolSchemas, handleToolExecute,
+      handleCallEvent, handleRecordingStatus, handleTranscriptReady,
+    } = await import('./routes/voice');
+
+    // Twilio signature validation — applies to every Twilio-originated webhook
+    // (the form-encoded POSTs below). Bridge service-token endpoints have
+    // their own bearer auth and aren't validated here.
+    const TWILIO_PATHS = new Set([
+      '/voice/inbound', '/voice/respond',
+      '/voice/sms-inbound', '/voice/status',
+      '/voice/recording-status',
+    ]);
+    if (TWILIO_PATHS.has(rawPath)) {
+      const { validateInboundWebhook } = await import('./services/twilio-signature');
+      const DEFAULT_TENANT_ID = process.env['DEFAULT_VOICE_TENANT_ID'] ?? '58b19370-10a1-70b9-584d-f14f731f6963';
+      const ok = await validateInboundWebhook({
+        tenantId: DEFAULT_TENANT_ID,
+        headers: event.headers as Record<string, string | undefined>,
+        body: voiceBody,
+        host,
+        rawPath,
+        stage,
+        rawQueryString: event.rawQueryString,
+      });
+      if (!ok) {
+        return { statusCode: 403, headers: { 'Content-Type': 'text/plain' }, body: 'Forbidden' };
+      }
+    }
 
     if (rawPath === '/voice/inbound' && method === 'POST') return handleInboundCall(voiceBody, baseUrl);
     if (rawPath === '/voice/respond' && method === 'POST') return handleVoiceRespond(voiceBody, baseUrl);
@@ -124,6 +154,20 @@ export const handler = async (
     }
     if (rawPath === '/voice/sms-inbound' && method === 'POST') return handleSmsInbound(voiceBody);
     if (rawPath === '/voice/status' && method === 'POST') return handleCallStatus(voiceBody);
+    if (rawPath === '/voice/recording-status' && method === 'POST') {
+      return handleRecordingStatus(voiceBody, (event.queryStringParameters ?? {}) as Record<string, string>);
+    }
+    // Service-token endpoints for the Nova Sonic voice bridge
+    if (rawPath === '/voice/tool-schemas' && method === 'GET') return handleToolSchemas(event.headers as Record<string, string | undefined>);
+    if (rawPath === '/voice/tool-execute' && method === 'POST') {
+      return handleToolExecute(body as Record<string, unknown>, event.headers as Record<string, string | undefined>);
+    }
+    if (rawPath === '/voice/call-event' && method === 'POST') {
+      return handleCallEvent(body as Record<string, unknown>, event.headers as Record<string, string | undefined>);
+    }
+    if (rawPath === '/voice/transcript-ready' && method === 'POST') {
+      return handleTranscriptReady(body as Record<string, unknown>, event.headers as Record<string, string | undefined>);
+    }
   }
 
   // Public widget endpoints — authenticated via API key, no JWT required
@@ -184,6 +228,22 @@ export const handler = async (
   }
 
   try {
+    // Voice monitoring endpoints — JWT-authenticated, tenant-scoped
+    if (rawPath === '/voice/active-calls' && method === 'GET') {
+      const { handleActiveCalls } = await import('./routes/voice');
+      return handleActiveCalls(ctx.organizationId);
+    }
+    const callDetailMatch = rawPath.match(/^\/voice\/call\/([^/]+)$/);
+    if (callDetailMatch && method === 'GET') {
+      const { handleCallDetail } = await import('./routes/voice');
+      return handleCallDetail(callDetailMatch[1], ctx.organizationId);
+    }
+    const reanalyzeMatch = rawPath.match(/^\/voice\/call\/([^/]+)\/reanalyze$/);
+    if (reanalyzeMatch && method === 'POST') {
+      const { handleReanalyzeCall } = await import('./routes/voice');
+      return handleReanalyzeCall(reanalyzeMatch[1], ctx.organizationId);
+    }
+
     // Chat must be checked before generic /assistants handler
     if (rawPath.match(/^\/assistants\/[^/]+\/chat$/) && method === 'POST') {
       return handleChat(rawPath, body, params, ctx.organizationId);
@@ -383,6 +443,11 @@ export const provisionHandler = async (
   }
   if (anyEvent._crawlJob) {
     await handleCrawlJob(anyEvent._crawlJob);
+    return { statusCode: 200, body: 'ok' };
+  }
+  if (anyEvent._extractJob) {
+    const { handleExtractJob } = await import('./services/kb-extract');
+    await handleExtractJob(anyEvent._extractJob);
     return { statusCode: 200, body: 'ok' };
   }
   if (anyEvent._reportJob) {
