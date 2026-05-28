@@ -273,12 +273,17 @@ async function generateResponse(
       });
     }
 
-    // Second call to Claude with tool results
+    // Second call to Claude with tool results.
+    // Bump max_tokens to 400 here because booking/lookup confirmations
+    // need to read back details ("Booked Tuesday June 3rd at 2pm with
+    // Dr. Smith — confirmation ABC123") — 200 tokens routinely truncates
+    // these mid-sentence, which is the exact failure pattern we see on
+    // voice booking flows.
     const followUp = await callClaude(systemPrompt, [
       ...messages,
       { role: 'assistant', content: result.content },
       { role: 'user', content: toolResults },
-    ], tools);
+    ], tools, 400);
 
     const textBlock = followUp.content.find((b: any) => b.type === 'text');
     return {
@@ -298,13 +303,14 @@ async function callClaude(
   system: string,
   messages: any[],
   tools: any[],
+  maxTokens = 200,
 ): Promise<any> {
   const payload = {
     anthropic_version: 'bedrock-2023-05-31',
     system,
     messages,
     tools,
-    max_tokens: 200,
+    max_tokens: maxTokens,
     temperature: 0.7,
   };
 
@@ -437,23 +443,54 @@ async function executeLocalTool(
 
 // ── System Prompt Builder ─────────────────────────────────────────────────────
 
-function buildSystemPrompt(session: IConversationSession): string {
+export function buildSystemPrompt(session: IConversationSession): string {
   const parts: string[] = [
     `You are ${session.agentName}, a friendly and professional AI receptionist for an eye care practice.`,
-    '',
-    'CRITICAL VOICE RULES:',
-    '- Keep responses SHORT — 2-3 sentences maximum, under 15 seconds when spoken.',
-    '- Output ONLY the words to be spoken. No stage directions, no asterisks, no emojis.',
-    '- Be warm, natural, and conversational — like the best front desk receptionist.',
-    '- NEVER reintroduce yourself after the first turn.',
-    '- If unsure, ask a clarifying question rather than guessing.',
   ];
+
+  // Channel-specific guidance. The previous version applied "voice rules" to
+  // every channel, which discouraged the multi-turn confirmation arc that
+  // booking actually needs over SMS. We now branch.
+  if (session.channel === 'voice') {
+    parts.push('');
+    parts.push('CRITICAL VOICE RULES:');
+    parts.push('- Keep responses SHORT — 2-3 sentences max, under 15 seconds when spoken.');
+    parts.push('- Output ONLY the words to be spoken. No stage directions, no asterisks, no emojis.');
+    parts.push('- Be warm, natural, and conversational — like the best front desk receptionist.');
+    parts.push('- NEVER reintroduce yourself after the first turn.');
+    parts.push('- If unsure, ask a clarifying question rather than guessing.');
+    parts.push('- After confirming and booking an appointment, ALWAYS read back the full details once: date, time, provider, office, and confirmation number.');
+  } else if (session.channel === 'sms') {
+    parts.push('');
+    parts.push('SMS RULES:');
+    parts.push('- Keep replies under 320 characters (2 SMS segments).');
+    parts.push('- Plain text only — no emojis, no markdown.');
+    parts.push('- A multi-turn back-and-forth is fine; don\'t try to resolve everything in one reply.');
+    parts.push('- After booking, send the confirmation details in a single follow-up text.');
+  } else {
+    // email or other
+    parts.push('');
+    parts.push('Be clear, complete, and warm. Plain text. No emojis.');
+  }
+
+  // Booking-flow guidance applies regardless of channel — this is the
+  // explicit script the model should follow when the caller wants to book.
+  parts.push('');
+  parts.push('BOOKING FLOW (when patient wants to book/reschedule):');
+  parts.push('1. Confirm which office they want (call getOffices if needed).');
+  parts.push('2. Ask which provider, or accept "any" / "no preference".');
+  parts.push('3. Ask preferred date and time-of-day (morning/afternoon) or specific time.');
+  parts.push('4. Call getAvailableSlots — read back the top 2-3 options.');
+  parts.push('5. Once the patient picks a slot, call bookAppointment with the exact officeId, providerId, ISO date (YYYY-MM-DD), and time (HH:MM).');
+  parts.push('6. After bookAppointment returns confirmed, read back: provider, office, date, time, confirmation number.');
+  parts.push('Never invent slot times. Never skip the getAvailableSlots step.');
 
   if (session.patient) {
     parts.push('');
     parts.push(`PATIENT CONTEXT: You are speaking with ${session.patient.firstName} ${session.patient.lastName}.`);
     if (session.patient.phone) parts.push(`Phone: ${session.patient.phone}`);
     if (session.patient.id) parts.push(`Patient ID: ${session.patient.id}`);
+    parts.push('Use this Patient ID when calling bookAppointment / getPatientAppointments.');
   }
 
   parts.push('');
