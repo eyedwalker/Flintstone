@@ -208,17 +208,13 @@ export class TestCaseEditorComponent implements OnInit, OnDestroy {
   }
 
   private async parseQAFile(file: File): Promise<{ prompt: string; answer: string }[]> {
-    const XLSX = await import('xlsx');
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) throw new Error('Workbook has no sheets');
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+    const ext = file.name.toLowerCase().split('.').pop() ?? '';
+    const rows = (ext === 'xlsx' || ext === 'xls')
+      ? await this.parseXlsxFile(file)
+      : await this.parseDelimitedFile(file, ext === 'tsv' ? '\t' : ',');
 
     if (rows.length === 0) return [];
 
-    // Find prompt/answer columns by fuzzy header match
     const headers = Object.keys(rows[0]);
     const promptKey = headers.find(h => /^(prompt|question|user[\s_]?message|query|input)$/i.test(h.trim()));
     const answerKey = headers.find(h => /^(expected[\s_]?answer|answer|expected|response|reply|output|expected[\s_]?behavior)$/i.test(h.trim()));
@@ -235,6 +231,63 @@ export class TestCaseEditorComponent implements OnInit, OnDestroy {
         answer: String(r[answerKey] ?? '').trim(),
       }))
       .filter(r => r.prompt && r.answer);
+  }
+
+  // Parse CSV/TSV natively. Handles RFC-4180 quoted fields with embedded
+  // newlines, commas, and escaped quotes ("").
+  private async parseDelimitedFile(file: File, delimiter: string): Promise<Record<string, string>[]> {
+    const text = await file.text();
+    const cleaned = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text; // strip BOM
+    const records: string[][] = [];
+    let field = '';
+    let row: string[] = [];
+    let inQuotes = false;
+    for (let i = 0; i < cleaned.length; i++) {
+      const c = cleaned[i];
+      if (inQuotes) {
+        if (c === '"' && cleaned[i + 1] === '"') { field += '"'; i++; }
+        else if (c === '"') { inQuotes = false; }
+        else { field += c; }
+      } else {
+        if (c === '"') { inQuotes = true; }
+        else if (c === delimiter) { row.push(field); field = ''; }
+        else if (c === '\r' && cleaned[i + 1] === '\n') { row.push(field); records.push(row); row = []; field = ''; i++; }
+        else if (c === '\n' || c === '\r') { row.push(field); records.push(row); row = []; field = ''; }
+        else { field += c; }
+      }
+    }
+    if (field.length > 0 || row.length > 0) { row.push(field); records.push(row); }
+    if (records.length < 2) return [];
+    const headers = records[0].map(h => h.trim());
+    return records.slice(1)
+      .filter(r => r.some(c => c.trim().length > 0))
+      .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ''])));
+  }
+
+  // Lazy-load SheetJS from CDN only when an .xlsx file is dropped. Avoids
+  // adding xlsx as an npm dependency (which corp-proxy makes painful).
+  private async parseXlsxFile(file: File): Promise<Record<string, unknown>[]> {
+    const XLSX = await this.loadXlsxFromCdn();
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new Error('Workbook has no sheets');
+    const sheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  }
+
+  private async loadXlsxFromCdn(): Promise<any> {
+    const w = window as any;
+    if (w.XLSX) return w.XLSX;
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load XLSX library from CDN'));
+      document.head.appendChild(script);
+    });
+    if (!w.XLSX) throw new Error('XLSX library loaded but global not found');
+    return w.XLSX;
   }
 
   async createCase(): Promise<void> {
