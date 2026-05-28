@@ -1215,95 +1215,18 @@ Resources:
             Method: GET
             Auth:
               Authorizer: NONE
-        # Voice/SMS webhooks — no JWT, Twilio signature auth
-        VoiceInboundEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/inbound
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        VoiceRespondEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/respond
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        VoiceOutboundTwimlEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/outbound-twiml
-            Method: GET
-            Auth:
-              Authorizer: NONE
-        VoiceSmsInboundEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/sms-inbound
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        VoiceStatusEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/status
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        # Service-token endpoints for the Nova Sonic voice bridge.
-        # Auth: NONE at the gateway; the route handler verifies a Bearer token
-        # against VOICE_GATEWAY_SERVICE_TOKEN with a constant-time compare.
-        VoiceToolSchemasEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/tool-schemas
-            Method: GET
-            Auth:
-              Authorizer: NONE
-        VoiceToolExecuteEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/tool-execute
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        # Call event log — bridge posts lifecycle events here.
-        # Auth NONE at gateway; handler verifies VOICE_GATEWAY_SERVICE_TOKEN.
-        VoiceCallEventEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/call-event
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        # Twilio recording status webhook.
-        VoiceRecordingStatusEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/recording-status
-            Method: POST
-            Auth:
-              Authorizer: NONE
-        # Transcript delivery from the Transcribe job-completion Lambda.
-        # Auth NONE at gateway; handler verifies VOICE_GATEWAY_SERVICE_TOKEN.
-        VoiceTranscriptReadyEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /voice/transcript-ready
-            Method: POST
-            Auth:
-              Authorizer: NONE
+        # ── Voice / SMS routes ─────────────────────────────────────────
+        # NOTE: The 5 EXISTING voice webhook routes (POST /voice/inbound,
+        # /voice/respond, /voice/sms-inbound, /voice/status, GET /voice/outbound-twiml)
+        # live as imported Route resources on VoiceHttpApi (id v1k97uw533).
+        #
+        # The NEW Twilio / bridge routes (recording-status, tool-*,
+        # call-event, transcript-ready) are also on VoiceHttpApi — declared
+        # as explicit AWS::ApiGatewayV2::Route resources further down (see
+        # VoiceRouteRecordingStatus etc). SAM's HttpApi event source does NOT
+        # create routes on external (Ref'd) APIs, only on APIs it owns, so
+        # we have to declare them explicitly.
+
         # JWT-authenticated voice monitoring (admin UIs).
         VoiceActiveCallsEvent:
           Type: HttpApi
@@ -1519,6 +1442,51 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VoiceHttpApi}/*"
+
+  # ── New voice webhook routes (declared explicitly because SAM's HttpApi ──
+  # event source doesn't create routes on external Ref'd APIs.)
+  # All share VoiceLambdaIntegration and the wildcard VoiceInvokePermission
+  # already grants ${VoiceHttpApi}/* — no per-route permission needed.
+
+  VoiceRouteRecordingStatus:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/recording-status"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteToolSchemas:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "GET /voice/tool-schemas"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteToolExecute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/tool-execute"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteCallEvent:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/call-event"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteTranscriptReady:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/transcript-ready"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
 
 # ── Outputs ────────────────────────────────────────────────────────
 Outputs:
