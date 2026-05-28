@@ -1422,6 +1422,104 @@ Resources:
           - "*"
         MaxAge: 300
 
+  # ── Voice API imported from drift (Phase 2, 2026-05-28) ────────────────────
+  # This HttpApi (v1k97uw533) was created outside SAM; Twilio webhooks point
+  # here. Imported via CloudFormation IMPORT alongside its 5 routes, the
+  # shared Lambda integration, and the lambda:InvokeFunction permission.
+  # The "dev" stage on this API is intentionally NOT a Resource here —
+  # AWS::ApiGatewayV2::Stage isn't supported for Import. The stage stays
+  # orphan but functional.
+
+  VoiceHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: chat-agent-voice
+      ProtocolType: HTTP
+      RouteSelectionExpression: "$request.method $request.path"
+      DisableExecuteApiEndpoint: false
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - "*"
+
+  VoiceLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:chat-agent-api-${Stage}"
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+
+  VoiceRouteSmsInbound:
+    Type: AWS::ApiGatewayV2::Route
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/sms-inbound"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteInbound:
+    Type: AWS::ApiGatewayV2::Route
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/inbound"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteRespond:
+    Type: AWS::ApiGatewayV2::Route
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/respond"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteOutboundTwiml:
+    Type: AWS::ApiGatewayV2::Route
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "GET /voice/outbound-twiml"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceRouteStatus:
+    Type: AWS::ApiGatewayV2::Route
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApiId: !Ref VoiceHttpApi
+      RouteKey: "POST /voice/status"
+      Target: !Sub "integrations/${VoiceLambdaIntegration}"
+      AuthorizationType: NONE
+
+  VoiceInvokePermission:
+    Type: AWS::Lambda::Permission
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      FunctionName: !Sub "chat-agent-api-${Stage}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VoiceHttpApi}/*"
+
 # ── Outputs ────────────────────────────────────────────────────────
 Outputs:
   ApiUrl:
@@ -1429,6 +1527,12 @@ Outputs:
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
     Export:
       Name: !Sub "chat-agent-api-url-${Stage}"
+
+  VoiceApiUrl:
+    Description: Voice/SMS API URL — what Twilio webhooks should point at
+    Value: !Sub "https://${VoiceHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Export:
+      Name: !Sub "chat-agent-voice-api-url-${Stage}"
 
   CognitoUserPoolId:
     Description: Cognito User Pool ID — use as cognitoUserPoolId in Angular environment.ts

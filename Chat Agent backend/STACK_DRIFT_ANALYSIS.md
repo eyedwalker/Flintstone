@@ -1,9 +1,10 @@
 # Chat Agent Backend — Stack Drift Analysis
 
 **Original analysis**: 2026-05-27
-**Phase 1 remediation (DynamoDB imports)**: 2026-05-28 ✅
+**Phase 1 (DynamoDB imports)**: 2026-05-28 ✅ — 12 tables imported
+**Phase 2 (Voice HttpApi imports)**: 2026-05-28 ✅ — 8 resources imported (1 API + 5 Routes + 1 Integration + 1 Lambda::Permission)
 **Stack**: `chat-agent` in `us-west-2` (account `780457123717`)
-**Status**: `IMPORT_COMPLETE` as of 2026-05-28; **all 12 orphan tables now stack-managed.**
+**Status**: `IMPORT_COMPLETE`. All major drift remediation complete except orphan S3 buckets (Phase 3 — deferred).
 
 ---
 
@@ -209,7 +210,28 @@ If neither is on fire: **Option D** — schedule the stack hygiene work properly
 
 Knowing these would change the remediation path. If, say, a teammate is deploying via Terraform for the voice infra, then Option B (parallel SAM stack) is wrong — we'd want to consolidate around Terraform.
 
-## Phase 2 plan — orphan `chat-agent-voice` HttpApi
+## Phase 2 outcome (2026-05-28)
+
+The orphan `chat-agent-voice` HttpApi (`v1k97uw533`) is now under CloudFormation management. 8 resources imported:
+
+| Logical | Physical | Type |
+|---|---|---|
+| `VoiceHttpApi` | `v1k97uw533` | AWS::ApiGatewayV2::Api |
+| `VoiceLambdaIntegration` | `3abnsoq` | AWS::ApiGatewayV2::Integration |
+| `VoiceRouteSmsInbound` | `3u5d8q6` | AWS::ApiGatewayV2::Route |
+| `VoiceRouteInbound` | `vasnleo` | AWS::ApiGatewayV2::Route |
+| `VoiceRouteRespond` | `cc8i8pm` | AWS::ApiGatewayV2::Route |
+| `VoiceRouteOutboundTwiml` | `4t3pn2e` | AWS::ApiGatewayV2::Route |
+| `VoiceRouteStatus` | `bl1x323` | AWS::ApiGatewayV2::Route |
+| `VoiceInvokePermission` | `voice-api-gateway` | AWS::Lambda::Permission |
+
+**Caveat**: `AWS::ApiGatewayV2::Stage` is not supported by CloudFormation Import, so the `dev` stage on this API stays orphan. The stage is functional; just can't be managed via the template. If a future cleanup needs to consolidate to a single voice API, the migration plan would be to delete + recreate the stage.
+
+**No traffic was interrupted** — Twilio webhooks continued hitting the same URL throughout. Import is a metadata operation; routes/integrations stayed exactly as they were.
+
+A new stack output, `VoiceApiUrl`, exports the voice API URL so other stacks / docs can reference it.
+
+## Phase 2 plan — orphan `chat-agent-voice` HttpApi (kept for reference)
 
 The DynamoDB import is done. The next-largest piece of drift is the separate `chat-agent-voice` HttpApi (`v1k97uw533`) — created outside SAM, with 5 voice routes pointing at the same Lambda (`chat-agent-api-dev`). This is what Twilio currently calls.
 
