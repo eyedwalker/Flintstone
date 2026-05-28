@@ -1,8 +1,42 @@
 # Chat Agent Backend — Stack Drift Analysis
 
-**Date**: 2026-05-27
+**Original analysis**: 2026-05-27
+**Phase 1 remediation (DynamoDB imports)**: 2026-05-28 ✅
 **Stack**: `chat-agent` in `us-west-2` (account `780457123717`)
-**Last successful CloudFormation deploy**: **2026-03-17** (10+ weeks ago)
+**Status**: `IMPORT_COMPLETE` as of 2026-05-28; **all 12 orphan tables now stack-managed.**
+
+---
+
+## Phase 1 progress (2026-05-28)
+
+CloudFormation IMPORT executed cleanly. The 12 orphan tables are now tracked
+by the `chat-agent` stack. Each carries `DeletionPolicy: Retain` so a future
+stack delete preserves data:
+
+| Logical | Physical |
+|---|---|
+| `AssistantKbTable` | `chat-agent-assistant-kb-dev` |
+| `AttachmentsTable` | `chat-agent-attachments-dev` |
+| `AuditLogTable` | `chat-agent-audit-log-dev` (TTL) |
+| `EscalationConfigTable` | `chat-agent-escalation-config-dev` |
+| `FinetuningJobsTable` | `chat-agent-finetuning-jobs-dev` |
+| `KnowledgeBasesTable` | `chat-agent-knowledge-bases-dev` |
+| `RaftIterationsTable` | `chat-agent-raft-iterations-dev` |
+| `RegistryTable` | `chat-agent-registry-dev` |
+| `SessionsTable` | `chat-agent-sessions-dev` (TTL) |
+| `TeamMembersTable` | `chat-agent-team-members-dev` |
+| `TrainingDatasetsTable` | `chat-agent-training-datasets-dev` |
+| `VoiceSessionsTable` | `chat-agent-voice-sessions-dev` (TTL) |
+
+**Live stack resource count: 26 → 55** (the 29-resource bump beyond +12 is auto-generated sub-resources picked up alongside the import).
+
+**Why the deploy was previously broken**: `EarlyValidation::ResourceExistenceCheck` was rejecting changesets because the local template tried to CREATE `VoiceSessionsTable` while the actual table already existed in AWS. With the table now imported, that conflict is gone — a normal `sam deploy` against the local template should now succeed (modulo any other surface like the orphan HttpApi, see Phase 2 below).
+
+**Original analysis below for reference.**
+
+---
+
+## Original analysis
 
 ## TL;DR
 
@@ -174,6 +208,41 @@ If neither is on fire: **Option D** — schedule the stack hygiene work properly
 4. Is there an IaC tool other than SAM in use here? (CDK? Terraform? Manual console?)
 
 Knowing these would change the remediation path. If, say, a teammate is deploying via Terraform for the voice infra, then Option B (parallel SAM stack) is wrong — we'd want to consolidate around Terraform.
+
+## Phase 2 plan — orphan `chat-agent-voice` HttpApi
+
+The DynamoDB import is done. The next-largest piece of drift is the separate `chat-agent-voice` HttpApi (`v1k97uw533`) — created outside SAM, with 5 voice routes pointing at the same Lambda (`chat-agent-api-dev`). This is what Twilio currently calls.
+
+The local `template.yaml` ALSO defines those same 5 routes as events on `ApiFunction`, plus the new monitoring/bridge routes added today. If we just do a normal `sam deploy` now, CloudFormation will create those routes on the main `chat-agent` HttpApi (id `2p595psdt1`) — DUPLICATING what's on the orphan API. That's not wrong per se, but it's two APIs doing the same thing.
+
+Three viable paths for Phase 2:
+
+### Option 2A — Import the orphan API (preserves Twilio URLs)
+- Import `v1k97uw533` + each of its 5 routes + each integration as CloudFormation resources
+- Remove the duplicate voice route declarations from `template.yaml` so they only live on the imported API
+- Twilio webhooks keep pointing at the same URLs — zero-downtime
+- Most work (HttpApi + 5 Route + 5 Integration + Stage = ~12 imports), but cleanest end-state
+
+### Option 2B — Cut over to the main `chat-agent` HttpApi (delete the orphan)
+- Let `sam deploy` create the voice routes on the main API
+- Update the Twilio number's webhook URLs to the main API
+- Delete the orphan `chat-agent-voice` HttpApi
+- Simpler (no imports), but requires a brief Twilio webhook flip and risks a few minutes of misrouted calls
+
+### Option 2C — Leave it, deploy as-is
+- Just do `sam deploy` — the main API gets the new routes, the orphan stays
+- Two APIs co-exist. Twilio keeps using the orphan. New monitoring/bridge endpoints live on the main.
+- Acceptable interim state but doubles future maintenance
+
+**Recommendation**: 2A. The orphan is small (one HttpApi + 5 routes + 5 integrations) and import is now a known-working pattern after Phase 1.
+
+## Phase 3 plan — S3 buckets
+
+The HIPAA bucket (`chat-agent-hipaa-dev`) and the training data bucket (`chat-agent-training-data-dev`) are orphan but referenced as env vars. They're stable enough to defer. The `snowflake-eyecare-reports-dev` and `wubba-*` buckets look like they belong to other workstreams and probably shouldn't be in this stack at all.
+
+Lowest-effort Phase 3:
+- Import `chat-agent-hipaa-dev` and `chat-agent-training-data-dev` only
+- Document the `snowflake-eyecare-reports-dev` and `wubba-*` buckets as "intentionally external" with a comment in the template
 
 ## What's safe to do without deploying
 
