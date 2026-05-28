@@ -129,15 +129,15 @@ export async function handleTestSuites(
       return ok(items);
     }
 
-    // GET /test-suites/:id
-    if (method === 'GET' && id && !path.includes('/cases')) {
+    // GET /test-suites/:id — only when path ends with the ID (no subpath)
+    if (method === 'GET' && id && path.endsWith(`/${id}`)) {
       const suite = await ddb.getItem<ITestSuite>(TEST_SUITES_TABLE, { id });
       if (!suite || suite.tenantId !== tenantId) return notFound();
       return ok(suite);
     }
 
     // PUT /test-suites/:id
-    if (method === 'PUT' && id && !path.includes('/cases')) {
+    if (method === 'PUT' && id && path.endsWith(`/${id}`)) {
       const suite = await ddb.getItem<ITestSuite>(TEST_SUITES_TABLE, { id });
       if (!suite || suite.tenantId !== tenantId) return notFound();
 
@@ -150,7 +150,7 @@ export async function handleTestSuites(
     }
 
     // DELETE /test-suites/:id
-    if (method === 'DELETE' && id && !path.includes('/cases')) {
+    if (method === 'DELETE' && id && path.endsWith(`/${id}`)) {
       const suite = await ddb.getItem<ITestSuite>(TEST_SUITES_TABLE, { id });
       if (!suite || suite.tenantId !== tenantId) return notFound();
 
