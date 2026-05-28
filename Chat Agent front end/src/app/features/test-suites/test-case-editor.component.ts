@@ -152,6 +152,91 @@ export class TestCaseEditorComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  importing = false;
+
+  triggerFileImport(): void {
+    const input = document.getElementById('test-case-import-input') as HTMLInputElement | null;
+    if (input) {
+      input.value = '';
+      input.click();
+    }
+  }
+
+  async onImportFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const category = window.prompt(
+      'Category to apply to all imported cases?\n(factual, multi-turn, procedural, video-citation, role-based, out-of-scope, adversarial, edge-case)',
+      'factual',
+    );
+    if (!category) return;
+    if (!this.categories.includes(category as TestCategory)) {
+      this.snackBar.open(`Invalid category "${category}". Aborted.`, 'Dismiss', { duration: 5000 });
+      return;
+    }
+
+    this.importing = true;
+    try {
+      const rows = await this.parseQAFile(file);
+      if (rows.length === 0) {
+        this.snackBar.open('No prompt/answer rows found in file.', 'Dismiss', { duration: 5000 });
+        return;
+      }
+
+      const cases: Partial<ITestCase>[] = rows.map(r => ({
+        name: r.prompt.length > 60 ? r.prompt.slice(0, 57) + '...' : r.prompt,
+        category: category as TestCategory,
+        priority: 'medium',
+        turns: [{ userMessage: r.prompt, expectedBehavior: r.answer }],
+        tags: ['imported'],
+      }));
+
+      const res = await this.tsManager.importCases(this.suiteId, cases);
+      if (res.success) {
+        this.snackBar.open(`Imported ${res.data?.imported ?? rows.length} cases.`, '', { duration: 4000 });
+        await this.load();
+      } else {
+        this.snackBar.open(`Import failed: ${res.error}`, 'Dismiss', { duration: 6000 });
+      }
+    } catch (e) {
+      this.snackBar.open(`Failed to parse file: ${(e as Error).message}`, 'Dismiss', { duration: 6000 });
+    } finally {
+      this.importing = false;
+    }
+  }
+
+  private async parseQAFile(file: File): Promise<{ prompt: string; answer: string }[]> {
+    const XLSX = await import('xlsx');
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new Error('Workbook has no sheets');
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+
+    if (rows.length === 0) return [];
+
+    // Find prompt/answer columns by fuzzy header match
+    const headers = Object.keys(rows[0]);
+    const promptKey = headers.find(h => /^(prompt|question|user[\s_]?message|query|input)$/i.test(h.trim()));
+    const answerKey = headers.find(h => /^(expected[\s_]?answer|answer|expected|response|reply|output|expected[\s_]?behavior)$/i.test(h.trim()));
+
+    if (!promptKey || !answerKey) {
+      throw new Error(
+        `Could not find prompt and answer columns. Expected headers like "Prompt" and "Expected Answer". Found: ${headers.join(', ')}`,
+      );
+    }
+
+    return rows
+      .map(r => ({
+        prompt: String(r[promptKey] ?? '').trim(),
+        answer: String(r[answerKey] ?? '').trim(),
+      }))
+      .filter(r => r.prompt && r.answer);
+  }
+
   async createCase(): Promise<void> {
     const res = await this.tsManager.createCase(this.suiteId, {
       name: 'New Test Case',

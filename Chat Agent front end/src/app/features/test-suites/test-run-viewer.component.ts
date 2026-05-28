@@ -83,8 +83,9 @@ export class TestRunViewerComponent implements OnInit, OnDestroy {
 
   openResult(result: ITestResult): void {
     const ref = this.dialog.open(TestResultDetailDialogComponent, {
-      width: '900px',
-      maxHeight: '90vh',
+      width: '1400px',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
       data: { result, runId: this.runId },
     });
 

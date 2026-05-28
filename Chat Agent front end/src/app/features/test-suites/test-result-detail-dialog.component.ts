@@ -75,15 +75,16 @@ export interface IResultDetailData {
                   <mat-icon class="small-icon">school</mat-icon> Ideal Response (Training)
                 </div>
                 <textarea class="correction-textarea"
-                          rows="4"
+                          rows="14"
                           [value]="getCorrection(i)?.idealResponse ?? turn.actualResponse"
                           (input)="updateCorrection(i, $event)"
                           placeholder="Edit to provide the ideal response for training..."></textarea>
                 <mat-form-field appearance="outline" class="correction-notes">
                   <mat-label>Correction Notes</mat-label>
-                  <input matInput [value]="getCorrection(i)?.correctionNotes ?? ''"
-                         (input)="updateCorrectionNotes(i, $event)"
-                         placeholder="Why was this corrected?">
+                  <textarea matInput rows="3"
+                            [value]="getCorrection(i)?.correctionNotes ?? ''"
+                            (input)="updateCorrectionNotes(i, $event)"
+                            placeholder="Why was this corrected?"></textarea>
                 </mat-form-field>
               </div>
             </div>
@@ -181,10 +182,10 @@ export interface IResultDetailData {
       display: flex; align-items: center; gap: 8px;
       .score-badge { margin-left: auto; font-size: 1.1rem; font-weight: 700; }
     }
-    .detail-content { max-height: 70vh; overflow-y: auto; }
-    .split-view { display: flex; gap: 24px; min-width: 860px; }
-    .conversation-panel { flex: 1; min-width: 0; }
-    .eval-panel { width: 320px; flex-shrink: 0; }
+    .detail-content { max-height: 82vh; overflow-y: auto; }
+    .split-view { display: flex; gap: 24px; min-width: 0; }
+    .conversation-panel { flex: 2 1 0; min-width: 0; }
+    .eval-panel { flex: 0 0 340px; }
 
     h3 { margin: 0 0 12px; font-size: 1rem; font-weight: 600; }
     h4 { margin: 12px 0 4px; font-size: 0.85rem; font-weight: 600; }
@@ -238,18 +239,18 @@ export interface IResultDetailData {
     .status-error { color: #e65100; }
 
     .trainer-correction {
-      margin-top: 8px; padding: 8px; border: 1px dashed #1565c0; border-radius: 8px; background: #f3f8ff;
+      margin-top: 12px; padding: 12px; border: 1px dashed #1565c0; border-radius: 8px; background: #f3f8ff;
     }
     .correction-label {
-      display: flex; align-items: center; gap: 4px; color: #1565c0;
-      .small-icon { font-size: 14px; width: 14px; height: 14px; }
+      display: flex; align-items: center; gap: 4px; color: #1565c0; font-size: 0.8rem;
+      .small-icon { font-size: 16px; width: 16px; height: 16px; }
     }
     .correction-textarea {
-      width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid rgba(0,0,0,0.15);
-      border-radius: 6px; font-family: inherit; font-size: 0.85rem; resize: vertical;
-      margin-top: 4px;
+      width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 6px; font-family: inherit; font-size: 0.9rem; line-height: 1.5;
+      resize: vertical; margin-top: 6px; min-height: 280px;
     }
-    .correction-notes { width: 100%; margin-top: 4px; }
+    .correction-notes { width: 100%; margin-top: 8px; }
 
     .training-status-controls { margin-bottom: 12px; }
     .save-annotation-btn { width: 100%; }

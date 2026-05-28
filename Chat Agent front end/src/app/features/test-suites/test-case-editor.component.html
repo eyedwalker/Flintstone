@@ -10,6 +10,13 @@
       <button mat-stroked-button (click)="createCase()">
         <mat-icon>add</mat-icon> Add Case
       </button>
+      <button mat-stroked-button (click)="triggerFileImport()" [disabled]="importing || generating"
+              matTooltip="Upload XLSX, CSV, or TSV with Prompt + Expected Answer columns">
+        <mat-icon>upload_file</mat-icon> {{ importing ? 'Importing...' : 'Upload File' }}
+      </button>
+      <input type="file" id="test-case-import-input" hidden
+             accept=".xlsx,.xls,.csv,.tsv"
+             (change)="onImportFileSelected($event)">
       <button mat-stroked-button color="primary" (click)="generateContentTests()" [disabled]="generating">
         <mat-icon>auto_awesome</mat-icon> Content Tests
       </button>
@@ -75,6 +82,9 @@
       </button>
       <button mat-stroked-button (click)="createCase()">
         <mat-icon>add</mat-icon> Create Manually
+      </button>
+      <button mat-stroked-button (click)="triggerFileImport()">
+        <mat-icon>upload_file</mat-icon> Upload XLSX/CSV
       </button>
     </div>
   </div>

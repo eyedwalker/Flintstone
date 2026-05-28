@@ -57,6 +57,7 @@
     "swagger-ui-dist": "^5.32.0",
     "tslib": "^2.3.0",
     "uuid": "^13.0.0",
+    "xlsx": "^0.18.5",
     "zone.js": "~0.14.3"
   },
   "devDependencies": {
