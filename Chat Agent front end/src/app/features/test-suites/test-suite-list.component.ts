@@ -30,6 +30,7 @@ export class TestSuiteListComponent implements OnInit, OnDestroy {
   expandedSuiteId = '';
   suiteRuns: ITestRun[] = [];
   loadingHistory = false;
+  historyError = '';
 
   constructor(
     private tsManager: TestSuiteManager,
@@ -249,15 +250,33 @@ export class TestSuiteListComponent implements OnInit, OnDestroy {
 
   async toggleRunHistory(suite: ITestSuite, event: Event): Promise<void> {
     event.stopPropagation();
+    event.preventDefault();
     if (this.expandedSuiteId === suite.id) {
       this.expandedSuiteId = '';
+      this.historyError = '';
       return;
     }
     this.expandedSuiteId = suite.id;
+    this.suiteRuns = [];
+    this.historyError = '';
     this.loadingHistory = true;
-    const res = await this.tsManager.listRuns(suite.id);
-    this.suiteRuns = res.data ?? [];
-    this.loadingHistory = false;
+    try {
+      const res = await this.tsManager.listRuns(suite.id);
+      if (!res.success) {
+        this.historyError = `API error: ${res.error ?? 'unknown'}`;
+        this.suiteRuns = [];
+      } else if (!Array.isArray(res.data)) {
+        this.historyError = `Unexpected response shape: ${JSON.stringify(res.data).slice(0, 200)}`;
+        this.suiteRuns = [];
+      } else {
+        this.suiteRuns = res.data;
+      }
+    } catch (e: any) {
+      this.historyError = `Exception: ${e?.message ?? String(e)}`;
+      this.suiteRuns = [];
+    } finally {
+      this.loadingHistory = false;
+    }
   }
 
   viewRunResults(runId: string, event: Event): void {

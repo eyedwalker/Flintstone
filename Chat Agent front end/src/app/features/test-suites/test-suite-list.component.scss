@@ -204,6 +204,15 @@
 
 .no-runs { font-size: 0.8rem; color: rgba(0,0,0,0.4); padding: 8px 0; }
 
+.history-error {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 12px; background: #ffebee; border: 1px solid #ef9a9a;
+  border-radius: 6px; color: #c62828; font-size: 0.85rem;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; }
+  strong { display: block; margin-bottom: 4px; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: monospace; font-size: 0.78rem; color: #b71c1c; }
+}
+
 // Score trend mini-chart
 .score-trend {
   margin-bottom: 12px; padding: 8px; background: #fafafa; border-radius: 8px;

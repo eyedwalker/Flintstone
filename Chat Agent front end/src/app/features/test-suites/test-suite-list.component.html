@@ -114,7 +114,15 @@
           <mat-spinner diameter="20"></mat-spinner> Loading runs...
         </div>
 
-        <div *ngIf="!loadingHistory && suiteRuns.length === 0" class="no-runs">
+        <div *ngIf="!loadingHistory && historyError" class="history-error">
+          <mat-icon>error_outline</mat-icon>
+          <div>
+            <strong>Could not load run history.</strong>
+            <pre>{{ historyError }}</pre>
+          </div>
+        </div>
+
+        <div *ngIf="!loadingHistory && !historyError && suiteRuns.length === 0" class="no-runs">
           No runs yet. Click the play button to run this suite.
         </div>
 
