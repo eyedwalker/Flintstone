@@ -1,7 +1,7 @@
 import { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2 } from 'aws-lambda';
 import * as fs from 'fs';
 import * as path from 'path';
-import { resolveRequestContext, requireRole, parseBody } from './auth';
+import { resolveRequestContext, requireRole, parseBody, decodeEventBody } from './auth';
 import { ok, notFound, serverError, forbidden, badRequest, cors, corsHeaders } from './response';
 import { handleAssistants } from './routes/assistants';
 import { handleChat } from './routes/chat';
@@ -77,13 +77,28 @@ export const handler = async (
     return handleActionGroup(event as any) as any;
   }
 
+  // R1: defensive event-shape check. We've seen ~4 invocations today from
+  // unknown sources (synthetic test, monitoring probe, etc.) crash here with
+  // "Cannot read properties of undefined (reading 'http')". Return a 400
+  // instead of throwing so Twilio (and CloudWatch noise) gets a clean answer.
+  if (!event.requestContext?.http) {
+    console.warn('[handler] Unsupported event shape — no requestContext.http');
+    return { statusCode: 400, body: 'Unsupported event shape' };
+  }
+
   const method = event.requestContext.http.method.toUpperCase();
 
   // Handle CORS preflight before auth check — no JWT required for OPTIONS
   if (method === 'OPTIONS') return cors();
 
-  const rawPath = event.rawPath.replace(/^\/dev|^\/prod/, ''); // strip stage prefix
-  const body = parseBody<Record<string, unknown>>(event.body ?? '') ?? {};
+  const rawPath = event.rawPath.replace(/^(?:\/dev|\/prod)/, ''); // strip stage prefix (D4 fix)
+
+  // Decode body once at the dispatcher level — API Gateway HttpApi base64-
+  // encodes non-JSON bodies (and sometimes JSON ones), so anything reading
+  // event.body downstream must base64-decode first. Decode now and pass the
+  // raw decoded string to body-format-specific parsers.
+  const rawBody = decodeEventBody(event);
+  const body = parseBody<Record<string, unknown>>(rawBody) ?? {};
 
   // OpenAPI spec — public, no auth required
   if (rawPath === '/docs/openapi.yaml' && method === 'GET') {
@@ -101,12 +116,13 @@ export const handler = async (
 
   // ── Voice/SMS webhooks — no JWT, Twilio signature auth ──────────────────
   if (rawPath.startsWith('/voice/')) {
-    // Parse URL-encoded body from Twilio
+    // Parse the (already-base64-decoded) body. Twilio sends form-encoded;
+    // bridge service-token endpoints send JSON. Both already had base64
+    // stripped by decodeEventBody() at the top of the handler.
     let voiceBody: Record<string, string> = {};
-    const ct = event.headers['content-type'] ?? '';
-    if (ct.includes('application/x-www-form-urlencoded') && event.body) {
-      const params = new URLSearchParams(event.body);
-      voiceBody = Object.fromEntries(params.entries());
+    const ct = event.headers['content-type'] ?? event.headers['Content-Type'] ?? '';
+    if (ct.includes('application/x-www-form-urlencoded') && rawBody) {
+      voiceBody = Object.fromEntries(new URLSearchParams(rawBody).entries());
     } else {
       voiceBody = body as Record<string, string>;
     }

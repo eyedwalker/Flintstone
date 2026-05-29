@@ -143,6 +143,18 @@ export async function handleVoiceRespond(
   baseUrl: string,
 ): Promise<APIGatewayProxyResultV2> {
   const callSid = body['CallSid'] ?? '';
+
+  // B2: Graceful hangup when CallSid is missing. This used to crash the Lambda
+  // because conversationEngine.loadSession passed id="" to DDB, which throws
+  // ValidationException, which surfaced to the caller as Twilio's
+  // "Application error has occurred" message. Fail fast with a clean hangup.
+  if (!callSid) {
+    console.warn('[Voice] handleVoiceRespond invoked without CallSid; returning hangup');
+    return twimlResponse(twiml.buildHangupTwiml(
+      'I\'m sorry, something went wrong. Please call back. Goodbye!',
+    ));
+  }
+
   const speechResult = body['SpeechResult'] ?? '';
   const digits = body['Digits'] ?? '';
   const fromPhone = body['From'] ?? '';

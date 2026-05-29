@@ -165,6 +165,22 @@ export function assertOwnership(
   return resourceTenantId === requestTenantId;
 }
 
+/**
+ * Decode the body of an API Gateway HttpApi event. API Gateway sets
+ * `isBase64Encoded: true` for any body whose content-type doesn't match
+ * a configured "passthrough" type (form-urlencoded is the usual victim).
+ * If we don't decode first, downstream parsers see the raw base64 string
+ * and return garbage / empty objects. Always call this before parsing.
+ */
+export function decodeEventBody(event: { body?: string | null; isBase64Encoded?: boolean }): string {
+  if (!event.body) return '';
+  if (event.isBase64Encoded) {
+    try { return Buffer.from(event.body, 'base64').toString('utf-8'); }
+    catch { return event.body; }
+  }
+  return event.body;
+}
+
 /** Safe JSON body parse — returns null on failure */
 export function parseBody<T>(raw: string | undefined): T | null {
   if (!raw) return null;
