@@ -59,7 +59,10 @@ export async function authenticate(config: IAmeliaConfig): Promise<{ token: stri
     // Note: Amelia login endpoint only accepts username/password — NOT domainCode
     const loginBody = { username: config.username, password: config.password };
 
-    let lastError = '';
+    // Accumulate all errors so the user sees the actual cause (e.g. 500 =
+    // bad credentials) rather than just the last URL's 404 from a dead path.
+    const allErrors: string[] = [];
+    let credentialError = '';
     for (const loginUrl of loginUrls) {
       try {
         const res = await fetch(loginUrl, {
@@ -69,19 +72,21 @@ export async function authenticate(config: IAmeliaConfig): Promise<{ token: stri
         });
 
         if (res.status === 404 || res.status === 405) {
-          lastError = `${loginUrl}: ${res.status}`;
+          allErrors.push(`${loginUrl}: ${res.status}`);
           continue; // Try next URL
         }
 
-        // Amelia returns 500 for bad credentials (not 401)
+        // Amelia returns 500 for bad credentials (not 401). Capture this
+        // separately so we can surface it as the headline error.
         if (res.status === 500) {
-          lastError = `${loginUrl}: 500 — check username/password`;
+          credentialError = `${loginUrl}: 500 — check username/password (Amelia returns 500 on bad credentials)`;
+          allErrors.push(credentialError);
           continue;
         }
 
         if (!res.ok) {
           const text = await res.text();
-          lastError = `${loginUrl}: ${res.status} ${text.slice(0, 200)}`;
+          allErrors.push(`${loginUrl}: ${res.status} ${text.slice(0, 200)}`);
           continue;
         }
 
@@ -102,14 +107,19 @@ export async function authenticate(config: IAmeliaConfig): Promise<{ token: stri
         if (data.id) return { token: data.id, authMode: 'token' as const };
 
         console.log(`[Amelia] Full login response:`, JSON.stringify(data).slice(0, 500));
-        lastError = `${loginUrl}: No token in response`;
+        allErrors.push(`${loginUrl}: No token in response`);
       } catch (err) {
-        lastError = `${loginUrl}: ${String(err).slice(0, 200)}`;
+        allErrors.push(`${loginUrl}: ${String(err).slice(0, 200)}`);
         continue;
       }
     }
 
-    throw new Error(`Could not authenticate with Amelia. Last error: ${lastError}`);
+    // Prefer the credential error if any URL returned 500; it's the most
+    // actionable signal. Otherwise show all attempts.
+    if (credentialError) {
+      throw new Error(`Amelia authentication failed: ${credentialError}`);
+    }
+    throw new Error(`Could not authenticate with Amelia. Attempts:\n  - ${allErrors.join('\n  - ')}`);
   }
 
   // Method 2: OAuth client credentials (returns Bearer token)
