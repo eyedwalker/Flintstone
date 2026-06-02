@@ -17,7 +17,16 @@ Parameters:
     Description: At least two public subnets for the ALB (Twilio needs HTTPS reachability)
   PrivateSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: At least two private subnets for the Fargate tasks
+    Default: ""
+    Description: >
+      Two private subnets for Fargate tasks. If empty, tasks run in the
+      public SubnetIds with AssignPublicIp=ENABLED — fine for first deploys
+      in a default VPC; tighten later when private subnets + NAT exist.
+  UsePublicSubnetsForTasks:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: When true, Fargate tasks run in the public SubnetIds (no NAT needed)
   ContainerImage:
     Type: String
     Description: ECR image URI for the bridge (e.g. 123.dkr.ecr.us-west-2.amazonaws.com/nova-sonic-bridge:latest)
@@ -42,6 +51,9 @@ Parameters:
     Type: Number
     Default: 1
     MinValue: 1
+
+Conditions:
+  TasksInPublicSubnets: !Equals [!Ref UsePublicSubnetsForTasks, "true"]
 
 Resources:
 
@@ -120,6 +132,13 @@ Resources:
       Type: application
       Subnets: !Ref SubnetIds
       SecurityGroups: [!Ref AlbSecurityGroup]
+      LoadBalancerAttributes:
+        # HTTP/2 must be DISABLED for WebSocket upgrade to work. Twilio Media
+        # Streams clients negotiate HTTP/2 with ALB by default, and ALB's WS
+        # support is HTTP/1.1-only. With HTTP/2 enabled, Twilio's connection
+        # gets a 404 and the call ends with duration=0. Don't re-enable.
+        - Key: routing.http2.enabled
+          Value: "false"
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -193,8 +212,8 @@ Resources:
         MaximumPercent: 200
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
-          Subnets: !Ref PrivateSubnetIds
+          AssignPublicIp: !If [TasksInPublicSubnets, ENABLED, DISABLED]
+          Subnets: !If [TasksInPublicSubnets, !Ref SubnetIds, !Ref PrivateSubnetIds]
           SecurityGroups: [!Ref ServiceSecurityGroup]
       LoadBalancers:
         - ContainerName: bridge
