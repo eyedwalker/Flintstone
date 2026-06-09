@@ -127,7 +127,8 @@ export async function dispatch(
   }
 
   // ── 4. Fast-path keyword matching ──────────────────────────────────────────
-  const selectedAgent = matchByKeywords(message, agents) ?? agents[0];
+  // Fallback to the last agent (highest priority number = catch-all, i.e. Encompass Larry).
+  const selectedAgent = matchByKeywords(message, agents) ?? agents[agents.length - 1];
 
   // Store session affinity
   sessionAffinityCache.set(sessionId, {
