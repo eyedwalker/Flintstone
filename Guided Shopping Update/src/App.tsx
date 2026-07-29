@@ -313,6 +313,10 @@ export default function App() {
             <button aria-pressed={view === 'stacked'} onClick={() => setView('stacked')}>☰</button>
           </div>
           <button className="cartbtn" onClick={() => setPage(page === 'shop' ? 'invoice' : 'shop')}>🛒 Cart <span className="n">{n}</span></button>
+          <button className="theme" title="Classic tiles & tabs view" aria-label="Classic view" onClick={() => {
+            const q = new URLSearchParams(window.location.search); q.set('ui', 'classic');
+            window.location.href = window.location.pathname + '?' + q.toString();
+          }}>▦</button>
           <button className="theme" title="Toggle theme" onClick={() => {
             const cur = document.documentElement.getAttribute('data-theme');
             const next = cur === 'dark' ? 'light' : cur === 'light' ? 'dark' : (matchMedia('(prefers-color-scheme:dark)').matches ? 'light' : 'dark');
