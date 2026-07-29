@@ -6,6 +6,7 @@ import fs from 'fs';
 import databaseRoutes from './routes/database';
 import guidedShoppingRoutes from './routes/guidedShopping';
 import adminConfigRoutes from './routes/adminConfig';
+import prcProxyRoutes from './routes/prcProxy';
 import { closeConnection } from './config/database';
 
 // Load environment variables
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use('/api/database', databaseRoutes);
 app.use('/api/guided-shopping', guidedShoppingRoutes);
 app.use('/api/admin-config', adminConfigRoutes);
+app.use('/api/prc', prcProxyRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

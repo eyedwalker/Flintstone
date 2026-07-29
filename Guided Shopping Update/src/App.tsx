@@ -101,6 +101,10 @@ export default function App() {
   const [toastMsg, setToastMsg] = useState('');
   const [anchor, setAnchor] = useState<{ at: string; hadInsurance: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  /* AI recommendation state: per-useCase reasons ({text, source}[]) + insights */
+  const [aiReasons, setAiReasons] = useState<Record<string, { text: string; source: string }[]>>({});
+  const [aiInsights, setAiInsights] = useState<string[]>([]);
+  const [aiApplied, setAiApplied] = useState(false);
 
   const ctx: PatientContext = useMemo(() => ({
     rx: { rightAdd: url.rx.add, leftAdd: url.rx.add },
@@ -115,7 +119,7 @@ export default function App() {
   /* Saved-cart open: load the persisted pairs + anchor from timeline-prc. */
   useEffect(() => {
     if (!url.savedCartToken || !url.prcBase) return;
-    fetch(`${url.prcBase}/api/guided-shopping/saved-cart?token=${encodeURIComponent(url.savedCartToken)}`)
+    fetch(`/api/prc/saved-cart?token=${encodeURIComponent(url.savedCartToken)}`)
       .then((r) => r.json())
       .then((d) => {
         if (!d?.success || !d.cart) return;
@@ -131,6 +135,35 @@ export default function App() {
   }, [url]);
 
   useEffect(() => { if (!toastMsg) return; const t = setTimeout(() => setToastMsg(''), 3400); return () => clearTimeout(t); }, [toastMsg]);
+
+  /* AI recommendations: the server gathers the full profile (PE Rx/age/orders +
+     questionnaires), fires the practice's dispensing rules deterministically,
+     and Claude composes the pairs with source-cited reasons. Fail-safe: any
+     miss keeps the local engine's picks. Skipped for saved-cart reopens. */
+  useEffect(() => {
+    if (url.savedCartToken || !url.prcBase || aiApplied) return;
+    (async () => {
+      try {
+        const r = await fetch(`/api/prc/recommend`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patientId: url.patientId, legacyPatientId: url.legacyPatientId, companyId: url.companyId,
+            catalog: { favorites: FAVORITES, packages: PACKAGES },
+            context: { reasonForVisit: url.reasonForVisit, insuranceSummary: 'VSP: $150 frame allowance, $25 lens copay' },
+          }),
+        });
+        const d = await r.json();
+        if (!d?.success || !Array.isArray(d.pairs)) return;
+        const ov: Record<string, { frameId?: string; pkgId?: string }> = {};
+        const reasons: Record<string, { text: string; source: string }[]> = {};
+        d.pairs.forEach((p: any) => { ov[p.useCase] = { frameId: p.frameId, pkgId: p.pkgId }; reasons[p.useCase] = p.reasons || []; });
+        setOverrides((prev) => ({ ...ov, ...prev }));   // user's manual picks win
+        setAiReasons(reasons);
+        setAiInsights(d.insights || []);
+        setAiApplied(true);
+      } catch { /* local engine stands */ }
+    })();
+  }, [url, aiApplied]);
 
   /* Build pairs, honor overrides, price the CART. */
   const rec = useMemo(() => {
@@ -161,7 +194,7 @@ export default function App() {
   async function postJson(path: string, body: unknown) {
     if (!url.prcBase) return null;
     try {
-      const r = await fetch(`${url.prcBase}${path}`, {
+      const r = await fetch(path, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
       return await r.json().catch(() => null);
@@ -186,11 +219,11 @@ export default function App() {
   }
   async function completeSale(kind: 'office' | 'portal') {
     setBusy(true);
-    await postJson('/api/guided-shopping/order-complete', orderPayload());
+    await postJson('/api/prc/order-complete', orderPayload());
     // Saved-for-later pairs persist server-side and are texted to the patient
     // (anchored to THIS purchase, so the second-pair window starts now).
     if (savedLater.size) {
-      await postJson('/api/guided-shopping/saved-cart', {
+      await postJson('/api/prc/saved-cart', {
         ...orderPayload(),
         pairs: [...savedLater].map(pairConfig),
         anchorPurchaseAt: new Date().toISOString(),
@@ -207,7 +240,7 @@ export default function App() {
      pairs) travels; benefits stay live because nothing anchored yet. */
   async function sendTextLink() {
     setBusy(true);
-    const d = await postJson('/api/guided-shopping/saved-cart', {
+    const d = await postJson('/api/prc/saved-cart', {
       ...orderPayload(),
       pairs: [...new Set([...inCart, ...savedLater])].map(pairConfig),
       anchorPurchaseAt: null, anchorHadInsurance: false,
@@ -269,6 +302,17 @@ export default function App() {
         }}>{saved ? '★ Saved' : '☆ Save for later'}</button>
       </div>
     );
+    const why = (aiReasons[p.useCase] || []).length > 0 && (
+      <div style={{ background: 'var(--raised)', borderRadius: 10, padding: '9px 11px' }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--brand-ink)', marginBottom: 4 }}>✨ Why this pair</div>
+        {(aiReasons[p.useCase] || []).map((r, i) => (
+          <div key={i} style={{ fontSize: 12, color: 'var(--ink)', marginTop: i ? 4 : 0 }}>
+            {r.text}
+            <span style={{ display: 'block', fontSize: 10.5, color: 'var(--faint)' }}>— {r.source}</span>
+          </div>
+        ))}
+      </div>
+    );
     const priceB = (
       <div className="price">
         <div className="prow"><span className="k">Retail</span><span className="v num">{money(p.pricing.retail)}</span></div>
@@ -283,10 +327,10 @@ export default function App() {
         <div className="cap" />
         <div className="body">
           {isHero
-            ? <>{head}<div className="lead-col">{glassCol}{sels}{actions}</div>{priceB}</>
+            ? <>{head}<div className="lead-col">{glassCol}{why}{sels}{actions}</div>{priceB}</>
             : view === 'stacked'
-              ? <>{head}{glassCol}<div className="midcol">{sels}{actions}</div>{priceB}</>
-              : <>{head}{glassCol}{sels}{priceB}{actions}</>}
+              ? <>{head}{glassCol}<div className="midcol">{why}{sels}{actions}</div>{priceB}</>
+              : <>{head}{glassCol}{why}{sels}{priceB}{actions}</>}
         </div>
       </article>
     );
@@ -363,6 +407,11 @@ export default function App() {
                   ? 'Benefits recalculate for exactly what’s in the cart · move them with the selectors above'
                   : 'Shop from home — your favorites, insurance, and office promotions are already loaded'}</p>
               </div>
+              {aiInsights.length > 0 && (
+                <div style={{ flexBasis: '100%', fontSize: 12.5, color: 'var(--muted)' }}>
+                  ✨ {aiInsights.join(' · ')}
+                </div>
+              )}
               <div className="savepill">▼ You save {money(rec.total.saved)}</div>
               <div className="bigmoney"><div className="lbl">Total you pay</div><div className="val num">{money(rec.total.youPay)}</div></div>
               <button className="checkout" disabled={n === 0} onClick={() => setPage('invoice')}>Checkout →</button>
