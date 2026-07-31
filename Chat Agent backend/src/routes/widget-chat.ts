@@ -317,6 +317,8 @@ export async function processChatJob(job: {
         query: job.userQuery,
         responseLength: reply.length,
         latencyMs,
+        ...(agentResult.firstTokenMs !== undefined && { firstTokenMs: agentResult.firstTokenMs }),
+        ...(agentResult.answerMs !== undefined && { answerMs: agentResult.answerMs }),
         intent,
         guardrailTriggered: false,
         videoCited: /video|vimeo|youtube/i.test(reply),

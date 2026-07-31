@@ -60,6 +60,29 @@
       <span class="legend-dot yellow"></span> Tune/monitor
       <span class="legend-dot red"></span> Stop &amp; fix
     </p>
+
+    <div class="speed-explainer">
+      <mat-icon>speed</mat-icon>
+      <div>
+        <strong>Two speed numbers, and they are not the same thing.</strong>
+        <p>
+          <strong>Time to first response</strong> is how long before the assistant starts
+          replying. It is what makes the experience feel quick, and it is the number to
+          quote when someone asks &ldquo;is it fast?&rdquo;
+        </p>
+        <p>
+          <strong>Time to first answer</strong> is how long until the complete, sourced
+          answer is finished — including looking up knowledge-base articles and pulling
+          live practice data. It is always the larger number, because that is the work
+          that makes the answer trustworthy rather than merely quick.
+        </p>
+        <p>
+          Judging the full answer against a first-response target is what previously showed
+          healthy performance as red. The two now have separate targets set to what each is
+          actually capable of.
+        </p>
+      </div>
+    </div>
     <table class="scorecard-table">
       <thead>
         <tr>
@@ -72,7 +95,10 @@
       </thead>
       <tbody>
         <tr *ngFor="let row of scorecard">
-          <td class="kpi-name-cell">{{ row.kpi }}</td>
+          <td class="kpi-name-cell">
+            {{ row.kpi }}
+            <span class="kpi-note" *ngIf="row.note">{{ row.note }}</span>
+          </td>
           <td class="current-cell">
             <span class="ryg-badge" [class]="'ryg-' + row.status">{{ row.value }}</span>
           </td>

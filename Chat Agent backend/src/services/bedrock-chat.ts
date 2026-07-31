@@ -35,6 +35,18 @@ export interface IAgentResult {
   text: string;
   sessionId?: string;
   actionGroupCalls?: IActionGroupCall[];
+  /**
+   * Time until the model emitted its first token — the "first response".
+   * This is when words would start appearing to a streaming client, and it is
+   * what a user perceives as responsiveness. Undefined if no text came back.
+   */
+  firstTokenMs?: number;
+  /**
+   * Time until the complete answer finished streaming — the "first answer".
+   * Includes retrieval and any action-group calls. This is the number a user
+   * waits for before they can actually read anything useful.
+   */
+  answerMs?: number;
 }
 
 /**
@@ -53,6 +65,7 @@ export async function invokeAgent(
   roleFilter?: IRoleFilter | IMultiKbRoleFilter,
   tenantId?: string,
 ): Promise<IAgentResult> {
+  const t0 = Date.now();
   let sessionState: Record<string, unknown> | undefined;
 
   if (roleFilter) {
@@ -96,10 +109,14 @@ export async function invokeAgent(
   const parts: string[] = [];
   const pendingCalls = new Map<string, IActionGroupCall>();
   const completedCalls: IActionGroupCall[] = [];
+  let firstTokenMs: number | undefined;
 
   if (res.completion) {
     for await (const event of res.completion) {
       if (event.chunk?.bytes) {
+        // First chunk carrying text = the model has started answering. Everything
+        // before this is retrieval and planning the user is waiting through.
+        if (firstTokenMs === undefined) firstTokenMs = Date.now() - t0;
         parts.push(new TextDecoder().decode(event.chunk.bytes));
       }
 
@@ -150,6 +167,8 @@ export async function invokeAgent(
   return {
     text: parts.join(''),
     actionGroupCalls: completedCalls.length > 0 ? completedCalls : undefined,
+    firstTokenMs,
+    answerMs: Date.now() - t0,
   };
 }
 

@@ -178,6 +178,11 @@ export async function handleChat(
         query: sanitizedForLog, // PII-redacted version for logs
         responseLength: reply.length,
         latencyMs,
+        // Split the wait into the two halves management asks about: when words
+        // start appearing vs when the answer is complete. latencyMs is kept as-is
+        // for back-compat and stays equivalent to the full answer.
+        ...(agentResult.firstTokenMs !== undefined && { firstTokenMs: agentResult.firstTokenMs }),
+        ...(agentResult.answerMs !== undefined && { answerMs: agentResult.answerMs }),
         intent,
         guardrailTriggered: false,
         videoCited: /video|vimeo|youtube/i.test(reply),

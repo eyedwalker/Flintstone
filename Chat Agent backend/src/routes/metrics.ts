@@ -57,12 +57,20 @@ export async function handleMetrics(
       const avgResponseLength = responseLengths.length > 0
         ? Math.round(responseLengths.reduce((a, b) => a + b, 0) / responseLengths.length) : 0;
 
-      // Latency stats (median, p90, avg)
+      // Latency stats (median, p90, avg). latencyMs measures the whole agent
+      // invocation, so it is the time to the COMPLETE answer, not to first word.
       const latencies = items.map(r => Number(r['latencyMs'] ?? 0)).filter(n => n > 0).sort((a, b) => a - b);
       const medianLatencyMs = latencies.length > 0 ? latencies[Math.floor(latencies.length / 2)] : 0;
       const p90LatencyMs = latencies.length > 0 ? latencies[Math.floor(latencies.length * 0.9)] : 0;
       const avgLatencyMs = latencies.length > 0
         ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0;
+
+      // Time to first token — when the model starts emitting words. Only present
+      // on records written after first-token instrumentation shipped, so this can
+      // legitimately be empty while latency data exists.
+      const firstTokens = items.map(r => Number(r['firstTokenMs'] ?? 0)).filter(n => n > 0).sort((a, b) => a - b);
+      const medianFirstTokenMs = firstTokens.length > 0 ? firstTokens[Math.floor(firstTokens.length / 2)] : 0;
+      const p90FirstTokenMs = firstTokens.length > 0 ? firstTokens[Math.floor(firstTokens.length * 0.9)] : 0;
 
       // Escalation count
       const escalated = items.filter(r => r['escalated'] === true).length;
@@ -148,6 +156,8 @@ export async function handleMetrics(
           avgResponseLength,
           medianLatencyMs, p90LatencyMs, avgLatencyMs,
           hasLatencyData: latencies.length > 0,
+          medianFirstTokenMs, p90FirstTokenMs,
+          hasFirstTokenData: firstTokens.length > 0,
           period, days,
         },
         dailyTrend,

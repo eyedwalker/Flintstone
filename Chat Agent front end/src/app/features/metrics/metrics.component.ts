@@ -15,11 +15,15 @@ interface IMetricsSummary {
   uniqueSessions: number; avgResponseLength: number;
   medianLatencyMs: number; p90LatencyMs: number; avgLatencyMs: number;
   hasLatencyData: boolean;
+  medianFirstTokenMs?: number; p90FirstTokenMs?: number;
+  hasFirstTokenData?: boolean;
   period: string; days: number;
 }
 
 interface IScorecardRow {
   kpi: string;
+  /** Plain-English definition shown under the KPI name, for non-technical readers. */
+  note?: string;
   value: string;
   rawValue: number;
   status: 'green' | 'yellow' | 'red';
@@ -175,11 +179,26 @@ export class MetricsComponent implements OnInit {
     const escalationStatus: 'green' | 'yellow' | 'red' =
       escalationRate <= 1.2 ? 'green' : escalationRate <= 1.5 ? 'yellow' : 'red';
 
-    // Median Response Time
+    // Speed is two different questions and they need two different bars.
+    //
+    // First RESPONSE = the model starts emitting words. This is what makes the
+    // assistant feel fast, and it is the bar the old ≤2.0s threshold was really
+    // written for, so it keeps that threshold.
+    //
+    // First ANSWER = the complete, grounded reply is finished — retrieval, any
+    // action-group lookups, and the full generation. It is always slower by
+    // construction, and holding it to a first-response bar marked healthy
+    // performance red. A researched answer inside ~6s is good.
+    const firstTokenSec = (s.medianFirstTokenMs ?? 0) / 1000;
+    const hasFirstToken = !!s.hasFirstTokenData && firstTokenSec > 0;
+    const firstResponseStatus: 'green' | 'yellow' | 'red' =
+      !hasFirstToken ? 'yellow' :
+      firstTokenSec <= 2.0 ? 'green' : firstTokenSec <= 4.0 ? 'yellow' : 'red';
+
     const medianSec = s.medianLatencyMs / 1000;
-    const speedStatus: 'green' | 'yellow' | 'red' =
+    const answerStatus: 'green' | 'yellow' | 'red' =
       !s.hasLatencyData ? 'yellow' :
-      medianSec <= 2.0 ? 'green' : medianSec <= 4.9 ? 'yellow' : 'red';
+      medianSec <= 6.0 ? 'green' : medianSec <= 9.0 ? 'yellow' : 'red';
 
     // Need Met Rate (satisfied / (satisfied + dissatisfied))
     const ratedCount = s.satisfied + s.dissatisfied;
@@ -205,9 +224,18 @@ export class MetricsComponent implements OnInit {
         status: escalationStatus, greenRange: '≤ 1.2%', yellowRange: '1.3–1.5%', redRange: '> 1.5%',
       },
       {
-        kpi: 'Speed: Median Response Time', value: s.hasLatencyData ? `${medianSec.toFixed(1)}s` : 'No data',
-        rawValue: medianSec, status: speedStatus,
-        greenRange: '≤ 2.0s', yellowRange: '2.1–4.9s', redRange: '> 5.0s',
+        kpi: 'Speed: Time to First Response',
+        note: 'Median wait before the assistant starts replying — what makes it feel fast.',
+        value: hasFirstToken ? `${firstTokenSec.toFixed(2)}s` : 'Not yet measured',
+        rawValue: firstTokenSec, status: firstResponseStatus,
+        greenRange: '≤ 2.0s', yellowRange: '2.1–4.0s', redRange: '> 4.0s',
+      },
+      {
+        kpi: 'Speed: Time to First Answer',
+        note: 'Median wait for the complete, sourced answer — includes lookups. This is the number users actually wait through.',
+        value: s.hasLatencyData ? `${medianSec.toFixed(2)}s` : 'No data',
+        rawValue: medianSec, status: answerStatus,
+        greenRange: '≤ 6.0s', yellowRange: '6.1–9.0s', redRange: '> 9.0s',
       },
       {
         kpi: 'Quality: Need Met Rate', value: ratedCount > 0 ? `${needMetRate.toFixed(0)}%` : 'No ratings',
@@ -231,31 +259,40 @@ export class MetricsComponent implements OnInit {
     const help = intents.find(i => i.intent === 'help');
     const frontOffice = intents.find(i => i.intent === 'front-office');
 
-    if (reporting && reporting.medianLatencyMs > 0) {
-      const sec = reporting.medianLatencyMs / 1000;
-      // Reporting gets a higher threshold (complex queries)
-      const st: 'green' | 'yellow' | 'red' = sec <= 5.0 ? 'green' : sec <= 10.0 ? 'yellow' : 'red';
-      this.scorecard.push({
-        kpi: `Speed: Reporting (${reporting.count} queries)`, value: `${sec.toFixed(1)}s`,
-        rawValue: sec, status: st, greenRange: '≤ 5.0s', yellowRange: '5.1–10s', redRange: '> 10s',
-      });
-    }
-
+    // These are all measured on the same full-answer clock as "Time to First
+    // Answer" above, so they are labelled and scored as answer times. They
+    // bracket the blended 6s/9s bar by how much work each intent really does:
+    // KB lookup is lightest, reporting is heaviest.
     if (help && help.medianLatencyMs > 0) {
       const sec = help.medianLatencyMs / 1000;
-      const st: 'green' | 'yellow' | 'red' = sec <= 2.0 ? 'green' : sec <= 4.9 ? 'yellow' : 'red';
+      const st: 'green' | 'yellow' | 'red' = sec <= 5.0 ? 'green' : sec <= 8.0 ? 'yellow' : 'red';
       this.scorecard.push({
-        kpi: `Speed: Help/KB (${help.count} queries)`, value: `${sec.toFixed(1)}s`,
-        rawValue: sec, status: st, greenRange: '≤ 2.0s', yellowRange: '2.1–4.9s', redRange: '> 5.0s',
+        kpi: `Answer time: Help/KB (${help.count} queries)`,
+        note: 'Knowledge-base lookup only — the lightest path, so the tightest bar.',
+        value: `${sec.toFixed(2)}s`,
+        rawValue: sec, status: st, greenRange: '≤ 5.0s', yellowRange: '5.1–8.0s', redRange: '> 8.0s',
       });
     }
 
     if (frontOffice && frontOffice.medianLatencyMs > 0) {
       const sec = frontOffice.medianLatencyMs / 1000;
-      const st: 'green' | 'yellow' | 'red' = sec <= 3.0 ? 'green' : sec <= 6.0 ? 'yellow' : 'red';
+      const st: 'green' | 'yellow' | 'red' = sec <= 6.0 ? 'green' : sec <= 9.0 ? 'yellow' : 'red';
       this.scorecard.push({
-        kpi: `Speed: Front Office (${frontOffice.count} queries)`, value: `${sec.toFixed(1)}s`,
-        rawValue: sec, status: st, greenRange: '≤ 3.0s', yellowRange: '3.1–6.0s', redRange: '> 6.0s',
+        kpi: `Answer time: Front Office (${frontOffice.count} queries)`,
+        note: 'Includes live scheduling and patient lookups against the practice system.',
+        value: `${sec.toFixed(2)}s`,
+        rawValue: sec, status: st, greenRange: '≤ 6.0s', yellowRange: '6.1–9.0s', redRange: '> 9.0s',
+      });
+    }
+
+    if (reporting && reporting.medianLatencyMs > 0) {
+      const sec = reporting.medianLatencyMs / 1000;
+      const st: 'green' | 'yellow' | 'red' = sec <= 8.0 ? 'green' : sec <= 12.0 ? 'yellow' : 'red';
+      this.scorecard.push({
+        kpi: `Answer time: Reporting (${reporting.count} queries)`,
+        note: 'Queries and aggregates practice data — expected to be the slowest, and users accept that.',
+        value: `${sec.toFixed(2)}s`,
+        rawValue: sec, status: st, greenRange: '≤ 8.0s', yellowRange: '8.1–12s', redRange: '> 12s',
       });
     }
 
