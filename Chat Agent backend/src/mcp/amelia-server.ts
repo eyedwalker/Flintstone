@@ -8,11 +8,12 @@
  * Usage:
  *   node src/mcp/amelia-server.js
  *
- * Configuration (env vars):
- *   AMELIA_BASE_URL    — Amelia REST API base URL (default: eyefinity.partners.amelia.com)
+ * Configuration (env vars, or the gitignored `.env.amelia` at the backend root —
+ * copy scripts/amelia.env.example; never put credentials in a tracked file):
+ *   AMELIA_BASE_URL    — Amelia REST API base URL (default: eyefinity2 prod)
  *   AMELIA_USERNAME    — Amelia login username
  *   AMELIA_PASSWORD    — Amelia login password
- *   AMELIA_DOMAIN      — Amelia domain code (default: eyefinitysandbox)
+ *   AMELIA_DOMAIN      — Amelia domain code (default: eyefinityencompassprod)
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -21,9 +22,34 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
-const BASE_URL = process.env['AMELIA_BASE_URL'] ?? 'https://eyefinity.partners.amelia.com/AmeliaRest';
-const DOMAIN = process.env['AMELIA_DOMAIN'] ?? 'eyefinitysandbox';
+// Load credentials from the gitignored `.env.amelia` (backend root) so MCP
+// client configs like .mcp.json never need to carry secrets. Real environment
+// variables win over file values. (__dirname because ts-node --skip-project
+// transpiles this file as CommonJS, where import.meta is unavailable.)
+(() => {
+  const root = typeof __dirname !== 'undefined'
+    ? path.resolve(__dirname, '..', '..')
+    : process.cwd();
+  for (const name of ['.env.amelia', '.env.local', '.env']) {
+    const f = path.join(root, name);
+    if (!fs.existsSync(f)) continue;
+    for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+      const m = line.match(/^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*)$/i);
+      if (!m) continue;
+      let val = m[2].trim();
+      if (/^"(.*)"$/s.test(val) || /^'(.*)'$/s.test(val)) val = val.slice(1, -1);
+      else val = val.replace(/\s+#.*$/, '').trim();
+      if (!(m[1] in process.env)) process.env[m[1]] = val;
+    }
+    break;
+  }
+})();
+
+const BASE_URL = process.env['AMELIA_BASE_URL'] ?? 'https://eyefinity2.amelia.com/AmeliaRest';
+const DOMAIN = process.env['AMELIA_DOMAIN'] ?? 'eyefinityencompassprod';
 
 let authToken: string | null = null;
 let activeConversations: Map<string, string> = new Map(); // name → conversationId

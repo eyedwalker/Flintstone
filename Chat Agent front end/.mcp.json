@@ -8,10 +8,7 @@
         "/Users/daviwa2@vsp.com/CascadeProjects/Chat Agent backend/src/mcp/amelia-server.ts"
       ],
       "env": {
-        "AMELIA_USERNAME": "daviwa2@vsp.com",
-        "AMELIA_PASSWORD": "Y5zr1MNNk6vNj4@0",
-        "AMELIA_DOMAIN": "eyefinitysandbox",
-        "AMELIA_BASE_URL": "https://eyefinity.partners.amelia.com/AmeliaRest"
+        "_comment": "No credentials here — this file is git-tracked. The server loads AMELIA_USERNAME/AMELIA_PASSWORD/AMELIA_DOMAIN/AMELIA_BASE_URL from the gitignored 'Chat Agent backend/.env.amelia' (template: scripts/amelia.env.example)."
       }
     }
   }
